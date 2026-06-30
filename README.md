@@ -1,31 +1,27 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=220&section=header&text=🛡️%20PhishGuard%20AI&fontSize=50&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Real-Time%20Phishing%20URL%20Detection%20Powered%20by%20Machine%20Learning&descSize=16&descAlignY=58&descColor=a0a0cc" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=220&section=header&text=🧠%20Codebase%20Onboarding%20Agent&fontSize=42&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Agentic%20Graph-Augmented%20RAG%20Pipeline%20for%20Codebase%20Intelligence&descSize=15&descAlignY=58&descColor=a0a0cc" width="100%"/>
 
 <br/>
 
-[![Stars](https://img.shields.io/github/stars/huziifa/Huzaifa?style=for-the-badge&logo=github&color=FFD700&labelColor=0d1117)](https://github.com/huziifa/Huzaifa/stargazers)
-[![Forks](https://img.shields.io/github/forks/huziifa/Huzaifa?style=for-the-badge&logo=git&color=4ECDC4&labelColor=0d1117)](https://github.com/huziifa/Huzaifa/network)
-[![Issues](https://img.shields.io/github/issues/huziifa/Huzaifa?style=for-the-badge&logo=gitbook&color=FF6B6B&labelColor=0d1117)](https://github.com/huziifa/Huzaifa/issues)
+[![Stars](https://img.shields.io/github/stars/HurairaMaqbool/HurairaMaqbool?style=for-the-badge&logo=github&color=FFD700&labelColor=0d1117)](https://github.com/HurairaMaqbool/HurairaMaqbool/stargazers)
+[![Forks](https://img.shields.io/github/forks/HurairaMaqbool/HurairaMaqbool?style=for-the-badge&logo=git&color=4ECDC4&labelColor=0d1117)](https://github.com/HurairaMaqbool/HurairaMaqbool/network)
+[![Issues](https://img.shields.io/github/issues/HurairaMaqbool/HurairaMaqbool?style=for-the-badge&logo=gitbook&color=FF6B6B&labelColor=0d1117)](https://github.com/HurairaMaqbool/HurairaMaqbool/issues)
 [![License](https://img.shields.io/badge/License-MIT-8A2BE2?style=for-the-badge&labelColor=0d1117)](LICENSE)
-[![Accuracy](https://img.shields.io/badge/Model%20Accuracy-97.4%25-00C851?style=for-the-badge&logo=checkmarx&labelColor=0d1117)](#-model-benchmarks)
 
 <br/>
 
-![Python](https://img.shields.io/badge/Python%203.6+-3776AB?style=flat-square&logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask%202.0-000000?style=flat-square&logo=flask&logoColor=white)
-![scikit-learn](https://img.shields.io/badge/scikit--learn%201.0-F7931E?style=flat-square&logo=scikit-learn&logoColor=white)
-![NumPy](https://img.shields.io/badge/NumPy-013243?style=flat-square&logo=numpy&logoColor=white)
-![Pandas](https://img.shields.io/badge/Pandas-150458?style=flat-square&logo=pandas&logoColor=white)
-![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=flat-square&logo=jupyter&logoColor=white)
+![Python](https://img.shields.io/badge/Python%203.12-3776AB?style=flat-square&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-VectorStore-6E57F7?style=flat-square)
+![NetworkX](https://img.shields.io/badge/NetworkX-GraphEngine-orange?style=flat-square)
+![LangChain](https://img.shields.io/badge/LangChain-Agentic-1C3C3C?style=flat-square)
+![Groq](https://img.shields.io/badge/Groq-LLM-F55036?style=flat-square)
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&pause=1000&color=6E57F7&center=true&vCenter=true&width=600&lines=Paste+any+URL.+Get+an+instant+AI+verdict.;97.4%25+accurate+phishing+detection.;30+intelligent+features+extracted.;99.4%25+recall+%E2%80%94+catches+almost+everything." alt="Typing SVG"/>
-
-<br/><br/>
-
-<img src="https://user-images.githubusercontent.com/79131292/144742825-23367f0f-9e67-4c99-ba1f-b86a187675c9.png" width="78%" style="border-radius:12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);"/>
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&pause=1000&color=6E57F7&center=true&vCenter=true&width=650&lines=Ask+any+question+about+your+codebase.;Hybrid+RAG+%2B+Graph+traversal+%2B+Hallucination+gating.;Auto-syncs+on+every+GitHub+push.;Built+for+developers%2C+not+demos." alt="Typing SVG"/>
 
 <br/><br/>
 
@@ -42,15 +38,15 @@
 |---|---------|
 | 1 | [🧠 About the Project](#-about-the-project) |
 | 2 | [✨ Features at a Glance](#-features-at-a-glance) |
-| 3 | [⚙️ How It Works](#️-how-it-works) |
-| 4 | [🔬 The 30-Feature Engine](#-the-30-feature-engine) |
-| 5 | [📊 Model Benchmarks](#-model-benchmarks) |
-| 6 | [🛠️ Tech Stack](#️-tech-stack) |
-| 7 | [📁 Project Structure](#-project-structure) |
-| 8 | [🚀 Getting Started](#-getting-started) |
-| 9 | [💻 Usage Guide](#-usage-guide) |
-| 10 | [📂 Dataset](#-dataset) |
-| 11 | [🏆 Results & Analysis](#-results--analysis) |
+| 3 | [🏗️ High-Level Architecture](#️-high-level-architecture) |
+| 4 | [⚙️ Workflow Breakdowns](#️-workflow-breakdowns) |
+| 5 | [📦 Module Reference](#-module-reference) |
+| 6 | [🔌 API Contracts](#-api-contracts) |
+| 7 | [🛡️ Agentic Gating & Hallucination Guard](#️-agentic-gating--hallucination-guard) |
+| 8 | [🛠️ Tech Stack](#️-tech-stack) |
+| 9 | [📁 Project Structure](#-project-structure) |
+| 10 | [🚀 Setup & Local Execution](#-setup--local-execution) |
+| 11 | [🧪 Testing](#-testing) |
 | 12 | [🛣️ Roadmap](#️-roadmap) |
 | 13 | [🤝 Contributing](#-contributing) |
 | 14 | [📄 License](#-license) |
@@ -62,30 +58,30 @@
 
 ## 🧠 About the Project
 
-<img align="right" src="https://user-images.githubusercontent.com/79131292/144742785-d183f50a-52d6-4296-a43a-90a1ee3502d8.png" width="38%"/>
+<img align="right" src="https://user-images.githubusercontent.com/79131292/144742785-d183f50a-52d6-4296-a43a-90a1ee3502d8.png" width="35%"/>
 
-**Phishing attacks account for over 90% of all data breaches worldwide.** Attackers craft convincing fake websites to steal credentials, banking details, and personal data — and traditional blacklist-based filters increasingly fail to keep up with evolving threats.
+**Onboarding onto a new codebase takes days — sometimes weeks.** Developers waste hours tracing function calls, reading stale docs, and asking colleagues questions that interrupt everyone's flow.
 
-**PhishGuard AI** solves this with machine learning. Rather than relying on lists that go stale within hours, the model learns the *structural DNA* of phishing URLs — 30 deep signals covering domain intelligence, HTML behaviour, redirect patterns, and web reputation — and generalises confidently to URLs it has never seen before.
+The **Codebase Onboarding Agent** eliminates that friction. It ingests any Git repository, builds a triple index (semantic vectors + BM25 keyword + call graph), and exposes an autonomous RAG agent that answers precise, citation-verified questions about the codebase in seconds.
 
-### The core challenge
+This is not a chatbot wrapper around an LLM. It is a production-grade agentic pipeline with:
 
-| Detection Method | Why It Fails |
-|-----------------|-------------|
-| Blacklist filtering | Only catches *known* sites; new phishing domains bypass instantly |
-| Rule-based heuristics | Brittle — one tweak in URL structure defeats the rules |
-| Human inspection | Impossible at scale; humans are fooled by design |
-| ✅ **Machine Learning** | Learns generalised patterns; adapts to new attack structures |
-
-### Why this implementation stands out
-
-- 🔬 **30 handcrafted features** across 4 analytical layers — URL structure, domain intelligence, HTML/JS content, and web reputation
-- 🏋️ **10 algorithms benchmarked** on identical splits — no cherry-picking
-- 🎯 **97.4% accuracy** with **99.4% recall** — misses almost nothing
-- 🌐 **Production-ready Flask app** — clean UI, Heroku-deployable, Gunicorn-ready
-- 📓 **Full reproducible Jupyter notebook** — EDA, training, evaluation, feature importance
+- 🔬 **AST-level chunking** — logic is never split mid-function
+- 🕸️ **Graph-augmented retrieval** — understand *who calls what*
+- 🛡️ **Hallucination gating** — every citation is verified against the index before it reaches the user
+- ⚡ **Semantic answer caching** — repeat questions are served in milliseconds
+- 🔄 **Webhook auto-sync** — the agent updates itself on every GitHub push
 
 <br clear="right"/>
+
+### The core problem
+
+| Old Way | This Agent |
+|---------|-----------|
+| Read docs that may be stale | Answers from the actual, live code |
+| Grep and trace calls manually | Graph traversal finds callers/callees instantly |
+| Ask a senior dev (interrupt their flow) | Ask the agent — it cites the exact file and line |
+| Re-onboard after every big PR | Webhook re-ingests on merge, cache is purged |
 
 ---
 
@@ -95,179 +91,363 @@
 
 | | Feature | Description |
 |-|---------|-------------|
-| 🔍 | **Real-Time Analysis** | Paste a URL and get results in seconds |
-| 🤖 | **GBC Model** | Gradient Boosting — the top performer across 10 algorithms |
-| 📊 | **Probability Score** | Not just "safe/unsafe" — a precise confidence percentage |
-| 🧮 | **30-Feature Engine** | Deep structural analysis of every URL component |
-| 🛡️ | **99.4% Recall** | Security-first — almost no phishing site slips through |
-| ⚡ | **Lightweight App** | Flask + Gunicorn — fast, portable, cloud-ready |
-| 📓 | **Open Notebook** | Full EDA and model comparison — fully transparent |
-| 🔌 | **Heroku Ready** | Procfile included — deploy in one command |
+| 🤖 | **Autonomous Agent Loop** | LLM decides which tools to call — no hardcoded router |
+| 🔍 | **Hybrid Search** | Vector (ChromaDB) + Keyword (BM25) fused via Reciprocal Rank Fusion |
+| 🕸️ | **Call Graph Engine** | NetworkX graph of imports and function calls — traversed via BFS (3-hop limit) |
+| 🛡️ | **Hallucination Guard** | Citation validation gates any response with confidence < 4.0 / 10 |
+| ⚡ | **Semantic Cache** | 95% similarity threshold — identical questions skip the LLM entirely |
+| 📊 | **Mermaid Diagrams** | Auto-generates call-graph diagrams that render in the Streamlit UI |
+| 🔄 | **Webhook Auto-Sync** | HMAC-verified GitHub webhooks trigger re-ingestion on every push |
+| 🌐 | **REST API** | FastAPI backend with X-API-Key auth and sliding-window rate limiting |
+| 📓 | **Ragas Evaluation** | Automated faithfulness, relevancy, and recall scoring via golden set |
 
 </div>
 
 ---
 
-## ⚙️ How It Works
+## 🏗️ High-Level Architecture
 
 ```
-╔══════════════════════════════════════════════════════════════╗
-║                      USER SUBMITS URL                       ║
-║           "http://paypa1-secure-login.free.fr/"             ║
-╚══════════════════════════════╦═══════════════════════════════╝
-                               │
-                               ▼
-╔══════════════════════════════════════════════════════════════╗
-║                    FEATURE EXTRACTION                       ║
-║                   (feature.py — 30 features)                ║
-║                                                             ║
-║   ┌──────────────────┐    ┌──────────────────────────────┐  ║
-║   │ ① URL Structure  │    │   ② Domain Intelligence      │  ║
-║   │   7 features     │    │      5 features               │  ║
-║   └──────────────────┘    └──────────────────────────────┘  ║
-║   ┌──────────────────┐    ┌──────────────────────────────┐  ║
-║   │ ③ HTML & JS      │    │   ④ Web Reputation           │  ║
-║   │   11 features    │    │      7 features               │  ║
-║   └──────────────────┘    └──────────────────────────────┘  ║
-║                                                             ║
-║              Output: numpy array of shape (1, 30)           ║
-╚══════════════════════════════╦═══════════════════════════════╝
-                               │
-                               ▼
-╔══════════════════════════════════════════════════════════════╗
-║             GRADIENT BOOSTING CLASSIFIER                    ║
-║                  (pickle/model.pkl)                         ║
-║        Trained on 11,055 real-world labelled URLs           ║
-║      Outputs: prediction class + probability vector         ║
-╚══════════════════════════════╦═══════════════════════════════╝
-                               │
-                               ▼
-╔══════════════════════════════════════════════════════════════╗
-║                         RESULT                              ║
-║                                                             ║
-║   ✅  96.2% safe  →  Proceed with confidence                ║
-║   ⚠️   7.4% safe  →  Phishing detected — do not visit      ║
-╚══════════════════════════════════════════════════════════════╝
+Developer / GitHub Webhook
+         |
+         v
+ Streamlit App (frontend/)
+         | HTTP REST
+         v
+ FastAPI Router (app/api/)
+         |
+         |──[Ingestion Pipeline]─────────────────────────────────┐
+         |    1. Git Clone / Fetch  (app/ingestion/clone.py)      |
+         |    2. File Filter        (file_filter.py)              |
+         |    3. Tree-Sitter Parser (app/parsing/)                |
+         |    4. AST Chunker        (chunker.py)                  |
+         |    5a. Vector Store      (ChromaDB)                    |
+         |    5b. BM25 Index        (app/retrieval/)              |
+         |    5c. Call Graph        (NetworkX)                    |
+         |                                                        |
+         └──[Chat Agentic Loop]──────────────────────────────────┘
+              Query ──> Semantic Answer Cache
+                            | (miss)
+                            v
+                    RAG Agent Loop (app/agent/)
+                            |
+                            v
+                    Agent Tools (tools.py)
+                       |            |
+                       v            v
+               Hybrid Search    Graph Queries
+              (RRF + Reranker)  (app/graph/)
+                       \            /
+                        \          /
+                         v        v
+                  Hallucination Guard (confidence.py)
+                            |
+                            v
+                    Cache & Return → API
 ```
-
-Each URL goes through **WHOIS lookup**, **DNS resolution**, **live HTTP request**, **BeautifulSoup HTML parsing**, **Google index check**, and **blacklist matching** — all inside `feature.py` — before the model ever sees it.
 
 ---
 
-## 🔬 The 30-Feature Engine
+## ⚙️ Workflow Breakdowns
 
-Every URL is scored across four analytical layers. Each feature returns `1` (legitimate), `0` (suspicious), or `-1` (phishing).
+### Workflow 1 — Ingestion Pipeline
+
+```
+User / Webhook
+     |
+     | POST /ingest
+     v
+  API Layer ──── 202 Accepted {job_id}
+     |
+     | [Background Task]
+     v
+  clone_repo()
+     |
+     v
+  filter_repo_files()   ← drops binaries, minified files, images
+     |
+     v
+  parse_file()          ← Tree-Sitter AST extraction
+     |
+     v
+  ┌──────────────────────────────────────┐
+  │  [Parallel Indexing]                 │
+  │  embed → ChromaDB (semantic)         │
+  │  tokenize → BM25 (keyword)           │
+  │  analyze → NetworkX (call graph)     │
+  └──────────────────────────────────────┘
+     |
+     v
+  metadata_store.update(status="synced")
+```
+
+**Key steps:**
+
+| Step | What Happens |
+|------|-------------|
+| **Fast Return** | API returns `job_id` immediately — client is never blocked |
+| **Safe Fetch** | Falls back to bundled dummy repo if network is unavailable |
+| **Filtering** | Drops binaries, minified JS, images — saves LLM tokens |
+| **AST Chunking** | Splits at class/function boundaries — context never chopped mid-logic |
+| **Triple Indexing** | Semantic (ChromaDB) + Keyword (BM25) + Relational (NetworkX) simultaneously |
+
+---
+
+### Workflow 2 — Agentic Chat (RAG)
+
+```
+User Question
+     |
+     v
+  Semantic Cache  ──── [HIT: similarity > 0.95] ──── Return cached answer
+     |
+  [MISS]
+     |
+     v
+  Agent Loop (max 4 iterations)
+     |
+     | think → decide tool → call tool → observe result
+     v
+  ┌─────────────────────────────────────────┐
+  │  search_code   → Hybrid Search (RRF)    │
+  │  read_file     → Raw file contents      │
+  │  get_callers   → Graph BFS upstream     │
+  │  get_callees   → Graph BFS downstream   │
+  │  generate_diagram → Mermaid output      │
+  └─────────────────────────────────────────┘
+     |
+     | [context near limit → compress_older_tool_results()]
+     v
+  Final Answer
+     |
+     v
+  Hallucination Guard
+     |
+     ├── confidence >= 4.0 → cache + return answer
+     └── confidence < 4.0  → return safe fallback, gated=true
+```
+
+---
+
+### Workflow 3 — Webhook Auto-Sync
+
+```
+GitHub Push / Merge Event
+     |
+     v
+  POST /webhook
+     |
+     | Verify X-Hub-Signature-256 (HMAC)
+     v
+  Acquire write lock for repo_id
+     |
+     v
+  Re-run full ingestion pipeline (force_reindex=True)
+     |
+     v
+  invalidate_cache(repo_id)   ← purges ALL cached answers for this repo
+     |
+     v
+  metadata_store.update(commit_hash=new_hash)
+```
+
+> **Why this matters:** HMAC-verified webhooks + write-locking + aggressive cache invalidation ensures the agent's answers always reflect the latest merged commit. Stale architectural explanations are never served.
+
+---
+
+## 📦 Module Reference
 
 <details>
-<summary><b>🔗 Layer 1 — URL Structure (Features 1–7)</b></summary>
+<summary><b>🌐 API Layer — app/api/ & app/main.py</b></summary>
 
 <br/>
 
-| # | Feature | Logic | Phishing Signal |
-|---|---------|-------|----------------|
-| 1 | **IP Address in URL** | Regex + `ipaddress` module | IPs bypass domain reputation systems entirely |
-| 2 | **URL Length** | `< 54` → safe · `54–75` → suspicious · `> 75` → phishing | Phishing URLs average 75+ chars due to obfuscation |
-| 3 | **URL Shortening** | Matches 50+ known shortener domains (bit.ly, tinyurl, etc.) | Shorteners hide the real malicious destination |
-| 4 | **`@` Symbol** | Regex search for `@` | Everything before `@` is ignored by the browser |
-| 5 | **Double Slash Redirect** | `rfind('//')` position > 6 | Forces redirect to attacker-controlled domain |
-| 6 | **Prefix/Suffix `-`** | Hyphen in domain (e.g. `pay-pal.com`) | Classic brand impersonation technique |
-| 7 | **Sub-domain Depth** | Count of `.` in URL | 1 dot = safe · 2 = suspicious · 3+ = phishing |
+| File | Responsibility |
+|------|---------------|
+| `app/main.py` | FastAPI bootstrap — middleware, exception handlers, router mount |
+| `app/config.py` | Pydantic `BaseSettings` — single source of truth for env variables |
+| `app/api/router.py` | REST endpoints: `/ingest`, `/status`, `/chat`, `/diagram` |
+| `app/api/auth.py` | X-API-Key header authentication |
+| `app/api/rate_limiter.py` | Sliding-window memory-based rate limiting on `/chat` |
 
 </details>
 
 <details>
-<summary><b>🌐 Layer 2 — Domain Intelligence (Features 8–12)</b></summary>
+<summary><b>⚙️ Ingestion Pipeline — app/ingestion/</b></summary>
 
 <br/>
 
-| # | Feature | Logic | Phishing Signal |
-|---|---------|-------|----------------|
-| 8 | **HTTPS** | Scheme check via `urlparse` | Phishing sites increasingly skip valid certificates |
-| 9 | **Domain Registration Length** | WHOIS expiry minus creation date | Legitimate sites register for 1+ years; phishing domains for months |
-| 10 | **Favicon Domain** | `<link href>` vs host domain | Favicons loaded from external domains expose cloned sites |
-| 11 | **Non-Standard Port** | `:port` present in domain string | Unusual ports (not 80/443) indicate malicious hosting |
-| 12 | **HTTPS in Domain Token** | `"https"` substring in domain part | e.g. `https-paypal.com` — visual deception trick |
+| File | Responsibility |
+|------|---------------|
+| `clone.py` | Git clone with size limits; offline fallback to dummy repo |
+| `file_filter.py` | Allowlist: `.py`, `.js`, `.ts` — drops binaries and minified files |
+| `metadata_store.py` | Persists sync state (`pending / synced / failed`) and commit hashes |
+| `locking.py` | Thread-level locking per `repo_id` — prevents concurrent ingestion collisions |
 
 </details>
 
 <details>
-<summary><b>🖥️ Layer 3 — HTML & JavaScript (Features 13–23)</b></summary>
+<summary><b>🔬 Parsing & Chunking — app/parsing/</b></summary>
 
 <br/>
 
-| # | Feature | Logic | Phishing Signal |
-|---|---------|-------|----------------|
-| 13 | **Request URL Ratio** | % of `<img>`, `<audio>`, `<embed>`, `<iframe>` from external hosts | > 61% external resources → cloned page |
-| 14 | **Anchor URL Ratio** | % of `<a href>` pointing off-domain | > 67% external links reveals the page is a shell |
-| 15 | **Script/Link Tag Ratio** | % of `<script src>` + `<link href>` from external hosts | > 81% external scripts is a clear phishing indicator |
-| 16 | **Server Form Handler** | `<form action>` pointing to `""`, `about:blank`, or off-domain | Credential harvest forms submit to attacker servers |
-| 17 | **Info Email** | `mailto:` present in page source | Used instead of real server-side form processing |
-| 18 | **Abnormal URL** | `response.text` vs WHOIS host mismatch | Hostname not matching WHOIS = domain spoofing |
-| 19 | **Website Forwarding** | `len(response.history)` | ≤1 redirect = safe · ≤4 = suspicious · 4+ = phishing |
-| 20 | **Status Bar Customisation** | `onmouseover` in `<script>` tags | Hides real URL destination in browser status bar |
-| 21 | **Disable Right Click** | `event.button == 2` in source | Prevents users from inspecting or saving the page |
-| 22 | **Popup Windows** | `alert(` in response text | Credential-stealing popup dialogs |
-| 23 | **Iframe Redirection** | `<iframe>` or `<frameBorder>` in source | Invisible frames loading malicious content |
+| File | Responsibility |
+|------|---------------|
+| `tree_sitter_parser.py` | AST extraction of classes, functions, and imports via Tree-sitter grammars |
+| `chunker.py` | Splits files at logical (class/function) boundaries — never mid-logic |
 
 </details>
 
 <details>
-<summary><b>📈 Layer 4 — Web Reputation (Features 24–30)</b></summary>
+<summary><b>🗄️ Retrieval & Storage — app/retrieval/</b></summary>
 
 <br/>
 
-| # | Feature | Logic | Phishing Signal |
-|---|---------|-------|----------------|
-| 24 | **Age of Domain** | WHOIS creation date vs today | Domains < 6 months old are highly suspicious |
-| 25 | **DNS Record** | WHOIS creation date present | Missing DNS record = no legitimate registration |
-| 26 | **Website Traffic** | Alexa API rank check | Rank > 100,000 or absent = low-traffic, new, or fake site |
-| 27 | **Page Rank** | checkpagerank.net API | Global rank < 100,000 = legitimate; else phishing |
-| 28 | **Google Index** | `googlesearch` package query | Unindexed URLs are often malicious or brand new |
-| 29 | **Links Pointing to Page** | Count of `<a href=` in source | 0 links = possibly safe · 1–2 = suspicious · 3+ = phishing |
-| 30 | **Statistical Report** | Regex match vs known phishing domain/IP blacklists | Matches 50+ known malicious IPs and domains |
+| File | Responsibility |
+|------|---------------|
+| `vector_store.py` | ChromaDB interface — stores and queries chunk embeddings |
+| `bm25_store.py` | Pure-Python BM25 index — catches exact variable/function name matches |
+| `embeddings.py` | SentenceTransformers wrapper for converting text to vectors |
+| `hybrid_search.py` | Reciprocal Rank Fusion (RRF) combining vector + BM25 results |
+| `reranker.py` | Cross-Encoder reranking of top-K hybrid search results |
+| `query_expansion.py` | LLM-generated synonym/keyword expansion before hitting the index |
+
+</details>
+
+<details>
+<summary><b>🕸️ Graph Operations — app/graph/ & app/diagrams/</b></summary>
+
+<br/>
+
+| File | Responsibility |
+|------|---------------|
+| `builder.py` | Builds a NetworkX directed graph of imports and internal function calls |
+| `queries.py` | Timeout-safe BFS traversal for callers/callees (3-hop limit) |
+| `mermaid_generator.py` | Converts a graph subgraph into a Mermaid diagram string for the frontend |
+
+</details>
+
+<details>
+<summary><b>🤖 Agentic Loop — app/agent/</b></summary>
+
+<br/>
+
+| File | Responsibility |
+|------|---------------|
+| `loop.py` | Core execution loop — LLM call → tool intercept → tool run → feed back → repeat |
+| `tools.py` | JSON schema definitions + retry logic for all 5 agent tools |
+| `system_prompt.py` | LLM instructions: persona, rules, and strict markdown citation format |
+| `semantic_cache.py` | 95% similarity threshold cache — same question, same commit → instant return |
+| `context_manager.py` | Monitors token usage; condenses old tool results via secondary LLM |
+| `confidence.py` | **Hallucination Guard** — validates every cited file/line; gates below score 4.0 |
+
+</details>
+
+<details>
+<summary><b>🧪 Evaluation Suite — eval/</b></summary>
+
+<br/>
+
+| File | Responsibility |
+|------|---------------|
+| `run_eval.py` | Ragas automated evaluation: Faithfulness, Answer Relevancy, Context Precision, Context Recall |
+| `compare_runs.py` | Compares new eval runs against previous baselines to detect regressions |
 
 </details>
 
 ---
 
-## 📊 Model Benchmarks
+## 🔌 API Contracts
 
-Ten classifiers were trained and evaluated on an **80/20 stratified train/test split** of 11,055 URLs:
+All routes require the `X-API-Key` header.
+
+### `POST /ingest`
+
+```json
+// Request
+{ "repo_url": "https://github.com/psf/requests", "ref": "main", "force_reindex": false }
+
+// Response — 202 Accepted
+{ "job_id": "abc-123", "status": "pending" }
+```
+
+### `GET /status/{repo_id}`
+
+```json
+{ "sync_status": "synced", "commit_hash": "a1b2c3d", "error": null, "has_circular_dependencies": false }
+```
+
+### `POST /chat`
+
+```json
+// Request
+{ "repo_id": "psf_requests", "question": "How does session handling work?", "session_id": "opt-123" }
+
+// Response
+{
+  "answer": "Session handling works by...",
+  "sources": [
+    { "file_path": "requests/sessions.py", "function_name": "Session.request", "start_line": 400, "end_line": 450 }
+  ],
+  "confidence_score": 9.5,
+  "gated": false
+}
+```
+
+### `POST /diagram`
+
+```json
+// Request
+{ "repo_id": "psf_requests", "entry_point": "Session.request", "direction": "both" }
+
+// Response
+{ "mermaid_markdown": "graph TD\n..." }
+```
 
 <div align="center">
 
-| Rank | Model | Accuracy | F1 Score | Recall | Precision |
-|:----:|-------|:--------:|:--------:|:------:|:---------:|
-| 🥇 | **Gradient Boosting Classifier** | **0.974** | **0.977** | **0.994** | **0.986** |
-| 🥈 | CatBoost Classifier | 0.972 | 0.975 | 0.994 | 0.989 |
-| 🥉 | XGBoost Classifier | 0.969 | 0.973 | 0.993 | 0.984 |
-| 4 | Multi-layer Perceptron | 0.969 | 0.973 | 0.995 | 0.981 |
-| 5 | Random Forest | 0.967 | 0.971 | 0.993 | 0.990 |
-| 6 | Support Vector Machine | 0.964 | 0.968 | 0.980 | 0.965 |
-| 7 | Decision Tree | 0.960 | 0.964 | 0.991 | 0.993 |
-| 8 | K-Nearest Neighbors | 0.956 | 0.961 | 0.991 | 0.989 |
-| 9 | Logistic Regression | 0.934 | 0.941 | 0.943 | 0.927 |
-| 10 | Naive Bayes Classifier | 0.605 | 0.454 | 0.292 | 0.997 |
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/ingest` | Start background ingestion of a repository |
+| `GET` | `/status/{repo_id}` | Check ingestion / sync status |
+| `POST` | `/chat` | Run the agentic RAG query loop |
+| `POST` | `/diagram` | Generate a Mermaid call-graph diagram |
 
 </div>
 
-> **Why Gradient Boosting?** It achieved the best balance of accuracy and recall. For a security tool, **recall is paramount** — a missed phishing URL (false negative) puts a real person at risk. GBC's 99.4% recall means it catches 994 out of every 1,000 phishing URLs.
+---
 
-### 📌 Feature Importance
+## 🛡️ Agentic Gating & Hallucination Guard
 
-<div align="center">
-<img src="https://user-images.githubusercontent.com/79131292/144603941-19044aae-7d7b-4e9a-88a8-6adfd8626f77.png" width="72%"/>
-</div>
+The Hallucination Guard (`confidence.py`) is the most critical safety feature. It parses the final LLM response for markdown citations (e.g. `` `src/auth.py:10-15` ``) and validates every single one against the actual index.
 
-<br/>
+```
+Final LLM Answer
+       |
+       v
+Parse markdown citations (`file:start-end`)
+       |
+       v
+For each citation:
+  - Does file exist in index?        → No → penalize score
+  - Are line numbers within bounds?  → No → penalize score
+       |
+       v
+Compute deterministic confidence score (0–10)
+       |
+       ├── score >= 4.0 → return answer,  gated=false
+       └── score < 4.0  → strip answer,   gated=true, return safe fallback
+```
 
-The three dominant features driving predictions:
+### Available Agent Tools
 
-| Rank | Feature | Why It Matters |
-|------|---------|---------------|
-| 🥇 | **HTTPS** | Certificate presence is the single strongest trust signal |
-| 🥈 | **AnchorURL** | Cloned pages always pull links from external sources |
-| 🥉 | **WebsiteTraffic** | Phishing domains never build real organic traffic |
+| Tool | Purpose |
+|------|---------|
+| `search_code` | Hybrid (vector + BM25) search with RRF fusion and Cross-Encoder reranking |
+| `read_file` | Read raw file contents from the indexed repository |
+| `get_callers` | Graph traversal: find functions that call a given function (3-hop limit) |
+| `get_callees` | Graph traversal: find functions called by a given function (3-hop limit) |
+| `generate_diagram` | Produce a Mermaid diagram from a graph subgraph |
 
 ---
 
@@ -275,19 +455,20 @@ The three dominant features driving predictions:
 
 <div align="center">
 
-| Layer | Technology | Version | Role |
-|-------|-----------|---------|------|
-| **Runtime** | Python | 3.6+ | Core language |
-| **Web** | Flask | 2.0.2 | App server and routing |
-| **ML** | scikit-learn | 1.0.1 | GBC model training and inference |
-| **Data** | NumPy / Pandas | 1.21 / 1.3 | Array ops and dataset handling |
-| **Scraping** | BeautifulSoup4 | 4.9.3 | HTML feature extraction |
-| **HTTP** | Requests | 2.25.1 | Live URL fetching |
-| **Domain** | python-whois | 0.9.13 | WHOIS domain registration data |
-| **Search** | googlesearch-python | 1.0.1 | Google index verification |
-| **Production** | Gunicorn | 20.1.0 | WSGI production server |
-| **Deployment** | Procfile | — | Heroku deployment config |
-| **Notebook** | Jupyter | — | EDA and model experiments |
+| Layer | Technology | Role |
+|-------|-----------|------|
+| **Runtime** | Python 3.12 | Core language |
+| **Backend** | FastAPI | REST API server, background tasks, auth |
+| **Frontend** | Streamlit | Developer-facing chat and diagram UI |
+| **LLM** | Groq (LLaMA 3) | Agent reasoning and answer generation |
+| **Vector Store** | ChromaDB | Semantic embedding storage and search |
+| **Keyword Index** | BM25 (pure Python) | Exact variable/function name matching |
+| **Graph Engine** | NetworkX | Call graph — callers, callees, import chains |
+| **AST Parser** | Tree-sitter | Language-aware code chunking |
+| **Embeddings** | SentenceTransformers | Text-to-vector conversion |
+| **Reranker** | Cross-Encoder | Relevance reranking of hybrid search results |
+| **Evaluation** | Ragas | Automated faithfulness and recall scoring |
+| **Webhooks** | HMAC SHA-256 | Secure GitHub push verification |
 
 </div>
 
@@ -296,37 +477,72 @@ The three dominant features driving predictions:
 ## 📁 Project Structure
 
 ```
-📦 Huzaifa/
+📦 codebase-onboarding-agent/
 │
-├── 📂 pickle/
-│   └── 🤖 model.pkl                     ← Trained GBC model (download separately)
+├── 📂 app/
+│   ├── 📂 api/
+│   │   ├── 🔐 auth.py                  ← X-API-Key authentication
+│   │   ├── 🚦 rate_limiter.py          ← Sliding-window rate limiting
+│   │   └── 🛣️ router.py               ← /ingest /status /chat /diagram
+│   │
+│   ├── 📂 agent/
+│   │   ├── 💬 loop.py                  ← Core agentic execution loop
+│   │   ├── 🔧 tools.py                 ← Tool schemas + retry logic
+│   │   ├── 📝 system_prompt.py         ← LLM instruction set
+│   │   ├── ⚡ semantic_cache.py        ← 95% similarity answer cache
+│   │   ├── 📏 context_manager.py       ← Token usage + compression
+│   │   └── 🛡️ confidence.py           ← Hallucination guard + gating
+│   │
+│   ├── 📂 ingestion/
+│   │   ├── 📥 clone.py                 ← Git clone + offline fallback
+│   │   ├── 🔍 file_filter.py           ← Allowlist filtering
+│   │   ├── 🗃️ metadata_store.py       ← Sync state + commit hash tracking
+│   │   └── 🔒 locking.py              ← Thread-level repo locks
+│   │
+│   ├── 📂 parsing/
+│   │   ├── 🌳 tree_sitter_parser.py    ← AST extraction
+│   │   └── ✂️ chunker.py              ← Function/class boundary splitting
+│   │
+│   ├── 📂 retrieval/
+│   │   ├── 🧮 vector_store.py          ← ChromaDB interface
+│   │   ├── 🔡 bm25_store.py            ← BM25 keyword index
+│   │   ├── 🧬 embeddings.py            ← SentenceTransformers wrapper
+│   │   ├── 🔀 hybrid_search.py         ← RRF fusion
+│   │   ├── 🎯 reranker.py              ← Cross-Encoder reranking
+│   │   └── 💡 query_expansion.py       ← LLM synonym expansion
+│   │
+│   ├── 📂 graph/
+│   │   ├── 🏗️ builder.py              ← NetworkX graph construction
+│   │   └── 🔎 queries.py              ← BFS traversal (3-hop limit)
+│   │
+│   ├── 📂 diagrams/
+│   │   └── 📊 mermaid_generator.py     ← Graph → Mermaid markdown
+│   │
+│   ├── ⚙️ config.py                   ← Pydantic BaseSettings (all env vars)
+│   └── 🚀 main.py                     ← FastAPI bootstrap
 │
-├── 📂 static/
-│   └── 🎨 styles.css                    ← Web interface stylesheet
+├── 📂 frontend/
+│   └── 🌐 streamlit_app.py            ← Chat UI + diagram rendering
 │
-├── 📂 templates/
-│   └── 🌐 index.html                    ← Jinja2 web UI template
+├── 📂 eval/
+│   ├── 🧪 run_eval.py                 ← Ragas evaluation runner
+│   └── 📈 compare_runs.py             ← Regression detection
 │
-├── 📓 Phishing URL Detection.ipynb      ← Full EDA, training & evaluation
-├── 🐍 app.py                            ← Flask routes & prediction logic
-├── 🔧 feature.py                        ← 30-feature URL extraction engine
-├── 📊 phishing.csv                      ← 11,055 labelled training URLs
-├── 🚀 Procfile                          ← Heroku deployment (web: gunicorn app:app)
-├── 📋 requirements.txt                  ← All Python dependencies
+├── 📂 tests/                          ← Full pytest suite
+├── 🔧 .env.example                    ← Environment variable template
+├── 🚀 run_local.bat                   ← One-command local startup
+├── 📋 requirements.txt                ← All Python dependencies
 └── 📖 README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Setup & Local Execution
 
 ### Prerequisites
 
-Ensure you have the following installed:
-
 ```bash
-python --version   # 3.6 or higher required
-pip --version      # pip 21+ recommended
+python --version   # 3.12 required
 git --version      # any recent version
 ```
 
@@ -335,21 +551,20 @@ git --version      # any recent version
 **① Clone the repository**
 
 ```bash
-git clone https://github.com/huziifa/Huzaifa.git
-cd Huzaifa
+git clone https://github.com/HurairaMaqbool/HurairaMaqbool.git
+cd codebase-onboarding-agent
 ```
 
-**② Create and activate a virtual environment** *(recommended)*
+**② Create and activate a virtual environment**
 
 ```bash
-# Create the environment
-python -m venv venv
+python -m venv .venv
 
-# Activate — Windows
-venv\Scripts\activate
+# Windows
+.venv\Scripts\activate
 
-# Activate — macOS / Linux
-source venv/bin/activate
+# macOS / Linux
+source .venv/bin/activate
 ```
 
 **③ Install all dependencies**
@@ -358,157 +573,87 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**④ Download the trained model**
-
-The `model.pkl` file is not included in the repository due to GitHub's 100 MB limit.
-Download it and place it inside the `pickle/` folder:
-
-```
-📥  Download link: [YOUR GOOGLE DRIVE / HUGGING FACE LINK HERE]
-
-Place the file at:  Huzaifa/pickle/model.pkl
-```
-
-**⑤ Run the application**
+**④ Configure environment variables**
 
 ```bash
-python app.py
+cp .env.example .env
 ```
 
-**⑥ Visit the app in your browser**
+Edit `.env`:
 
-```
-http://127.0.0.1:5000
+```env
+GROQ_API_KEY="your_groq_api_key"
+LLM_PROVIDER="groq"
+API_KEY="dev-secret-key"
+WEBHOOK_SECRET="your_github_webhook_secret"
 ```
 
-### Deploy to Heroku *(optional)*
+**⑤ Start the system**
 
 ```bash
-heroku login
-heroku create your-app-name
-git push heroku main
-heroku open
+run_local.bat
 ```
 
-The `Procfile` is already configured: `web: gunicorn app:app`
+| Service | URL |
+|---------|-----|
+| FastAPI Backend | http://localhost:8000 |
+| Streamlit Frontend | http://localhost:8501 |
+| API Docs (Swagger) | http://localhost:8000/docs |
 
 ---
 
-## 💻 Usage Guide
+## 🧪 Testing
 
-### Basic Usage
+```bash
+# Run the full test suite
+pytest tests/
 
-1. Open the web app at `http://127.0.0.1:5000`
-2. Paste any URL into the input field
-3. Click **Check URL**
-4. Read your result with confidence score
+# Run a specific module
+pytest tests/test_module_12.py -v
 
-### Example Predictions
-
-```
-URL                                   Safety Score    Verdict
-────────────────────────────────────────────────────────────
-https://www.google.com                96.2%           ✅ Safe
-https://github.com                    94.7%           ✅ Safe
-https://stackoverflow.com             91.3%           ✅ Safe
-http://paypa1-secure-login.free.fr/    3.1%           ⚠️ PHISHING
-http://amazon-account-verify.tk/       5.8%           ⚠️ PHISHING
-http://192.168.1.1/bank/login          2.4%           ⚠️ PHISHING
+# Run with coverage report
+pytest tests/ --cov=app --cov-report=html
 ```
 
-### Understanding Your Score
+> **Note:** `tests/test_golden_set.py` performs live API calls against real repositories. It is skipped by default to preserve API quotas — run explicitly when needed.
 
-```
- 90% – 100%  ███████████████████  ✅  Very Safe
- 70% –  89%  ██████████████░░░░░  ✅  Safe
- 40% –  69%  ████████░░░░░░░░░░░  ⚠️  Suspicious — proceed with caution
-  0% –  39%  ████░░░░░░░░░░░░░░░  🚨  Likely Phishing — do not visit
-```
+### Evaluation (Ragas)
 
-> **Note:** WHOIS lookup, DNS resolution, and Google index checks require an active internet connection and may add 3–8 seconds to analysis time.
-
----
-
-## 📂 Dataset
-
-<div align="center">
-
-| Property | Detail |
-|----------|--------|
-| **Name** | UCI Phishing Websites Dataset |
-| **Source** | [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets/phishing+websites) |
-| **Total Samples** | 11,055 URLs |
-| **Features** | 30 numerical features per URL |
-| **Phishing** | 4,898 samples `(-1)` |
-| **Suspicious** | 702 samples `(0)` |
-| **Legitimate** | 6,157 samples `(1)` |
-| **Train Split** | 80% — 8,844 samples |
-| **Test Split** | 20% — 2,211 samples |
-| **Class Balance** | Moderately imbalanced (44% phishing) |
-
-</div>
-
----
-
-## 🏆 Results & Analysis
-
-### Final Scorecard
-
-```
-╔══════════════════════════════════════════════════════╗
-║          GRADIENT BOOSTING CLASSIFIER                ║
-║          Tested on 2,211 held-out URLs               ║
-╠══════════════════════════════════════════════════════╣
-║                                                      ║
-║  Accuracy   ██████████████████████████░░  97.4%     ║
-║  F1 Score   ██████████████████████████░░  97.7%     ║
-║  Recall     ███████████████████████████░  99.4%     ║
-║  Precision  ██████████████████████████░░  98.6%     ║
-║                                                      ║
-╚══════════════════════════════════════════════════════╝
+```bash
+python eval/run_eval.py        # Run full Ragas eval
+python eval/compare_runs.py    # Compare against previous baseline
 ```
 
-### Deep-Dive Insights
-
-**1. Why recall matters most in this domain**
-A false negative (missed phishing site) exposes a real user to credential theft or malware. A false positive (blocking a safe site) is an inconvenience. The model was optimised with this asymmetry in mind — 99.4% recall means only 6 in every 1,000 phishing URLs are missed.
-
-**2. Why Gradient Boosting beats Random Forest here**
-Both are ensemble tree methods, but GBC corrects errors sequentially — each tree focuses on the mistakes of the previous. This makes it especially effective on tabular features with non-linear interactions, which is exactly the structure of URL feature vectors.
-
-**3. Why Naive Bayes failed catastrophically (29.2% recall)**
-NB assumes all features are conditionally independent given the class label. URL features are deeply correlated — a short registration length and a missing DNS record often appear together. This violated assumption makes NB nearly useless for this task.
-
-**4. The power of three features**
-HTTPS + AnchorURL + WebsiteTraffic alone explain the majority of variance. Phishing sites cannot easily fake all three simultaneously: acquiring a real certificate, building genuine organic traffic, and hosting content on-domain are expensive and time-consuming.
+Metrics tracked: **Faithfulness · Answer Relevancy · Context Precision · Context Recall**
 
 ---
 
 ## 🛣️ Roadmap
 
 ```
- ✅  Phase 1 — Research & Modelling
-     [x] Dataset collection and EDA
-     [x] 30-feature extraction engine
-     [x] 10 model benchmark comparison
-     [x] GBC model selection and export
+ ✅  Phase 1 — Core Pipeline
+     [x] Git ingestion + AST chunking
+     [x] Triple indexing (ChromaDB + BM25 + NetworkX)
+     [x] Hybrid search with RRF + reranker
+     [x] Autonomous agentic loop (5 tools)
 
- ✅  Phase 2 — Web Application
-     [x] Flask app with prediction endpoint
-     [x] Jinja2 UI template
-     [x] Heroku deployment config (Procfile + Gunicorn)
+ ✅  Phase 2 — Safety & Reliability
+     [x] Hallucination guard with citation validation
+     [x] Semantic answer cache (95% threshold)
+     [x] Context compression (token overflow protection)
+     [x] HMAC-verified webhook auto-sync
 
- 🔄  Phase 3 — API & Integrations  (in progress)
-     [ ] REST API endpoint  POST /api/v1/check
-     [ ] JSON response format with feature breakdown
-     [ ] Rate limiting and API key authentication
+ 🔄  Phase 3 — Evaluation & Observability  (in progress)
+     [ ] Ragas golden set scoring
+     [ ] LangSmith tracing integration
+     [ ] Regression detection pipeline
 
  🔮  Phase 4 — Extensions
-     [ ] Chrome browser extension
-     [ ] Docker containerisation
-     [ ] GitHub Actions CI/CD pipeline
-     [ ] Real-time model retraining pipeline
-     [ ] Streamlit dashboard for visual EDA
+     [ ] VS Code extension
+     [ ] Multi-repo cross-codebase queries
+     [ ] Docker containerisation + CI/CD
+     [ ] Fine-tuned reranker on code-specific data
+     [ ] Support for Go, Rust, Java (Tree-sitter grammar expansion)
 ```
 
 ---
@@ -517,14 +662,11 @@ HTTPS + AnchorURL + WebsiteTraffic alone explain the majority of variance. Phish
 
 Contributions, ideas, and bug reports are warmly welcomed!
 
-**How to contribute:**
-
 ```bash
-# 1. Fork the repository on GitHub
+# 1. Fork the repository
 
 # 2. Clone your fork
-git clone https://github.com/YOUR-USERNAME/Huzaifa.git
-cd Huzaifa
+git clone https://github.com/YOUR-USERNAME/codebase-onboarding-agent.git
 
 # 3. Create a feature branch
 git checkout -b feature/your-feature-name
@@ -533,20 +675,16 @@ git checkout -b feature/your-feature-name
 git add .
 git commit -m "feat: describe your change clearly"
 
-# 5. Push to your fork
+# 5. Push and open a Pull Request
 git push origin feature/your-feature-name
-
-# 6. Open a Pull Request on GitHub
 ```
 
 **Contribution ideas:**
-- 🐛 Fix known bugs in `feature.py` (e.g. `self.soup` reference issue)
-- ➕ Add new URL features (e.g. certificate transparency logs)
-- 🎨 Improve the Flask UI
-- 🐳 Add Docker support
-- 📈 Add more modern models (LightGBM, TabNet)
-
-Found a bug? [Open an issue →](https://github.com/huziifa/Huzaifa/issues/new)
+- 🐛 Fix edge cases in `tree_sitter_parser.py` for multi-language repos
+- ➕ Add Tree-sitter grammars for Go, Rust, or Java
+- 🧪 Expand the Ragas golden set with new Q&A pairs
+- 🐳 Add Docker + Docker Compose support
+- 📊 Build a LangSmith observability dashboard
 
 ---
 
@@ -567,12 +705,12 @@ See the LICENSE file for full terms.
 
 <br/>
 
-<img src="https://github.com/huziifa.png" width="110px" style="border-radius:50%; border: 3px solid #6E57F7;"/>
+<img src="https://github.com/HurairaMaqbool.png" width="110px" style="border-radius:50%; border: 3px solid #6E57F7;"/>
 
 <br/>
 
-### **Huzaifa**
-*Machine Learning Engineer · Cybersecurity Enthusiast · Python Developer*
+### **Huraira Maqbool**
+*AI Engineer · LangChain · LangGraph · RAG Pipelines · Agentic Systems*
 
 <br/>
 
@@ -582,8 +720,8 @@ See the LICENSE file for full terms.
 
 <br/>
 
-*If this project helped you, saved you from a phishing attack, or taught you something new —  
-a ⭐ star on GitHub means a lot and helps others find the project.*
+*If this project saved you hours of onboarding time or taught you something new —
+a ⭐ star on GitHub means a lot and helps other developers find it.*
 
 <br/>
 
@@ -596,7 +734,7 @@ a ⭐ star on GitHub means a lot and helps others find the project.*
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:24243e,50:302b63,100:0f0c29&height=120&section=footer" width="100%"/>
 
 <sub>
-Built with 🐍 Python · 🤖 scikit-learn · 🌐 Flask · ❤️ Passion for Cybersecurity
+Built with 🐍 Python · ⚡ FastAPI · 🧠 LangChain · 🕸️ NetworkX · ❤️ Passion for Developer Tooling
 </sub>
 
 </div>
