@@ -1,0 +1,137 @@
+[
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "What is the purpose of the PreparedRequest class in requests?",
+    "ground_truth_files": ["src/requests/models.py"],
+    "ground_truth_answer_summary": "PreparedRequest represents an HTTP request fully prepared to be sent: it parses and formats the method, URL, headers, body, and authentication before transmission.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+    "ground_truth_files": ["src/requests/auth.py"],
+    "ground_truth_answer_summary": "HTTPBasicAuth is defined in auth.py. It attaches an Authorization header with base64-encoded credentials to the request.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+    "ground_truth_files": ["src/requests/exceptions.py"],
+    "ground_truth_answer_summary": "All requests exceptions, including ConnectionError, Timeout, and HTTPError, are defined in exceptions.py and inherit from RequestException.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "How is SSL certificate verification handled when sending a request?",
+    "ground_truth_files": ["src/requests/adapters.py"],
+    "ground_truth_answer_summary": "The HTTPAdapter.cert_verify method in adapters.py configures SSL verification, resolving the CA bundle and applying the verify flag to the underlying urllib3 connection.",
+    "category": "behavior",
+    "difficulty": "medium",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "What does the Session class do and how does it persist state across requests?",
+    "ground_truth_files": ["src/requests/sessions.py"],
+    "ground_truth_answer_summary": "Session persists cookies, headers, and connection pooling across multiple requests, and provides the request/get/post methods that prepare and send requests.",
+    "category": "behavior",
+    "difficulty": "medium",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "How does requests.get() ultimately send an HTTP request?",
+    "ground_truth_files": ["src/requests/api.py", "src/requests/sessions.py"],
+    "ground_truth_answer_summary": "requests.get() in api.py creates a Session and calls its request method, which prepares a PreparedRequest and dispatches it through the HTTPAdapter.",
+    "category": "behavior",
+    "difficulty": "medium",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "How does the HTTPAdapter send a prepared request?",
+    "ground_truth_files": ["src/requests/adapters.py"],
+    "ground_truth_answer_summary": "HTTPAdapter.send in adapters.py takes a PreparedRequest, gets a urllib3 connection from the pool, sends it, and builds a Response object.",
+    "category": "behavior",
+    "difficulty": "medium",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "How are cookies stored and managed across requests?",
+    "ground_truth_files": ["src/requests/cookies.py"],
+    "ground_truth_answer_summary": "Cookies are managed by RequestsCookieJar in cookies.py, a dict-like wrapper over http.cookiejar that the Session uses to persist cookies.",
+    "category": "behavior",
+    "difficulty": "medium",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "Where are utility helper functions like url encoding and header parsing defined?",
+    "ground_truth_files": ["src/requests/utils.py"],
+    "ground_truth_answer_summary": "General-purpose helpers (URL handling, header parsing, encoding detection) live in utils.py.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+    "question": "What status code helper structures does requests provide?",
+    "ground_truth_files": ["src/requests/status_codes.py", "requests/status_codes.py"],
+    "ground_truth_answer_summary": "status_codes.py defines the `codes` lookup object mapping human-readable names to HTTP status code integers.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "requests"
+  },
+  {
+    "repo_id": "2ceb61e6c82fdb09dd8c3072b8cb8bfd0c6954b543aa398d8e0a15cdd9850710",
+    "question": "Where is the Flask application class defined?",
+    "ground_truth_files": ["src/flask/app.py"],
+    "ground_truth_answer_summary": "The Flask class is defined in app.py and is the central WSGI application object.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "flask"
+  },
+  {
+    "repo_id": "2ceb61e6c82fdb09dd8c3072b8cb8bfd0c6954b543aa398d8e0a15cdd9850710",
+    "question": "How does Flask manage application and request context?",
+    "ground_truth_files": ["src/flask/ctx.py"],
+    "ground_truth_answer_summary": "ctx.py defines AppContext and RequestContext, which push/pop context locals for the active app and request.",
+    "category": "behavior",
+    "difficulty": "medium",
+    "fixture": "flask"
+  },
+  {
+    "repo_id": "2ceb61e6c82fdb09dd8c3072b8cb8bfd0c6954b543aa398d8e0a15cdd9850710",
+    "question": "Where are Blueprint objects defined in Flask?",
+    "ground_truth_files": ["src/flask/blueprints.py"],
+    "ground_truth_answer_summary": "Blueprint is defined in blueprints.py and provides modular route registration on a Flask app.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "flask"
+  },
+  {
+    "repo_id": "2ceb61e6c82fdb09dd8c3072b8cb8bfd0c6954b543aa398d8e0a15cdd9850710",
+    "question": "Where is the Flask command-line interface implemented?",
+    "ground_truth_files": ["src/flask/cli.py", "flask/cli.py"],
+    "ground_truth_answer_summary": "cli.py implements the Flask CLI (flask run, shell, etc.) using Click.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "flask"
+  },
+  {
+    "repo_id": "2ceb61e6c82fdb09dd8c3072b8cb8bfd0c6954b543aa398d8e0a15cdd9850710",
+    "question": "Where are the Request and Response wrapper classes defined?",
+    "ground_truth_files": ["src/flask/wrappers.py"],
+    "ground_truth_answer_summary": "wrappers.py defines Request and Response, extending Werkzeug's base classes for Flask.",
+    "category": "definition",
+    "difficulty": "easy",
+    "fixture": "flask"
+  }
+]

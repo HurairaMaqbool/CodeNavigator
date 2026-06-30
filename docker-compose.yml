@@ -1,0 +1,95 @@
+services:
+  chromadb:
+    # Must match the Python chromadb package version (see requirements-docker.txt).
+    image: chromadb/chroma:0.6.3
+    container_name: agent_chromadb
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - ./data/chroma_db:/chroma/chroma
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: agent_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  backend:
+    build: .
+    image: codenavigator:app
+    container_name: agent_backend
+    command: ["gunicorn", "app.main:app", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--graceful-timeout", "30"]
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+      - REPOS_PATH=/app/data/repos
+      - GRAPH_STORE_PATH=/app/data/graph_store
+      - HF_HOME=/app/data/huggingface
+      - TRANSFORMERS_CACHE=/app/data/huggingface
+    volumes:
+      - ./data:/app/data
+      - bm25_data:/app/bm25_index
+      - ./app:/app/app
+    depends_on:
+      - chromadb
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  worker:
+    image: codenavigator:app
+    container_name: agent_worker
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "-l", "info", "-Q", "ingestion", "--concurrency", "1"]
+    env_file:
+      - .env
+    environment:
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+      - REPOS_PATH=/app/data/repos
+      - GRAPH_STORE_PATH=/app/data/graph_store
+      - HF_HOME=/app/data/huggingface
+      - TRANSFORMERS_CACHE=/app/data/huggingface
+    volumes:
+      - ./data:/app/data
+      - bm25_data:/app/bm25_index
+      - ./app:/app/app
+    depends_on:
+      - redis
+      - chromadb
+    restart: unless-stopped
+
+  frontend:
+    image: codenavigator:app
+    container_name: agent_frontend
+    command: ["streamlit", "run", "frontend/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - API_BASE_URL=http://backend:8000
+      - API_KEY=${API_KEY:-dev-secret-key}
+    volumes:
+      - ./frontend:/app/frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  bm25_data:

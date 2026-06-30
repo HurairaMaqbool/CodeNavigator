@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: codebase-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: codenavigator:app
+          command: ["celery", "-A", "app.tasks.celery_app", "worker", "-l", "info", "-Q", "ingestion", "--concurrency", "2"]
+          envFrom:
+            - configMapRef:
+                name: agent-config
+            - secretRef:
+                name: agent-secrets
+          volumeMounts:
+            - name: app-data
+              mountPath: /app/data
+            - name: bm25-data
+              mountPath: /app/bm25_index
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data-pvc
+        - name: bm25-data
+          persistentVolumeClaim:
+            claimName: bm25-data-pvc

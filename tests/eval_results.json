@@ -1,0 +1,587 @@
+[
+  {
+    "version": "eval_20260627_131737",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T13:17:37.739121+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.8333333333333333,
+      "answer_relevancy": 0.6446524214083033,
+      "context_precision": 0.918518518465679,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 8.666666666666666,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.3333333333333333,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 8.666666666666666,
+      "retrieval_precision_at_3": 0.3333333333333333
+    }
+  },
+  {
+    "version": "eval_20260627_132450",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T13:24:50.441547+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.712121212121212,
+      "answer_relevancy": 0.8201257027842944,
+      "context_precision": 0.918518518465679,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 8.666666666666666,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.3333333333333333,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 8.666666666666666,
+      "retrieval_precision_at_3": 0.3333333333333333
+    }
+  },
+  {
+    "version": "eval_20260627_135959",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T13:59:59.393608+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.8,
+      "answer_relevancy": 0.949206591545836,
+      "context_precision": 0.8999999999477778,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 9.0,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.7777777777777778,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 9.0,
+      "retrieval_precision_at_3": 0.7777777777777778
+    }
+  },
+  {
+    "version": "eval_20260627_143922",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T14:39:22.051501+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.6528571428571428,
+      "answer_relevancy": 0.7766831790968745,
+      "context_precision": 0.8363888888420161,
+      "context_recall": 0.825
+    },
+    "mean_confidence_score": 7.88,
+    "average_iterations": 1.1,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.7,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 10,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 7.88,
+      "retrieval_precision_at_3": 0.7
+    }
+  },
+  {
+    "version": "eval_20260627_175738",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T17:57:38.113852+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.8333333333333333,
+      "answer_relevancy": 0.8623595487028087,
+      "context_precision": 0.8999999999477778,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 9.0,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.611111111111111,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 9.0,
+      "retrieval_precision_at_3": 0.611111111111111
+    }
+  },
+  {
+    "version": "eval_20260627_180532",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T18:05:32.427093+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.8777777777777779,
+      "answer_relevancy": 0.8789457547681544,
+      "context_precision": 0.8999999999477778,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 9.0,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 1.0,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 9.0,
+      "retrieval_precision_at_3": 1.0
+    }
+  },
+  {
+    "version": "eval_20260627_181941",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T18:19:41.915686+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.6761904761904761,
+      "answer_relevancy": 0.8906130542631904,
+      "context_precision": 0.8999999999477778,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 9.0,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.7777777777777778,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 9.0,
+      "retrieval_precision_at_3": 0.7777777777777778
+    },
+    "regression_warning": "Regression detected in evaluation:\nfaithfulness dropped from 0.878 to 0.676\n\nDiagnostics: gated 0/3, empty sources 0/3, P@3 0.778, asset_repo_id b4f947369301e4e0..., compared_to eval_20260627_180532 (n=3)",
+    "regression_baseline_version": "eval_20260627_180532"
+  },
+  {
+    "version": "eval_20260627_190620",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T19:06:20.094546+00:00",
+    "ragas_scores": {
+      "faithfulness": 1.0,
+      "answer_relevancy": 0.8706257677551154,
+      "context_precision": 0.8999999999477778,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 9.0,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.5555555555555555,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 9.0,
+      "retrieval_precision_at_3": 0.5555555555555555
+    }
+  },
+  {
+    "version": "eval_20260627_205956",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-27T20:59:56.875917+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.7142857142857143,
+      "answer_relevancy": 0.6369356779567518,
+      "context_precision": 0.9166666666097223,
+      "context_recall": 1.0
+    },
+    "mean_confidence_score": 8.733333333333334,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.3333333333333333,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 8.733333333333334,
+      "retrieval_precision_at_3": 0.3333333333333333,
+      "per_question": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/models.py",
+            "src/requests/adapters.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/models.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 9.5,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/auth.py",
+            "src/requests/adapters.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/auth.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 8.6,
+          "context_count": 4,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/exceptions.py",
+            "src/requests/adapters.py",
+            "tests/test_requests.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/exceptions.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 8.1,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        }
+      ]
+    },
+    "regression_warning": "Regression detected in evaluation:\nfaithfulness dropped from 1.000 to 0.714\nanswer_relevancy dropped from 0.871 to 0.637\n\nDiagnostics: gated 0/3, empty sources 0/3, P@3 0.333, asset_repo_id b4f947369301e4e0..., compared_to eval_20260627_190620 (n=3)",
+    "regression_baseline_version": "eval_20260627_190620"
+  },
+  {
+    "version": "eval_20260628_141141",
+    "git_sha": "unknown",
+    "timestamp": "2026-06-28T14:11:41.693330+00:00",
+    "ragas_scores": {
+      "faithfulness": 0.7217813051146384,
+      "answer_relevancy": 0.6413177722950478,
+      "context_precision": 0.5648015872678839,
+      "context_recall": 0.6746031746031746
+    },
+    "mean_confidence_score": 8.04,
+    "average_iterations": 1.0,
+    "invalid_reference_rate": 0.0,
+    "retrieval_precision_at_3": 0.22222222222222224,
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 15,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "mean_confidence_score": 8.04,
+      "retrieval_precision_at_3": 0.22222222222222224,
+      "per_question": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/models.py",
+            "src/requests/adapters.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/models.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 9.0,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/auth.py",
+            "src/requests/adapters.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/auth.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 9.1,
+          "context_count": 4,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/exceptions.py",
+            "src/requests/adapters.py",
+            "src/requests/help.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/exceptions.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 8.6,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "How is SSL certificate verification handled when sending a request?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/adapters.py",
+            "src/requests/sessions.py",
+            "tests/test_requests.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/adapters.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 9.0,
+          "context_count": 7,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "What does the Session class do and how does it persist state across requests?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/sessions.py",
+            "src/requests/models.py",
+            "src/requests/cookies.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/sessions.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 5.5,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "How does requests.get() ultimately send an HTTP request?",
+          "precision_at_3": 0.6667,
+          "top_files": [
+            "src/requests/api.py",
+            "src/requests/sessions.py",
+            "src/requests/adapters.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 9.6,
+          "context_count": 7,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "How does the HTTPAdapter send a prepared request?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/sessions.py",
+            "src/requests/adapters.py",
+            "tests/test_requests.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/adapters.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 8.6,
+          "context_count": 8,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "How are cookies stored and managed across requests?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/sessions.py",
+            "src/requests/models.py",
+            "src/requests/cookies.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/cookies.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 6.8,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Where are utility helper functions like url encoding and header parsing defined?",
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/api.py",
+            "src/requests/utils.py",
+            "src/requests/models.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/utils.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 6.0,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "What status code helper structures does requests provide?",
+          "precision_at_3": 0.0,
+          "top_files": [
+            "src/requests/models.py",
+            "src/requests/adapters.py",
+            "src/requests/utils.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/status_codes.py",
+            "requests/status_codes.py"
+          ],
+          "gt_hit": false,
+          "gated": false,
+          "confidence_score": 4.9,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Where is the Flask application class defined?",
+          "precision_at_3": 0.0,
+          "top_files": [
+            "docs/_themes/flask_theme_support.py",
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/app.py"
+          ],
+          "gt_hit": false,
+          "gated": false,
+          "confidence_score": 8.6,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "How does Flask manage application and request context?",
+          "precision_at_3": 0.0,
+          "top_files": [
+            "docs/_themes/flask_theme_support.py",
+            "src/requests/sessions.py",
+            "src/requests/utils.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/ctx.py"
+          ],
+          "gt_hit": false,
+          "gated": false,
+          "confidence_score": 8.6,
+          "context_count": 7,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Where are Blueprint objects defined in Flask?",
+          "precision_at_3": 0.0,
+          "top_files": [
+            "docs/_themes/flask_theme_support.py",
+            "src/requests/api.py",
+            "src/requests/utils.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/blueprints.py"
+          ],
+          "gt_hit": false,
+          "gated": false,
+          "confidence_score": 8.6,
+          "context_count": 6,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Where is the Flask command-line interface implemented?",
+          "precision_at_3": 0.0,
+          "top_files": [
+            "docs/_themes/flask_theme_support.py",
+            "src/requests/api.py",
+            "src/requests/auth.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/cli.py",
+            "flask/cli.py"
+          ],
+          "gt_hit": false,
+          "gated": false,
+          "confidence_score": 8.1,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        },
+        {
+          "question": "Where are the Request and Response wrapper classes defined?",
+          "precision_at_3": 0.0,
+          "top_files": [
+            "src/requests/models.py",
+            "src/requests/exceptions.py",
+            "src/requests/adapters.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/wrappers.py"
+          ],
+          "gt_hit": false,
+          "gated": false,
+          "confidence_score": 9.6,
+          "context_count": 5,
+          "used_sentinel": false,
+          "rate_limited": false
+        }
+      ]
+    }
+  }
+]

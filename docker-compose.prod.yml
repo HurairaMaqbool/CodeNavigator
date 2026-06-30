@@ -1,0 +1,143 @@
+# Production profile — no dev bind-mounts, Redis password, internal Redis only.
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  chromadb:
+    image: chromadb/chroma:0.6.3
+    container_name: agent_chromadb
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - chroma_data:/chroma/chroma
+    restart: unless-stopped
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: agent_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme-prod-redis}
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - internal
+
+  backend:
+    build: .
+    image: codenavigator:app
+    container_name: agent_backend
+    command: ["gunicorn", "app.main:app", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120"]
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=production
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme-prod-redis}@redis:6379/0
+      - REPOS_PATH=/app/data/repos
+      - GRAPH_STORE_PATH=/app/data/graph_store
+      - PROTECT_METRICS=true
+      - DISABLE_OPENAPI_IN_PRODUCTION=true
+      - DATABASE_URL=${DATABASE_URL:-}
+    volumes:
+      - app_data:/app/data
+      - bm25_data:/app/bm25_index
+    depends_on:
+      - chromadb
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - internal
+
+  worker:
+    image: codenavigator:app
+    container_name: agent_worker
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "-l", "info", "-Q", "ingestion", "--concurrency", "2"]
+    env_file:
+      - .env
+    environment:
+      - ENVIRONMENT=production
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme-prod-redis}@redis:6379/0
+      - DATABASE_URL=${DATABASE_URL:-}
+    volumes:
+      - app_data:/app/data
+      - bm25_data:/app/bm25_index
+    depends_on:
+      - redis
+      - chromadb
+    restart: unless-stopped
+    networks:
+      - internal
+
+  frontend:
+    image: codenavigator:app
+    container_name: agent_frontend
+    command: ["streamlit", "run", "frontend/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - API_BASE_URL=http://backend:8000
+      - API_KEY=${API_KEY}
+      - STREAMLIT_UI_PASSWORD=${STREAMLIT_UI_PASSWORD:-}
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
+
+  admin:
+    build: ./admin
+    image: codenavigator:admin
+    container_name: agent_admin
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: agent_postgres
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme-prod-pg}
+      POSTGRES_DB: agent
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - internal
+    profiles:
+      - postgres
+
+volumes:
+  chroma_data:
+  redis_data:
+  bm25_data:
+  app_data:
+  postgres_data:
+
+networks:
+  internal:
+    driver: bridge

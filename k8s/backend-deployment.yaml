@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: codebase-agent
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: codenavigator:app
+          command: ["gunicorn", "app.main:app", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120"]
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: agent-config
+            - secretRef:
+                name: agent-secrets
+          volumeMounts:
+            - name: app-data
+              mountPath: /app/data
+            - name: bm25-data
+              mountPath: /app/bm25_index
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+              httpHeaders:
+                - name: X-API-Key
+                  valueFrom:
+                    secretKeyRef:
+                      name: agent-secrets
+                      key: API_KEY
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data-pvc
+        - name: bm25-data
+          persistentVolumeClaim:
+            claimName: bm25-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: codebase-agent
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8000
+      targetPort: 8000

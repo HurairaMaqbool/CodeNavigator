@@ -1,0 +1,27 @@
+[
+  {
+    "question": "Which file handles sending an HTTP request in the Session class?",
+    "must_cite_file": "requests/sessions.py",
+    "min_confidence_score": 5.0
+  },
+  {
+    "question": "Where are the standard HTTP status codes defined in requests?",
+    "must_cite_file": "requests/status_codes.py",
+    "min_confidence_score": 5.0
+  },
+  {
+    "question": "Which file implements custom HTTP authentication handling like HTTPBasicAuth in requests?",
+    "must_cite_file": "requests/auth.py",
+    "min_confidence_score": 5.0
+  },
+  {
+    "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+    "must_cite_file": "requests/exceptions.py",
+    "min_confidence_score": 5.0
+  },
+  {
+    "question": "Which file provides the main user API methods like get() and post() for requests?",
+    "must_cite_file": "requests/api.py",
+    "min_confidence_score": 5.0
+  }
+]

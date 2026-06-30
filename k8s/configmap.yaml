@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-config
+  namespace: codebase-agent
+data:
+  ENVIRONMENT: production
+  CHROMA_HOST: chromadb
+  CHROMA_PORT: "8000"
+  PROTECT_METRICS: "true"
+  DISABLE_OPENAPI_IN_PRODUCTION: "true"
+  # REDIS_URL is injected from Secret agent-secrets (not ConfigMap)
