@@ -688,14 +688,30 @@ git push origin feature/your-feature-name
 
 ---
 
-## 📄 License
+## 📄 Intellectual Property & Licensing
 
-This project is distributed under the **MIT License**.
+### 🔒 Copyright Notice
+**Copyright © 2026 Huraira Maqbool. All Rights Reserved.**
 
-```
-MIT License — free to use, modify, and distribute with attribution.
-See the LICENSE file for full terms.
-```
+This repository and all associated files—including but not limited to the Artificial Intelligence (AI) Agent Loop, prompt engineering templates, confidence gating guardrails, system architecture designs, and RAG retrieval algorithms—constitute the proprietary intellectual property of the author, **Huraira Maqbool**.
+
+### 💼 Terms of Use
+This repository is published exclusively for **learning, demonstration, and professional portfolio evaluation**. 
+- **No Commercial Use:** You may not use this code or logic, in whole or in part, for any commercial activity or profit-generating business.
+- **No Redistribution:** You are not permitted to host, distribute, or republish this codebase or any derivatives.
+- **No Modifications or Reuse:** Direct copying, reuse of the AI prompting structure, or modification of the core retrieval systems without express written consent from the author is strictly prohibited.
+
+For commercial licensing requests, collaboration inquiries, or permission to reuse components of this architecture, please contact:
+📧 **hurairac37@gmail.com**
+
+---
+
+## 🛡️ Security & Responsible Usage
+
+- **Educational Context:** This repository is intended to demonstrate architectural patterns and engineering best practices in RAG development.
+- **Data Protection:** Ensure any deployment of this system complies with your organization's local data compliance standards. Do not load unvetted or sensitive internal credentials into public repository forks.
+- **Vulnerability Reporting:** If you discover any security issues or potential vulnerabilities in this codebase, please refer to our [SECURITY.md](SECURITY.md) guidelines for instructions on safe, private disclosure.
+
 
 ---
 

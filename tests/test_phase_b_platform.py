@@ -1,3 +1,8 @@
+# Copyright (c) 2026 Huraira Maqbool
+# All Rights Reserved
+# Unauthorized copying, modification, distribution, reverse engineering,
+# or commercial use of this file is strictly prohibited.
+
 """Phase B/C platform: Postgres fallback, Stripe webhooks, status, keys."""
 from __future__ import annotations
 

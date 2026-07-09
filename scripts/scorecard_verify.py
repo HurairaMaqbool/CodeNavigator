@@ -1,3 +1,8 @@
+# Copyright (c) 2026 Huraira Maqbool
+# All Rights Reserved
+# Unauthorized copying, modification, distribution, reverse engineering,
+# or commercial use of this file is strictly prohibited.
+
 #!/usr/bin/env python3
 """Live accuracy scorecard verification."""
 from __future__ import annotations
@@ -18,7 +23,7 @@ os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 JOB_ID = "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d"
 CLONE_ID = "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee"
 API = "http://127.0.0.1:8000"
-API_KEY = "dev-secret-key"
+API_KEY = os.getenv("API_KEY", "dev-secret-key")
 
 QUESTIONS = [
     {

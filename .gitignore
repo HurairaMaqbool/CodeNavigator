@@ -123,3 +123,41 @@ embedding_cache/
 
 MinGit*/
 MinGit*.zip
+
+# =============================================================================
+# Logs & Debug (NEVER commit logs — may contain sensitive request/response data)
+# =============================================================================
+logs/
+*.log
+debug-*.log
+app.log
+uvicorn.log
+celery*.log
+
+# =============================================================================
+# Cache & temp directories
+# =============================================================================
+cache/
+tmp/
+.tmp/
+.cache/
+
+# =============================================================================
+# Sensitive pipeline artifacts
+# =============================================================================
+pip_download_out.txt
+pip_out.txt
+pip_install.log
+worker_latest.txt
+
+# =============================================================================
+# Security — prevent accidental exposure of private key files
+# =============================================================================
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+private_key*
+service_account*.json

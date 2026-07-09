@@ -1,21 +1,18 @@
-MIT License
+Copyright © 2026 Huraira Maqbool
+All Rights Reserved
 
-Copyright (c) 2026 CodeNavigator Contributors
+This repository and all its contents, including but not limited to the source code, system architecture, database models, API structures, workflows, algorithms, user interface designs, and specifically the proprietary Artificial Intelligence (AI) Agent Loop, prompt templates, system instructions, confidence gating systems, and retrieval pipelines (collectively, the "Work"), are the exclusive intellectual property of Huraira Maqbool ("Owner").
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This repository is published solely for educational demonstration, learning, and professional portfolio evaluation purposes. 
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Strict Restrictions:
+1. No Commercial Use: You may not use the Work, in whole or in part, for any commercial purpose, business activity, or profit-generating enterprise.
+2. No Redistribution: You may not publish, host, redistribute, share, transfer, or make the Work available to third parties in any format, whether modified or unmodified.
+3. No Modification: You may not alter, transform, build upon, or create derivative works from the Work.
+4. No Resale or Sublicensing: You may not sell, lease, license, sublicense, or rent the Work.
+5. No Reuse or Integration: You may not integrate, copy, or reuse any logic, prompts, code blocks, or algorithms from this Work into other software applications, private or open-source, without express written permission from the Owner.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+BY ACCESSING OR VIEWING THE WORK, YOU AGREE TO BE BOUND BY THESE TERMS. ANY UNAUTHORIZED COPYING, USE, REUSE, OR REDISTRIBUTION OF THE WORK CONSTITUTES A BREACH OF COPYRIGHT AND INTELLECTUAL PROPERTY LAW.
+
+For licensing inquiries or permission requests, please contact:
+Huraira Maqbool (hurairac37@gmail.com)

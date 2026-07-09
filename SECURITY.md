@@ -1,37 +1,55 @@
 # Security Policy
 
-## Supported versions
+## Supported Versions
 
 | Version | Supported |
 |---------|-----------|
-| 1.0.x   | Yes       |
+| Latest (main branch) | ✅ Supported |
+| Any older branch | ❌ Not Supported |
 
-## Reporting a vulnerability
+## Reporting a Vulnerability
 
-Email security issues to your organization's security contact (replace before public launch).
+**Please do not open a public GitHub issue for security vulnerabilities.**
 
-Please include:
-- Description and impact
-- Steps to reproduce
-- Affected version / commit
+Security issues in this codebase may affect users who self-host the application, expose sensitive repository data, or allow unauthorized API access. If you have discovered a vulnerability, please disclose it responsibly.
 
-Do **not** open public GitHub issues for undisclosed vulnerabilities.
+### How to Report
 
-## Security controls (v1.0)
+Send a private email to:
 
-- API key authentication on all business endpoints
-- Path jail on `read_file` agent tool (blocks `../` traversal)
-- GitHub webhook HMAC-SHA256 verification
-- Rate limiting on ingest, chat, and webhooks
-- Secret masking in indexed chunks
-- Production validation for `API_KEY` and `GITHUB_WEBHOOK_SECRET`
-- Optional `/metrics` protection in production
-- GDPR purge API: `DELETE /platform/repos/{repo_id}`
+📧 **hurairac37@gmail.com**
 
-## Hardening checklist for operators
+Please include the following in your report:
+- A clear description of the vulnerability
+- The file(s) and line number(s) affected
+- Steps to reproduce the issue
+- The potential impact (data exposure, privilege escalation, denial of service, etc.)
+- Any proof-of-concept code or screenshots, if applicable
 
-1. Set `ENVIRONMENT=production`
-2. Use a strong `API_KEY` (24+ characters) or per-org keys via `POST /platform/api-keys`
-3. Set `GITHUB_WEBHOOK_SECRET`
-4. Do not expose Redis/Chroma ports publicly
-5. Terminate TLS at a reverse proxy (nginx, Caddy, cloud LB)
+### What to Expect
+
+- **Acknowledgement:** Within 48 hours of receiving your report.
+- **Assessment:** The severity and impact will be assessed within 5 business days.
+- **Fix & Disclosure:** A patch will be released and a security advisory will be published after the fix is confirmed. Credit will be given to the reporter unless they prefer anonymity.
+
+## Known Security Scope
+
+The following are in scope for vulnerability reports:
+- Authentication bypass on the `/chat`, `/ingest`, or `/status` endpoints
+- API Key leakage or weak key validation
+- Arbitrary file read/write via path traversal in the repository clone logic
+- Webhook HMAC bypass
+- Insecure pickle deserialization in the BM25 index loading logic
+
+The following are **out of scope:**
+- Vulnerabilities in third-party dependencies (report directly to the respective package maintainers)
+- Local-only exploits that require physical machine access
+- Rate limiting misconfigurations that do not lead to data exposure
+
+## Security Best Practices for Operators
+
+If you self-host CodeNavigator:
+- Always set a strong, random `API_KEY` in your `.env` file (minimum 32 characters)
+- Never expose the FastAPI backend (`port 8000`) directly to the public internet — place it behind a reverse proxy (e.g., Nginx) with TLS
+- Rotate `GITHUB_WEBHOOK_SECRET` regularly
+- Do not store sensitive credentials inside the cloned repositories directory (`repos/`)
