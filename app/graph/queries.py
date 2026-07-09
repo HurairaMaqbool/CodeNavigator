@@ -29,30 +29,29 @@ from app.graph.builder import _graph_path_for
 from app.observability.logging_config import logger
 
 # ---------------------------------------------------------------------------
-# Global Graph Cache (Lazy Load)
+# Global Graph Cache (short TTL — avoids disk reload within a request burst)
 # ---------------------------------------------------------------------------
-# We hold graphs in memory keyed by repo_id to avoid parsing JSON on every query.
-_GRAPH_CACHE: dict[str, nx.DiGraph] = {}
+import time
+
+_GRAPH_CACHE: dict[str, tuple[float, nx.DiGraph]] = {}
+_GRAPH_CACHE_TTL_S = 60.0
 
 
 def _get_graph(repo_id: str) -> nx.DiGraph | None:
-    """Return the DiGraph for *repo_id*, loading it if necessary."""
-    if repo_id in _GRAPH_CACHE:
-        return _GRAPH_CACHE[repo_id]
+    """Return the DiGraph for *repo_id*, loading via builder.get_graph() when needed."""
+    now = time.monotonic()
+    cached = _GRAPH_CACHE.get(repo_id)
+    if cached is not None:
+        loaded_at, graph = cached
+        if now - loaded_at < _GRAPH_CACHE_TTL_S:
+            return graph
 
-    path = _graph_path_for(repo_id)
-    if not path.exists():
-        return None
+    from app.graph.builder import get_graph
 
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            payload = json.load(f)
-        graph = nx.node_link_graph(payload["graph"])
-        _GRAPH_CACHE[repo_id] = graph
-        return graph
-    except Exception as exc:
-        logger.error("failed_to_load_graph", repo_id=repo_id, error=str(exc))
-        return None
+    graph = get_graph(repo_id)
+    if graph is not None:
+        _GRAPH_CACHE[repo_id] = (now, graph)
+    return graph
 
 
 # ---------------------------------------------------------------------------
@@ -178,52 +177,128 @@ def get_callees(repo_id: str, name: str) -> list[dict[str, Any]]:
     return callees
 
 
-def get_subgraph(repo_id: str, name: str, depth: int = 2) -> dict[str, Any]:
+def get_subgraph(
+    repo_id: str,
+    entry_point: str,
+    direction: str = "both",
+    max_depth: int = 3,
+    *,
+    depth: int | None = None,
+) -> dict[str, Any]:
     """
-    Traverses outward from *name* up to *depth* hops.
-    
-    Server-side clamp: Max depth is strictly limited to 3.
+    Traverses outward from entry_point up to max_depth hops.
+
+    Parameters
+    ----------
+    repo_id: str
+        The repository ID.
+    entry_point: str
+        The starting node ID (or name).
+    direction: str
+        One of "upstream", "downstream", or "both".
+    max_depth: int
+        Maximum BFS hops to traverse.
+    depth: int | None
+        Legacy alias for ``max_depth`` (accepted by older callers/tests).
+
+    Forward Interface Contract:
+    --------------------------
+    Returns:
+        dict: {
+            "nodes": list[dict[str, Any]],  # each node has id, path, name, type
+            "edges": list[dict[str, Any]],  # each edge has source, target, type, call_count
+            "requested_depth": int,
+            "clamped": bool
+        }
     """
-    original_depth = depth
-    depth = min(depth, 3)
-    clamped = (original_depth > 3)
+    # Dynamic parameter type shifting for backward compatibility
+    if isinstance(direction, int):
+        max_depth = direction
+        direction = "both"
+    if depth is not None:
+        max_depth = depth
+
+    original_depth = max_depth
+    clamped = (max_depth > 3)
+    clamped_depth = min(max(1, max_depth), 3)
 
     graph = _get_graph(repo_id)
     if not graph:
-        return {"nodes": [], "edges": [], "requested_depth": original_depth, "clamped": clamped}
+        return {
+            "nodes": [],
+            "edges": [],
+            "requested_depth": original_depth,
+            "clamped": clamped
+        }
 
-    matches = _find_matching_nodes(graph, name)
-    if not matches:
-        return {"nodes": [], "edges": [], "requested_depth": original_depth, "clamped": clamped, "not_found": True}
+    # Resolve entry_point to node IDs
+    start_nodes = []
+    if entry_point in graph:
+        start_nodes = [entry_point]
+    else:
+        start_nodes = _find_matching_nodes(graph, entry_point)
 
-    # We use a BFS out to `depth` hops starting from all matches
-    visited_nodes: set[str] = set(matches)
-    current_layer: set[str] = set(matches)
+    if not start_nodes:
+        return {
+            "nodes": [],
+            "edges": [],
+            "requested_depth": original_depth,
+            "clamped": clamped,
+            "not_found": True
+        }
+
+    # BFS traversal using networkx successors (downstream) and predecessors (upstream)
+    visited_nodes: set[str] = set(start_nodes)
+    current_layer: set[str] = set(start_nodes)
     edges: list[dict[str, Any]] = []
 
-    for _ in range(depth):
+    for _ in range(clamped_depth):
         next_layer: set[str] = set()
         for u in current_layer:
-            # Outgoing
-            for _, v, data in graph.out_edges(u, data=True):
-                if v not in visited_nodes:
-                    visited_nodes.add(v)
-                    next_layer.add(v)
-                edges.append({"source": graph.nodes[u].get("name", u), "target": graph.nodes[v].get("name", v), "data": data})
-            # Incoming
-            for w, _, data in graph.in_edges(u, data=True):
-                if w not in visited_nodes:
-                    visited_nodes.add(w)
-                    next_layer.add(w)
-                edges.append({"source": graph.nodes[w].get("name", w), "target": graph.nodes[u].get("name", u), "data": data})
+            # Downstream traversal (successors)
+            if direction in ("downstream", "both"):
+                for v in graph.successors(u):
+                    edge_data = graph.edges[u, v]
+                    edges.append({
+                        "source": u,
+                        "target": v,
+                        "type": edge_data.get("type", "unknown"),
+                        "call_count": edge_data.get("call_count", 1)
+                    })
+                    if v not in visited_nodes:
+                        visited_nodes.add(v)
+                        next_layer.add(v)
+
+            # Upstream traversal (predecessors)
+            if direction in ("upstream", "both"):
+                for w in graph.predecessors(u):
+                    edge_data = graph.edges[w, u]
+                    edges.append({
+                        "source": w,
+                        "target": u,
+                        "type": edge_data.get("type", "unknown"),
+                        "call_count": edge_data.get("call_count", 1)
+                    })
+                    if w not in visited_nodes:
+                        visited_nodes.add(w)
+                        next_layer.add(w)
+
         current_layer = next_layer
         if not current_layer:
             break
 
-    # Dedup edges since u->v could be hit from both sides
+    # Dedup edges
     unique_edges = {f"{e['source']}->{e['target']}": e for e in edges}.values()
 
-    nodes_out = [{"id": n, "name": graph.nodes[n].get("name", n), "path": graph.nodes[n].get("path")} for n in visited_nodes]
+    nodes_out = [
+        {
+            "id": n,
+            "name": graph.nodes[n].get("name", n),
+            "path": graph.nodes[n].get("path", ""),
+            "type": graph.nodes[n].get("type", "")
+        }
+        for n in visited_nodes
+    ]
 
     return {
         "nodes": nodes_out,
@@ -231,6 +306,61 @@ def get_subgraph(repo_id: str, name: str, depth: int = 2) -> dict[str, Any]:
         "requested_depth": original_depth,
         "clamped": clamped
     }
+
+
+def get_dependencies(repo_id: str, node_id: str) -> list[str]:
+    """
+    Return direct dependencies (outgoing edges) of a node.
+    Uses networkx's successors utility.
+    """
+    graph = _get_graph(repo_id)
+    if not graph:
+        return []
+        
+    start_nodes = [node_id] if node_id in graph else _find_matching_nodes(graph, node_id)
+    if not start_nodes:
+        return []
+        
+    deps = set()
+    for node in start_nodes:
+        deps.update(graph.successors(node))
+    return list(deps)
+
+
+def get_dependents(repo_id: str, node_id: str) -> list[str]:
+    """
+    Return direct dependents (incoming edges) of a node.
+    Uses networkx's predecessors utility.
+    """
+    graph = _get_graph(repo_id)
+    if not graph:
+        return []
+        
+    start_nodes = [node_id] if node_id in graph else _find_matching_nodes(graph, node_id)
+    if not start_nodes:
+        return []
+        
+    deps = set()
+    for node in start_nodes:
+        deps.update(graph.predecessors(node))
+    return list(deps)
+
+
+def get_cycle_info(repo_id: str) -> list[list[str]]:
+    """
+    Return the pre-computed cycle list for the repository.
+    Surfaces builder.py's precomputed cycle list without recomputing it.
+    """
+    path = _graph_path_for(repo_id)
+    if not path.exists():
+        return []
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+        return payload["metadata"].get("cycles", [])
+    except Exception as exc:
+        logger.warning("failed_to_get_cycle_info", repo_id=repo_id, error=str(exc))
+        return []
 
 
 # ---------------------------------------------------------------------------

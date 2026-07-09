@@ -6,148 +6,243 @@
 """
 app/diagrams/mermaid_generator.py
 ---------------------------------
-Diagram generation layer.
+Layer 6 — Graph Operations (Module #20).
 
-Responsibility boundary
------------------------
-Pure function that converts graph data from Module 7 into valid Mermaid syntax.
-It does NOT:
-  - execute queries against the graph itself
-  - handle HTTP routing or agent loop execution
+Pure string generation: zero external dependencies, zero LLM cost.
+Renders bounded subgraphs from app/graph/queries.py into valid Mermaid markdown.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 from typing import Any
 
+# Characters that break Mermaid node labels when copied from code paths / identifiers.
+_MERMAID_ESCAPE_MAP = {
+    '"': "&quot;",
+    "[": "&#91;",
+    "]": "&#93;",
+    "|": "&#124;",
+    "(": "&#40;",
+    ")": "&#41;",
+    "\n": " ",
+    "\r": " ",
+}
+
+
+def sanitize_node_label(label: str) -> str:
+    """
+    Escape display labels so code-derived identifiers cannot break Mermaid syntax.
+
+    Handles: ``"`` ``[`` ``]`` ``|`` ``(`` ``)`` newlines — replaced with HTML
+    entities (or a single space for line breaks).
+    """
+    out = str(label)
+    for char, replacement in _MERMAID_ESCAPE_MAP.items():
+        out = out.replace(char, replacement)
+    return out
+
 
 def sanitize(name: str, _seen_ids: dict[str, str] | None = None) -> str:
-    """
-    Sanitize a function name into a safe Mermaid node ID.
-    Mermaid node IDs should be strictly alphanumeric/underscores.
-    
-    If _seen_ids is provided, it handles collision resolution by appending
-    a numeric suffix to disambiguate identical sanitized strings.
-    """
+    """Stable Mermaid node ID, distinct from the human-readable label."""
     if _seen_ids is None:
         _seen_ids = {}
-        
-    safe_base = re.sub(r'[^a-zA-Z0-9_]', '_', name)
-    
-    # If this exact name was already sanitized, return its assigned ID
+
     if name in _seen_ids:
         return _seen_ids[name]
-        
-    # Check if the generated safe_base is already used by a DIFFERENT name
+
+    if "/" in name or "\\" in name or ":" in name:
+        digest = hashlib.sha1(name.encode("utf-8")).hexdigest()[:10]
+        leaf = re.sub(r"[^a-zA-Z0-9_]", "_", name.split("/")[-1].split(":")[-1])[:24] or "node"
+        safe_base = f"n_{leaf}_{digest}"
+    else:
+        safe_base = re.sub(r"[^a-zA-Z0-9_]", "_", name)
+
     assigned = safe_base
     counter = 1
-    # _seen_ids.values() check is linear, but node count is max 25, so O(N) is trivial.
     used_ids = set(_seen_ids.values())
     while assigned in used_ids:
         assigned = f"{safe_base}_{counter}"
         counter += 1
-        
+
     _seen_ids[name] = assigned
     return assigned
 
 
-def graph_to_mermaid(subgraph: dict[str, Any], requested_depth: int, clamped_depth: int, max_nodes: int = 25) -> dict[str, Any]:
+def _direction_header(direction: str) -> str:
+    """Flowchart orientation keyword from traversal direction."""
+    if direction == "downstream":
+        return "graph LR"
+    if direction == "upstream":
+        return "graph BT"
+    return "graph TD"
+
+
+def _resolve_entry_point(subgraph: dict[str, Any], nodes_data: list[dict[str, Any]]) -> str:
+    if subgraph.get("entry_point"):
+        return str(subgraph["entry_point"])
+    if len(nodes_data) == 1:
+        return nodes_data[0]["id"]
+    if nodes_data:
+        return sorted(n["id"] for n in nodes_data)[0]
+    return "entry"
+
+
+def _no_connections_diagram(
+    direction: str,
+    entry_key: str,
+    id_to_label: dict[str, str],
+    seen_ids: dict[str, str],
+) -> str:
+    display_base = id_to_label.get(entry_key, entry_key)
+    label = sanitize_node_label(f"{display_base}: no connections found")
+    nid = sanitize(entry_key, seen_ids)
+    return f'{_direction_header(direction)}\n    {nid}["{label}"]'
+
+
+def _cycle_edge_set(cycles: list[list[str]], node_ids: set[str]) -> set[tuple[str, str]]:
+    flagged: set[tuple[str, str]] = set()
+    for cycle in cycles:
+        if len(cycle) < 2:
+            continue
+        for i, src in enumerate(cycle):
+            tgt = cycle[(i + 1) % len(cycle)]
+            if src in node_ids and tgt in node_ids:
+                flagged.add((src, tgt))
+    return flagged
+
+
+def generate_mermaid(
+    subgraph: dict[str, Any],
+    direction: str = "both",
+    *,
+    repo_id: str | None = None,
+    max_nodes: int = 25,
+) -> str:
     """
-    Convert a subgraph into valid Mermaid diagram syntax.
-    
-    Why a node cap?
-    ---------------
-    A central, widely-used function can easily have 100+ nodes in its call graph.
-    Rendering all of them produces an unreadable diagram. The cap plus a visible
-    "+N more dependencies not shown" note keeps the diagram legible while staying honest.
-    
-    `clamped` (depth) and `hidden_count` (node truncation) are distinct signals.
+    Render a queries.py subgraph into Mermaid flowchart markdown.
+
+    Input:  subgraph dict from get_subgraph() + direction string.
+    Output: single valid Mermaid markdown string (never empty).
     """
-    # Extract nodes and edges from the Module 7 dict format
     nodes_data = subgraph.get("nodes", [])
     edges_data = subgraph.get("edges", [])
-    
-    if not nodes_data or subgraph.get("not_found"):
-        return {
-            "mermaid": None,
-            "empty": True,
-            "reason": "no_connections",
-            "requested_depth": requested_depth,
-            "clamped": requested_depth != clamped_depth
-        }
-
-    lines = ["graph TD"]
-    
-    node_names = [n["id"] for n in nodes_data]
-    node_names = sorted(node_names)
-    
-    kept_ids = set(node_names[:max_nodes])
-    kept_names = {n.get("name", n["id"]) for n in nodes_data if n["id"] in kept_ids}
-    hidden_count = max(0, len(node_names) - max_nodes)
-    
     seen_ids: dict[str, str] = {}
-    
+    id_to_label = {n["id"]: n.get("name", n["id"]) for n in nodes_data}
+
+    if subgraph.get("not_found") or not nodes_data:
+        entry = _resolve_entry_point(subgraph, nodes_data)
+        return _no_connections_diagram(direction, entry, {entry: entry}, seen_ids)
+
     if not edges_data:
-        for n in nodes_data:
-            if n["id"] not in kept_ids:
-                continue
-            display = n.get("name", n["id"])
-            safe_id = sanitize(display, seen_ids)
-            lines.append(f'    {safe_id}["{display}"]')
-        if hidden_count > 0:
-            lines.append(f'    note["+{hidden_count} more dependencies not shown"]')
-        return {
-            "mermaid": "\n".join(lines),
-            "empty": False,
-            "requested_depth": requested_depth,
-            "clamped": requested_depth != clamped_depth,
-            "hidden_count": hidden_count,
-        }
+        entry = _resolve_entry_point(subgraph, nodes_data)
+        return _no_connections_diagram(direction, entry, id_to_label, seen_ids)
+
+    header = _direction_header(direction)
+    lines = [header]
+
+    node_ids = {n["id"] for n in nodes_data}
+    sorted_nodes = sorted(node_ids)
+    kept_ids = set(sorted_nodes[:max_nodes])
+    hidden_count = max(0, len(sorted_nodes) - max_nodes)
+
+    cycle_edges: set[tuple[str, str]] = set()
+    if repo_id:
+        from app.graph.queries import get_cycle_info
+
+        cycle_edges = _cycle_edge_set(get_cycle_info(repo_id), node_ids)
+
+    cycle_nodes = {src for src, tgt in cycle_edges} | {tgt for src, tgt in cycle_edges}
 
     added_edges = 0
+    declared: set[str] = set()
+
     for edge in edges_data:
         source = edge["source"]
         target = edge["target"]
-        
-        # In get_subgraph, edges refer to node names or IDs
-        # We need to map them to the full names
-        
-        if (source in kept_ids or source in kept_names) and (target in kept_ids or target in kept_names):
-            source_id = sanitize(source, seen_ids)
-            target_id = sanitize(target, seen_ids)
-            
-            # The brackets define the human-readable label
-            lines.append(f'    {source_id}["{source}"] --> {target_id}["{target}"]')
-            added_edges += 1
-            
-    # Handle edgeless subgraphs (e.g. leaf function requested with depth=2)
-    # If no edges were added, we must explicitly declare the kept nodes so they render.
+        if source not in kept_ids or target not in kept_ids:
+            continue
+        src_id = sanitize(source, seen_ids)
+        tgt_id = sanitize(target, seen_ids)
+        src_label = sanitize_node_label(id_to_label.get(source, source))
+        tgt_label = sanitize_node_label(id_to_label.get(target, target))
+        is_cycle = (source, target) in cycle_edges
+        if is_cycle:
+            lines.append(f'    {src_id}["{src_label}"] -.->|cycle| {tgt_id}["{tgt_label}"]')
+        else:
+            lines.append(f'    {src_id}["{src_label}"] --> {tgt_id}["{tgt_label}"]')
+        declared.update({source, target})
+        added_edges += 1
+
     if added_edges == 0:
-        for node in node_names:
-            if node in kept_ids:
-                nid = sanitize(node, seen_ids)
-                lines.append(f'    {nid}["{node}"]')
-            
+        entry = _resolve_entry_point(subgraph, nodes_data)
+        return _no_connections_diagram(direction, entry, id_to_label, seen_ids)
+
+    for node_key in kept_ids:
+        if node_key not in declared:
+            display = sanitize_node_label(id_to_label.get(node_key, node_key))
+            nid = sanitize(node_key, seen_ids)
+            suffix = " :::cycleNode" if node_key in cycle_nodes else ""
+            lines.append(f'    {nid}["{display}"]{suffix}')
+
+    if cycle_nodes:
+        lines.append("    classDef cycleNode fill:#fff3cd,stroke:#d97706,stroke-width:2px")
+
     if hidden_count > 0:
         lines.append(f'    note["+{hidden_count} more dependencies not shown"]')
-        
+
+    return "\n".join(lines)
+
+
+def graph_to_mermaid(
+    subgraph: dict[str, Any],
+    requested_depth: int,
+    clamped_depth: int,
+    max_nodes: int = 25,
+    *,
+    repo_id: str | None = None,
+    direction: str = "both",
+) -> dict[str, Any]:
+    """Backward-compatible wrapper returning metadata + mermaid string for tests/tools."""
+    mermaid = generate_mermaid(
+        subgraph,
+        direction=direction,
+        repo_id=repo_id,
+        max_nodes=max_nodes,
+    )
+
+    is_empty = "no connections found" in mermaid
+    if is_empty:
+        return {
+            "mermaid": mermaid,
+            "empty": True,
+            "reason": "no_connections",
+            "requested_depth": requested_depth,
+            "clamped": requested_depth != clamped_depth,
+        }
+
     return {
-        "mermaid": "\n".join(lines),
+        "mermaid": mermaid,
+        "empty": False,
         "requested_depth": requested_depth,
-        "clamped": requested_depth != clamped_depth
+        "clamped": requested_depth != clamped_depth,
+        "hidden_count": max(0, len(subgraph.get("nodes", [])) - max_nodes),
     }
 
+
 def generate_diagram(repo_id: str, name: str, depth: int = 2) -> dict[str, Any]:
-    """
-    Handoff wrapper used by Module 9a tools.py.
-    Calls Module 7's get_subgraph and passes the result to graph_to_mermaid.
-    """
+    """Handoff wrapper used by agent tools — subgraph + mermaid metadata."""
     from app.graph.queries import get_subgraph
-    
+
     sub = get_subgraph(repo_id, name, depth)
-    
+    sub = {**sub, "entry_point": name}
     requested = sub.get("requested_depth", depth)
-    # If clamped is True, Module 7 clamped it to 3.
     clamped_depth = 3 if sub.get("clamped") else requested
-    
-    return graph_to_mermaid(sub, requested, clamped_depth, max_nodes=25)
+    return graph_to_mermaid(
+        sub,
+        requested,
+        clamped_depth,
+        max_nodes=25,
+        repo_id=repo_id,
+        direction="both",
+    )

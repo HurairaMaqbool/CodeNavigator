@@ -66,7 +66,7 @@ def test_step1_deliverables():
 @patch("app.tasks.ingestion_task.run_ingestion.delay")
 @patch("app.api.router.lock_manager.try_acquire")
 @patch("app.api.router.metadata_store")
-@patch("app.api.router.answer_question_cached")
+@patch("app.api.router.run")
 @patch("app.api.router.get_subgraph")
 @patch("app.api.router.graph_to_mermaid")
 @patch("app.retrieval.vector_store.get_collection")
@@ -146,7 +146,7 @@ def test_ec3_zero_files(mock_lock, mock_delay, tmp_db, tmp_repos):
     print(f"{PASS} EC3: Zero supported files reported via /status after async filter")
 
 @patch("app.api.router.metadata_store")
-@patch("app.api.router.answer_question_cached")
+@patch("app.api.router.run")
 def test_ec4_llm_timeout(mock_ans, mock_meta):
     mock_meta.get.return_value = MagicMock(sync_status="synced", commit_hash="123")
     class RetryError(Exception): pass
@@ -156,7 +156,7 @@ def test_ec4_llm_timeout(mock_ans, mock_meta):
     print(f"{PASS} EC4: LLM timeout caught cleanly -> 504")
 
 @patch("app.api.router.metadata_store")
-@patch("app.api.router.answer_question_cached")
+@patch("app.api.router.run")
 def test_ec5_unknown_function_chat(mock_ans, mock_meta):
     mock_meta.get.return_value = MagicMock(sync_status="synced", commit_hash="123")
     # Simulate answer_question generating text about missing function
@@ -230,7 +230,7 @@ def test_ec12_concurrent_ingest(mock_get_col, mock_lock):
     print(f"{PASS} EC12: Concurrent ingest -> 202 already_running")
 
 @patch("app.api.router.metadata_store")
-@patch("app.api.router.answer_question_cached")
+@patch("app.api.router.run")
 def test_ec14_disk_full_prior_state(mock_ans, mock_meta):
     # Simulated disk full -> new ingest fails -> sync_status="failed", BUT commit_hash exists!
     mock_meta.get.return_value = MagicMock(sync_status="failed", commit_hash="old_commit")

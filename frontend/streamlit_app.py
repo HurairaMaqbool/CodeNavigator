@@ -25,6 +25,7 @@ from ui_theme import (
     inject_styles,
     render_backend_status,
     render_empty_chat,
+    render_empty_workspace,
     render_footer,
     render_hero,
     render_ragas_chart,
@@ -32,6 +33,8 @@ from ui_theme import (
     section_header,
     status_pill_html,
 )
+from theme import apply_branding, render_theme_mode_toggle
+from voice_output import render_voice_output_toggle
 
 # ---------------------------------------------------------------------------
 # Page config (must be first Streamlit call)
@@ -43,7 +46,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-inject_styles()
+inject_styles()  # Module #34 boot_theme() — dark default, CSS variables once
 
 # Optional UI password gate (set STREAMLIT_UI_PASSWORD in env)
 _ui_password = os.environ.get("STREAMLIT_UI_PASSWORD", "").strip()
@@ -67,19 +70,121 @@ if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 if "active_page" not in st.session_state:
     st.session_state.active_page = "Workspace"
+if "voice_permission_denied" not in st.session_state:
+    st.session_state.voice_permission_denied = False
+if "last_diagram_symbol" not in st.session_state:
+    st.session_state.last_diagram_symbol = None
+if "voice_output_enabled" not in st.session_state:
+    st.session_state.voice_output_enabled = False
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _run_chat_exchange(question: str) -> None:
+    """Shared typed + voice chat path — POST /chat with loading experience."""
+    st.session_state.chat_history.append({"role": "user", "content": question})
+    with st.chat_message("user"):
+        st.markdown(question)
+    with st.chat_message("assistant"):
+        progress_slot = st.empty()
+        skeleton_slot = st.empty()
+        t0 = time.time()
+        try:
+            from loading_experience import run_chat_with_loading
+            from voice_output import render_read_aloud_controls
+
+            ans = run_chat_with_loading(
+                progress_slot,
+                skeleton_slot,
+                session_id=st.session_state.session_id,
+                repo_id=st.session_state.repo_id,
+                question=question,
+                chat_callable=api_client.chat,
+            )
+            progress_slot.empty()
+            skeleton_slot.empty()
+            elapsed = time.time() - t0
+            text = ans.get("answer", "")
+            gated = ans.get("gated", False)
+            (st.warning if gated else st.markdown)(text)
+            # Speak only final verified (non-gated) answers after RESPOND.
+            if text and not gated:
+                render_read_aloud_controls(text)
+            st.caption(
+                "⚡ Cached" if ans.get("cache_hit") else f"Completed in {elapsed:.1f}s"
+            )
+            if ans.get("sources"):
+                with st.expander("Sources"):
+                    for s in ans["sources"]:
+                        st.markdown(f"`{s['file_path']}` · `{s.get('function_name', '—')}`")
+            if ans.get("trace"):
+                with st.expander("Agent trace"):
+                    st.json(ans["trace"])
+            st.session_state.chat_history.append({
+                "role": "assistant",
+                "content": text,
+                "gated": gated,
+                "cache_hit": ans.get("cache_hit"),
+                "sources": ans.get("sources"),
+                "trace": ans.get("trace"),
+            })
+        except api_client.APIError as e:
+            progress_slot.empty()
+            skeleton_slot.empty()
+            if e.status_code == 409:
+                st.info("Repository is still indexing — try again shortly.")
+            elif e.status_code == 429:
+                st.warning("Rate limit reached — wait a minute.")
+            else:
+                st.error(e.message)
+        except Exception as e:
+            progress_slot.empty()
+            skeleton_slot.empty()
+            import requests as _req
+            if isinstance(e, (_req.exceptions.Timeout, _req.exceptions.ReadTimeout)):
+                st.warning("Request timed out — try a simpler question.")
+            elif isinstance(e, _req.exceptions.ConnectionError):
+                st.error("Cannot reach backend on port 8000.")
+            else:
+                st.error(str(e))
+
+
+def _run_diagram_for_symbol(symbol: str, depth: int = 2) -> None:
+    """Shared diagram path for sidebar button and voice shortcut."""
+    st.session_state.last_diagram_symbol = symbol.strip()
+    with st.spinner("Building diagram…"):
+        try:
+            diag_res = api_client.get_diagram(
+                st.session_state.repo_id, symbol.strip(), depth
+            )
+            mermaid_code = diag_res.get("mermaid")
+            if not mermaid_code or str(mermaid_code).strip() in ("", "graph TD"):
+                st.warning("No graph found for this symbol.")
+            else:
+                if diag_res.get("clamped"):
+                    st.caption("Depth clamped for readability.")
+                render_mermaid(mermaid_code)
+        except api_client.APIError as e:
+            st.error(e.message)
+
+
 def render_mermaid(mermaid_code: str) -> None:
+    try:
+        from theme import apply_branding
+    except ImportError:
+        from frontend.theme import apply_branding
+
+    open_tag = apply_branding("diagram")
+    st.markdown(open_tag, unsafe_allow_html=True)
     mermaid_html = f"""
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({{startOnLoad:true, theme:'neutral'}});</script>
     <div class="mermaid">{mermaid_code}</div>
     """
     components.html(mermaid_html, height=480, scrolling=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def display_status_badges(meta: dict[str, Any]) -> None:
@@ -171,30 +276,40 @@ def _poll_ingestion(job_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
-st.sidebar.markdown('<div class="sidebar-brand">⚡ Onboard AI</div>', unsafe_allow_html=True)
+st.sidebar.markdown(apply_branding("sidebar") + "</div>", unsafe_allow_html=True)
 backend_ok = render_backend_status()
+
+st.sidebar.divider()
+render_theme_mode_toggle()
+render_voice_output_toggle()
 
 st.sidebar.divider()
 page = st.sidebar.radio(
     "Navigate",
     ["Workspace", "Evaluation & QA", "Platform"],
-    label_visibility="collapsed",
+    format_func=lambda p: {
+        "Workspace": "◆  Workspace",
+        "Evaluation & QA": "◇  Evaluation",
+        "Platform": "▣  Platform",
+    }.get(p, p),
 )
 
 if st.session_state.repo_id:
+    st.sidebar.markdown("---")
     st.sidebar.caption("Active repository")
-    st.sidebar.code(st.session_state.repo_id[:20] + "…", language=None)
+    short = st.session_state.repo_id
+    st.sidebar.code((short[:22] + "…") if len(short) > 22 else short, language=None)
     if st.sidebar.button("Clear session", use_container_width=True):
         st.session_state.repo_id = None
         st.session_state.chat_history = []
         st.session_state.session_id = str(uuid.uuid4())
         st.rerun()
 
-st.sidebar.divider()
-st.sidebar.markdown("**Quick ingest**")
+st.sidebar.markdown("---")
+st.sidebar.caption("Quick start")
 for label, url in [
-    ("requests", "https://github.com/psf/requests"),
-    ("Flask", "https://github.com/pallets/flask"),
+    ("psf / requests", "https://github.com/psf/requests"),
+    ("pallets / flask", "https://github.com/pallets/flask"),
 ]:
     if st.sidebar.button(label, key=f"quick_{label}", use_container_width=True):
         if backend_ok:
@@ -222,13 +337,13 @@ render_hero()
 if page == "Workspace":
     # --- Ingest ---
     st.markdown('<div class="ingest-panel">', unsafe_allow_html=True)
-    section_header("Repository ingestion", "Paste a GitHub URL or use Quick ingest in the sidebar")
+    section_header("Repository", "Paste a public GitHub URL — or use Quick start in the sidebar")
     with st.form("ingest_form", clear_on_submit=False):
-        c1, c2, c3 = st.columns([4, 1, 1])
+        c1, c2, c3 = st.columns([4.2, 1.1, 1.1])
         with c1:
             repo_url = st.text_input(
                 "GitHub URL",
-                placeholder="https://github.com/psf/requests",
+                placeholder="https://github.com/owner/repo",
                 label_visibility="collapsed",
             )
         with c2:
@@ -266,7 +381,7 @@ if page == "Workspace":
             st.error("Backend is offline. Run: `python -m uvicorn app.main:app --port 8000`")
 
     if not st.session_state.repo_id:
-        st.info("👆 Ingest a repository to start chatting and running evaluations.")
+        render_empty_workspace()
         render_footer()
         st.stop()
 
@@ -292,20 +407,7 @@ if page == "Workspace":
             elif not diag_func.strip():
                 st.warning("Enter a function or class name.")
             else:
-                with st.spinner("Building diagram…"):
-                    try:
-                        diag_res = api_client.get_diagram(
-                            st.session_state.repo_id, diag_func.strip(), diag_depth
-                        )
-                        mermaid_code = diag_res.get("mermaid")
-                        if not mermaid_code or str(mermaid_code).strip() in ("", "graph TD"):
-                            st.warning("No graph found for this symbol.")
-                        else:
-                            if diag_res.get("clamped"):
-                                st.caption("Depth clamped for readability.")
-                            render_mermaid(mermaid_code)
-                    except api_client.APIError as e:
-                        st.error(e.message)
+                _run_diagram_for_symbol(diag_func.strip(), diag_depth)
 
     with col_main:
         section_header("Chat")
@@ -331,60 +433,41 @@ if page == "Workspace":
                     with st.expander("Agent trace"):
                         st.json(msg["trace"])
 
+        from voice_input import (
+            apply_browser_voice_event,
+            drain_browser_voice_event,
+            render_permission_notice,
+            render_voice_input,
+        )
+
+        voice_browser_event = drain_browser_voice_event()
+        pending_voice_action = None
+        if voice_browser_event:
+            pending_voice_action = apply_browser_voice_event(
+                voice_browser_event,
+                st.session_state.chat_history,
+                last_diagram_symbol=st.session_state.last_diagram_symbol,
+            )
+
+        render_voice_input(disabled=not is_ready)
+        render_permission_notice()
+
         question = st.chat_input(
             "Ask about architecture, data flow, or specific code…",
             disabled=not is_ready,
         )
-        if question:
-            st.session_state.chat_history.append({"role": "user", "content": question})
-            with st.chat_message("user"):
-                st.markdown(question)
-            with st.chat_message("assistant"):
-                with st.spinner("Analyzing codebase…"):
-                    t0 = time.time()
-                    try:
-                        ans = api_client.chat(
-                            st.session_state.repo_id,
-                            question,
-                            session_id=st.session_state.session_id,
-                        )
-                        elapsed = time.time() - t0
-                        text = ans.get("answer", "")
-                        gated = ans.get("gated", False)
-                        (st.warning if gated else st.markdown)(text)
-                        st.caption(
-                            "⚡ Cached" if ans.get("cache_hit") else f"Completed in {elapsed:.1f}s"
-                        )
-                        if ans.get("sources"):
-                            with st.expander("Sources"):
-                                for s in ans["sources"]:
-                                    st.markdown(f"`{s['file_path']}` · `{s.get('function_name', '—')}`")
-                        if ans.get("trace"):
-                            with st.expander("Agent trace"):
-                                st.json(ans["trace"])
-                        st.session_state.chat_history.append({
-                            "role": "assistant",
-                            "content": text,
-                            "gated": gated,
-                            "cache_hit": ans.get("cache_hit"),
-                            "sources": ans.get("sources"),
-                            "trace": ans.get("trace"),
-                        })
-                    except api_client.APIError as e:
-                        if e.status_code == 409:
-                            st.info("Repository is still indexing — try again shortly.")
-                        elif e.status_code == 429:
-                            st.warning("Rate limit reached — wait a minute.")
-                        else:
-                            st.error(e.message)
-                    except Exception as e:
-                        import requests as _req
-                        if isinstance(e, (_req.exceptions.Timeout, _req.exceptions.ReadTimeout)):
-                            st.warning("Request timed out — try a simpler question.")
-                        elif isinstance(e, _req.exceptions.ConnectionError):
-                            st.error("Cannot reach backend on port 8000.")
-                        else:
-                            st.error(str(e))
+
+        if pending_voice_action and pending_voice_action.get("route") == "diagram":
+            _run_diagram_for_symbol(pending_voice_action["symbol"])
+
+        chat_question = question
+        if not chat_question and pending_voice_action:
+            route = pending_voice_action.get("route")
+            if route in ("chat", "explain_again"):
+                chat_question = pending_voice_action.get("question")
+
+        if chat_question:
+            _run_chat_exchange(chat_question)
 
 elif page == "Evaluation & QA":
     # --- Evaluation & QA ---

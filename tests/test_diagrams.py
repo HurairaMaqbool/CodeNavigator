@@ -38,16 +38,17 @@ class TestDiagramGenerator(unittest.TestCase):
         self.assertNotIn("more dependencies not shown", res["mermaid"])
 
     def test_graph_to_mermaid_edgeless(self):
-        # Zero edges but nodes present: render isolated nodes (not empty)
         subgraph = {
             "nodes": [{"id": "a"}, {"id": "b"}],
-            "edges": []
+            "edges": [],
+            "entry_point": "a",
         }
         res = graph_to_mermaid(subgraph, requested_depth=2, clamped_depth=2)
         
-        self.assertFalse(res.get("empty"))
+        self.assertTrue(res.get("empty"))
         self.assertIn("graph TD", res["mermaid"])
-        self.assertIn('a["a"]', res["mermaid"])
+        self.assertIn("no connections found", res["mermaid"])
+        self.assertIn("a", res["mermaid"])
 
     def test_graph_to_mermaid_self_loop(self):
         subgraph = {
@@ -82,10 +83,9 @@ class TestDiagramGenerator(unittest.TestCase):
         # Requested 10, clamped to 3. But the graph is tiny (1 node).
         res = graph_to_mermaid(subgraph, requested_depth=10, clamped_depth=3)
         
-        # Clamped is True (depth was restricted); single node still renders
         self.assertTrue(res["clamped"])
-        self.assertFalse(res.get("empty"))
-        self.assertIn("graph TD", res["mermaid"])
+        self.assertTrue(res.get("empty"))
+        self.assertIn("no connections found", res["mermaid"])
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

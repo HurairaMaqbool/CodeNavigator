@@ -53,8 +53,9 @@ def _graph_path_for(repo_id: str) -> Path:
 
 def build_graph(
     repo_id: str,
-    parsed_files: list[ParsedFile],
-) -> None:
+    definitions: list[ParsedFile] | None = None,
+    parsed_files: list[ParsedFile] | None = None,
+) -> nx.DiGraph:
     """
     Build a call graph from the parsed AST data and persist it atomically.
 
@@ -66,11 +67,22 @@ def build_graph(
     ----------
     repo_id:
         The repository identifier.
+    definitions:
+        The parsed files list from tree_sitter_parser.py.
     parsed_files:
-        The parsed output from Module 5.
+        Alias for definitions parameter, kept for backwards compatibility.
+
+    Returns
+    -------
+    nx.DiGraph
+        The constructed NetworkX directed graph object.
     """
     log = logger.bind(repo_id=repo_id)
     graph = nx.DiGraph()
+
+    files = definitions if definitions is not None else parsed_files
+    if files is None:
+        files = []
 
     max_nodes = settings.MAX_GRAPH_NODES
     truncated = False
@@ -81,7 +93,7 @@ def build_graph(
     #    This deterministic file-walk order guarantees consistent truncation if we hit the limit.
     known_nodes: set[str] = set()
 
-    for p_file in parsed_files:
+    for p_file in files:
         if node_count >= max_nodes:
             truncated = True
             break
@@ -125,7 +137,7 @@ def build_graph(
         name_to_nodes.setdefault(name, []).append(node_id)
 
     edge_count = 0
-    for p_file in parsed_files:
+    for p_file in files:
         path = getattr(p_file, 'normalized_path', None) or p_file.file_path.lower()
 
         # Helper to process calls for a given function/method node
@@ -137,32 +149,25 @@ def build_graph(
             for call in calls:
                 targets = name_to_nodes.get(call, [])
                 if not targets:
-                    # Called function is outside our parsed codebase (e.g., standard library, pip package, or unparsed file)
+                    # Called function is outside our parsed codebase
                     continue
 
                 if len(targets) == 1:
                     callee_id = targets[0]
-                    # Same file -> static. Cross file -> semi_static (we didn't trace the exact import path, but it's unambiguous).
                     edge_type = "static" if callee_id.startswith(f"{path}:") else "semi_static"
                     resolution = "exact_match"
                 else:
-                    # Multiple targets share this name. Heuristic resolution.
-                    # If one is in the SAME file, we statically assume that's the one.
                     local_target = f"{path}:{call}"
                     if local_target in targets:
                         callee_id = local_target
                         edge_type = "static"
                         resolution = "local_priority"
                     else:
-                        # Otherwise, we just pick the first one and flag it heuristic.
-                        # (A more advanced implementation would look at parsed imports).
                         callee_id = targets[0]
                         edge_type = "heuristic"
                         resolution = "name_collision_fallback"
 
                 if callee_id in known_nodes:
-                    # We only add the edge if the callee actually exists in the graph.
-                    # This prevents dangling edges if the callee was dropped due to truncation.
                     if graph.has_edge(caller_id, callee_id):
                         graph[caller_id][callee_id]["call_count"] += 1
                     else:
@@ -183,23 +188,18 @@ def build_graph(
 
     log.info("graph_built", nodes=graph.number_of_nodes(), edges=graph.number_of_edges(), truncated=truncated)
 
-    has_circular_dependencies = False
-    if graph.number_of_nodes() > 0:
-        try:
-            has_circular_dependencies = not nx.is_directed_acyclic_graph(graph)
-        except Exception:
-            has_circular_dependencies = False
+    # 3. Detect Cycles
+    cycles = detect_cycles(graph)
+    has_circular_dependencies = len(cycles) > 0
 
-    # 3. Serialize and persist atomically.
-    #    We write to a `.tmp` file and use os.replace() to overwrite the final target.
-    #    This ensures that if the process crashes mid-write, the old graph.json remains
-    #    intact and uncorrupted.
+    # 4. Serialize and persist atomically.
     data = nx.node_link_data(graph)
     payload = {
         "metadata": {
             "graph_truncated": truncated,
             "repo_id": repo_id,
             "has_circular_dependencies": has_circular_dependencies,
+            "cycles": cycles,
         },
         "graph": data
     }
@@ -214,3 +214,47 @@ def build_graph(
     # Atomic replace
     os.replace(tmp_path, final_path)
     log.debug("graph_persisted_atomically", path=str(final_path))
+
+    # Write progress checkpoint to metadata_store
+    from app.ingestion.metadata_store import metadata_store, Stage
+    try:
+        metadata_store.update(
+            repo_id,
+            Stage.INDEXING,
+            has_circular_dependencies=has_circular_dependencies,
+            progress="Graph construction complete"
+        )
+    except Exception as exc:
+        logger.warning("failed_to_write_graph_metadata_checkpoint", error=str(exc))
+
+    return graph
+
+
+def detect_cycles(graph: nx.DiGraph) -> list[list[str]]:
+    """
+    Find circular import/call chains in the graph.
+    Uses networkx.simple_cycles which is a DFS-based cycle search algorithm.
+    """
+    if graph.number_of_nodes() == 0:
+        return []
+    try:
+        return list(nx.simple_cycles(graph))
+    except Exception as exc:
+        logger.warning("cycle_detection_failed", error=str(exc))
+        return []
+
+
+def get_graph(repo_id: str) -> nx.DiGraph | None:
+    """
+    Load and return the persisted directed graph for repo_id.
+    """
+    path = _graph_path_for(repo_id)
+    if not path.exists():
+        return None
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+        return nx.node_link_graph(payload["graph"])
+    except Exception as exc:
+        logger.warning("failed_to_load_graph", repo_id=repo_id, error=str(exc))
+        return None

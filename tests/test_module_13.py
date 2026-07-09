@@ -169,7 +169,7 @@ def run_tests():
         ingest = client.post("/ingest", json={"repo_url": "u"}).status_code == 200
     
     with patch("app.api.router.metadata_store.get") as mock_meta, \
-         patch("app.api.router.answer_question_cached") as mock_ans, \
+         patch("app.api.router.run") as mock_ans, \
          patch("app.api.router.get_subgraph") as mock_sub, \
          patch("app.api.router.graph_to_mermaid") as mock_merm:
         mock_meta.return_value = MagicMock(sync_status="synced", commit_hash="123")

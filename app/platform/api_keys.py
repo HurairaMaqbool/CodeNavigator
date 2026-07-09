@@ -52,7 +52,7 @@ def _save_registry(data: dict[str, Any]) -> None:
 def resolve_api_key(raw_key: str) -> ApiKeyContext | None:
     if not raw_key:
         return None
-    if raw_key == settings.API_KEY:
+    if secrets.compare_digest(raw_key, settings.API_KEY):
         return ApiKeyContext(org_id="default", label="primary", key_id="legacy")
 
     if _use_pg():

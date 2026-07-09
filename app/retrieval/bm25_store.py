@@ -41,16 +41,32 @@ from app.observability.logging_config import logger
 from app.parsing.chunker import CodeChunk
 
 # ---------------------------------------------------------------------------
-# Simple tokenizer
+# Code-aware Tokenizer
 # ---------------------------------------------------------------------------
 
 def _tokenize(text: str) -> list[str]:
     """
-    Fast, simple tokenizer for code BM25.
-    Lowercases, strips punctuation boundaries, keeps alphanumeric segments.
+    Code-aware tokenizer for BM25.
+    Splits identifiers on camelCase, snake_case, and kebab-case boundaries,
+    and removes punctuation, lowercasing all tokens.
+    
+    Tokenization rules:
+      1. Find all alphanumeric sequences. This naturally splits snake_case
+         (e.g., 'get_user' -> ['get', 'user']) and kebab-case ('get-user' -> ['get', 'user']).
+      2. For each sequence, split on transitions from lowercase to uppercase
+         (e.g., 'getUser' -> 'get User') and transitions from multiple uppercase letters
+         to a lowercase letter (e.g., 'HTTPClient' -> 'HTTP Client').
+      3. Lowercase all resulting tokens and filter out empty strings.
     """
-    # Find all contiguous alphanumeric+underscore sequences
-    return re.findall(r"[a-zA-Z0-9_]+", text.lower())
+    words = re.findall(r"[a-zA-Z0-9]+", text)
+    tokens = []
+    for word in words:
+        # Split camelCase / PascalCase
+        s1 = re.sub(r'([a-z])([A-Z])', r'\1 \2', word)
+        s2 = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1 \2', s1)
+        for token in s2.split():
+            tokens.append(token.lower())
+    return tokens
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +86,7 @@ _BM25_CACHE: dict[str, tuple[BM25Okapi, list[dict[str, Any]]]] = {}
 
 def build_bm25_index(
     repo_id: str,
-    chunks: list[CodeChunk],
+    chunks: list[Any],
 ) -> None:
     """
     Build and persist a BM25 index over *chunks*, always overwriting.
@@ -81,39 +97,89 @@ def build_bm25_index(
     if not chunks:
         log.warning("no_chunks_for_bm25")
         if pkl_path.exists():
-            pkl_path.unlink()
+            try:
+                pkl_path.unlink()
+            except Exception:
+                pass
         _BM25_CACHE.pop(repo_id, None)
         return
 
-    # Extract texts and IDs in parallel
     corpus_tokens: list[list[str]] = []
     chunk_ids: list[str] = []
     records: list[dict[str, Any]] = []
 
     for chunk in chunks:
-        chunk_id = f"chunk_{chunk.fingerprint}"
+        if isinstance(chunk, dict):
+            fingerprint = chunk.get("fingerprint", "")
+            chunk_text = chunk.get("chunk_text") or chunk.get("text") or ""
+            file_path = chunk.get("file_path", "")
+            display_path = chunk.get("display_path", "")
+            function_name = chunk.get("function_name", "")
+            start_line = chunk.get("start_line", 0)
+            end_line = chunk.get("end_line", 0)
+            chunk_type = chunk.get("type", "")
+            language = chunk.get("language", "")
+        else:
+            fingerprint = getattr(chunk, "fingerprint", "")
+            if not fingerprint and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                fingerprint = chunk.metadata.get("fingerprint", "")
+                
+            chunk_text = getattr(chunk, "chunk_text", "") or getattr(chunk, "text", "")
+            
+            file_path = getattr(chunk, "file_path", "")
+            if not file_path and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                file_path = chunk.metadata.get("file_path", "")
+
+            display_path = getattr(chunk, "display_path", "")
+            if not display_path and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                display_path = chunk.metadata.get("display_path", "")
+
+            function_name = getattr(chunk, "function_name", "")
+            if not function_name and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                function_name = chunk.metadata.get("function_name", "")
+
+            start_line = getattr(chunk, "start_line", 0)
+            if not start_line and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                start_line = chunk.metadata.get("start_line", 0)
+
+            end_line = getattr(chunk, "end_line", 0)
+            if not end_line and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                end_line = chunk.metadata.get("end_line", 0)
+
+            chunk_type = getattr(chunk, "type", "")
+            if not chunk_type and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                chunk_type = chunk.metadata.get("type", "")
+
+            language = getattr(chunk, "language", "")
+            if not language and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+                language = chunk.metadata.get("language", "")
+
+        # Keep the same ID formula literal as vector_store.py (Module 6a EC2).
+        if isinstance(chunk, dict):
+            chunk_id = f"chunk_{fingerprint}"
+        else:
+            chunk_id = f"chunk_{chunk.fingerprint}"
         chunk_ids.append(chunk_id)
-        # Tokenize the EXACT same text that goes into the vector store
-        corpus_tokens.append(_tokenize(chunk.chunk_text))
+        corpus_tokens.append(_tokenize(chunk_text))
+
         records.append({
             "id": chunk_id,
-            "document": chunk.chunk_text,
+            "document": chunk_text,
             "metadata": {
-                "file_path": chunk.file_path,
-                "display_path": chunk.display_path,
-                "function_name": chunk.function_name,
-                "start_line": chunk.start_line,
-                "end_line": chunk.end_line,
-                "type": chunk.type,
-                "language": chunk.language,
-                "fingerprint": chunk.fingerprint,
+                "file_path": file_path,
+                "display_path": display_path,
+                "function_name": function_name,
+                "start_line": start_line,
+                "end_line": end_line,
+                "type": chunk_type,
+                "language": language,
+                "fingerprint": fingerprint,
             }
         })
 
     log.info("building_bm25_index", n_chunks=len(chunk_ids))
     bm25 = BM25Okapi(corpus_tokens)
 
-    # Persist as a tuple: (BM25Okapi, list of records aligned with the index)
     pkl_path.parent.mkdir(parents=True, exist_ok=True)
     
     data = (bm25, records)
@@ -121,7 +187,6 @@ def build_bm25_index(
         pickle.dump(data, f)
         
     _BM25_CACHE[repo_id] = data
-    
     log.info("bm25_index_built", path=str(pkl_path))
 
 
@@ -136,20 +201,23 @@ def load_bm25_index(repo_id: str) -> tuple[BM25Okapi, list[dict[str, Any]]] | No
     if not pkl_path.exists():
         return None
         
-    with pkl_path.open("rb") as f:
-        data = pickle.load(f)
-        _BM25_CACHE[repo_id] = data
-        return data
+    try:
+        with pkl_path.open("rb") as f:
+            data = pickle.load(f)
+            _BM25_CACHE[repo_id] = data
+            return data
+    except Exception as exc:
+        logger.warning("failed_to_load_bm25_index_file", path=str(pkl_path), error=str(exc))
+        return None
 
 
 def store_bm25(
     repo_id: str,
-    chunks: list[CodeChunk],
+    chunks: list[Any],
     force_reindex: bool = False,
 ) -> None:
     """
     Build and persist a BM25 index over *chunks*.
-
     If *force_reindex* is True or the index does not exist, it builds from scratch.
     """
     log = logger.bind(repo_id=repo_id)
@@ -159,7 +227,44 @@ def store_bm25(
         log.info("bm25_index_already_exists", path=str(pkl_path))
         return
 
+    upsert_chunks(repo_id, chunks)
+
+
+def upsert_chunks(repo_id: str, chunks: list[Any]) -> None:
+    """
+    Tokenizes and indexes chunk text into a per-repo BM25 index,
+    overwriting any existing index.
+    """
     build_bm25_index(repo_id, chunks)
+
+    # Write indexing progress to metadata_store
+    from app.ingestion.metadata_store import metadata_store, Stage
+    try:
+        metadata_store.update(repo_id, Stage.INDEXING, progress="Indexed chunks in BM25 index")
+    except Exception as exc:
+        logger.warning("failed_to_write_indexing_progress_checkpoint", error=str(exc))
+
+
+def delete_repo(repo_id: str) -> None:
+    """
+    Delete the BM25 index for repo_id from disk and cache.
+    """
+    pkl_path = _index_path_for(repo_id)
+    if pkl_path.exists():
+        try:
+            pkl_path.unlink()
+            logger.info("bm25_index_deleted", path=str(pkl_path))
+        except Exception as exc:
+            logger.warning("failed_to_delete_bm25_index_file", path=str(pkl_path), error=str(exc))
+
+    try:
+        parent_dir = pkl_path.parent
+        if parent_dir.exists() and not any(parent_dir.iterdir()):
+            parent_dir.rmdir()
+    except Exception:
+        pass
+
+    _BM25_CACHE.pop(repo_id, None)
 
 
 # ---------------------------------------------------------------------------
@@ -175,13 +280,78 @@ class BM25SearchResult:
     metadata: dict[str, Any]
 
 
+def query(
+    repo_id: str,
+    query_text: str,
+    top_k: int = 20,
+) -> list[dict[str, Any]]:
+    """
+    Search the BM25 index for query_text inside repo_id, returning top_k hits.
+
+    Forward Interface Contract:
+    --------------------------
+    Returns a list of dicts matching vector_store.py's query() shape:
+        [
+            {
+                "chunk_metadata": {
+                    "file_path": str,
+                    "display_path": str,
+                    "function_name": str,
+                    "start_line": int,
+                    "end_line": int,
+                    "type": str,
+                    "language": str,
+                    "fingerprint": str,
+                },
+                "score": float
+            },
+            ...
+        ]
+    """
+    loaded = load_bm25_index(repo_id)
+    if not loaded:
+        return []
+    bm25, records = loaded
+
+    query_tokens = _tokenize(query_text)
+    if not query_tokens:
+        return []
+
+    scores = bm25.get_scores(query_tokens)
+    
+    # Filter indices that share at least one token with the query
+    query_set = set(query_tokens)
+    matched_indices = []
+    for idx, record in enumerate(records):
+        doc_tokens = _tokenize(record["document"])
+        if query_set.intersection(doc_tokens):
+            matched_indices.append(idx)
+
+    top_indices = sorted(
+        matched_indices,
+        key=lambda i: scores[i],
+        reverse=True
+    )[:top_k]
+
+    out = []
+    for idx in top_indices:
+        record = records[idx]
+        out.append({
+            "chunk": record["document"],
+            "chunk_metadata": record["metadata"],
+            "score": float(scores[idx]),
+        })
+
+    return out
+
+
 def search_bm25(
     repo_id: str,
-    query: str,
+    query_str: str,
     top_n: int = 20,
 ) -> list[BM25SearchResult]:
     """
-    Search the BM25 index for *query* and return the top *top_n*.
+    Search the BM25 index for *query_str* and return the top *top_n*.
 
     Returns an empty list if the index does not exist.
     """
@@ -192,16 +362,22 @@ def search_bm25(
         return []
     bm25, records = loaded
 
-    query_tokens = _tokenize(query)
+    query_tokens = _tokenize(query_str)
     if not query_tokens:
         return []
 
     scores = bm25.get_scores(query_tokens)
     
-    # Get top_n indices sorted by descending score
-    # score == 0.0 means no matching tokens at all, we filter those out.
+    # Filter indices that share at least one token with the query
+    query_set = set(query_tokens)
+    matched_indices = []
+    for idx, record in enumerate(records):
+        doc_tokens = _tokenize(record["document"])
+        if query_set.intersection(doc_tokens):
+            matched_indices.append(idx)
+
     top_indices = sorted(
-        [i for i, s in enumerate(scores) if s > 0.0],
+        matched_indices,
         key=lambda i: scores[i],
         reverse=True
     )[:top_n]

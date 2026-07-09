@@ -25,6 +25,7 @@ Rules
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -141,6 +142,13 @@ class Settings(BaseSettings):
     # resolve in 1-2 searches. A high iteration/wall-clock cap just lets a slow
     # run drag on instead of failing fast. Override via .env if needed.
     MAX_AGENT_ITERATIONS: int = Field(default=3)
+    # Spec-canonical alias — loop.py reads MAX_ITERATIONS; both refer to the
+    # same setting so they always stay in sync.
+    MAX_ITERATIONS: int = Field(
+        default=3,
+        validation_alias=AliasChoices("MAX_ITERATIONS", "MAX_AGENT_ITERATIONS"),
+        description="Hard cap on agent loop iterations (used by loop.py)",
+    )
     AGENT_MAX_SECONDS: int = Field(default=30)
     MAX_TOOL_CALLS: int = Field(default=3)
     MAX_TOTAL_TOKENS: int = Field(default=6000)
@@ -264,6 +272,23 @@ class Settings(BaseSettings):
 
 
 # ---------------------------------------------------------------------------
-# Instantiate the singleton and validate immediately.
+# Singleton accessor — lru_cache ensures the Settings object is constructed
+# exactly once per process, never per request (Pydantic validation fires here).
 # ---------------------------------------------------------------------------
-settings = Settings()
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    """
+    Return the process-wide Settings singleton.
+
+    All modules should import this function (or the pre-built `settings`
+    alias below) rather than constructing their own Settings() instance.
+    Using lru_cache guarantees a single construction + validation per
+    process lifetime, even if the function is called from multiple threads.
+    """
+    return Settings()
+
+
+# Convenience alias so existing code can keep `from app.config import settings`
+# without modification, while new code can call get_settings() explicitly.
+settings: Settings = get_settings()

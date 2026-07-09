@@ -6,24 +6,23 @@
 """
 eval/run_eval.py
 ----------------
-Executes RAGAS evaluation against a real, already-ingested fixture repo.
-Guarantees zero-cost by strictly importing judge wrappers.
+Module #28 — Automated quality regression testing (RAGAS + state-path consistency).
+
+Exercises the live ``POST /chat`` stack end-to-end. Intended for scheduled /
+pre-release runs — not every commit — to conserve Groq free-tier quota.
 """
 from __future__ import annotations
 
 import os
+
 os.environ["GIT_PYTHON_REFRESH"] = "quiet"
 
 import json
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
-# NOTE: datasets / ragas are imported lazily inside run_eval() so this module
-# (and the helpers below) stay importable even when the eval stack isn't
-# installed or is version-mismatched. ragas 0.3.2 imports a vertexai path that
-# langchain-community 0.4.x removed; pin via requirements-eval.txt to run evals.
-from app.agent.loop import answer_question
 from eval.context_builder import build_ragas_contexts
 from eval.eval_store import append_run, load_runs, update_last_run
 from eval.groq_guard import GroqQuotaError, eval_question_delay, require_groq_quota
@@ -36,6 +35,12 @@ from eval.health_check import (
 )
 from eval.retrieval_metrics import precision_at_k
 
+# Version-controlled Golden Set (question + expected citations per entry).
+DEFAULT_GOLDEN_SET_PATH = Path("data/golden_set.json")
+FALLBACK_GOLDEN_SET_PATH = Path("tests/eval_set.json")
+
+STATE_PATH_RUNS_DEFAULT = 3
+
 
 class RegressionError(Exception):
     def __init__(self, message: str, diagnostics: dict | None = None):
@@ -43,11 +48,111 @@ class RegressionError(Exception):
         self.diagnostics = diagnostics or {}
 
 
-def _find_comparable_baseline(
-    prior_runs: list[dict],
-    question_count: int,
-) -> dict | None:
-    """Compare only against the most recent run with the same question count."""
+def _resolve_golden_path(golden_path: str | Path | None = None) -> Path:
+    path = Path(golden_path) if golden_path else DEFAULT_GOLDEN_SET_PATH
+    if not path.exists() and path == DEFAULT_GOLDEN_SET_PATH and FALLBACK_GOLDEN_SET_PATH.exists():
+        return FALLBACK_GOLDEN_SET_PATH
+    return path
+
+
+def load_golden_set(golden_path: str | Path | None = None) -> list[dict[str, Any]]:
+    """
+    Load Golden Set JSON — list of entries::
+
+        {
+          "repo_id": "...",
+          "question": "...",
+          "ground_truth_files": ["path/to/file.py"],   # expected citations
+          "ground_truth_answer_summary": "...",
+          "expected_gated": false                      # optional
+        }
+    """
+    path = _resolve_golden_path(golden_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Golden set not found at {path}")
+
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(raw, dict) and "entries" in raw:
+        return list(raw["entries"])
+    if isinstance(raw, list):
+        return raw
+    raise ValueError(f"Invalid golden set format in {path}")
+
+
+def _extract_state_path(chat_response: dict[str, Any]) -> list[str]:
+    """
+    Ordered state-transition log — list of AgentState enum names from loop.run().
+
+    loop.py exposes this as ``trace: [{"state": "INTAKE"}, {"state": "PLAN"}, ...]``
+    on the /chat JSON payload (no extra loop instrumentation required).
+    """
+    trace = chat_response.get("trace") or []
+    return [str(item.get("state", "")) for item in trace if isinstance(item, dict)]
+
+
+def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
+    """Call the real ``POST /chat`` handler via FastAPI TestClient (full router → loop stack)."""
+    from unittest.mock import MagicMock, patch
+
+    from fastapi.testclient import TestClient
+
+    from app.api.auth import verify_api_key
+    from app.main import app
+
+    tenant = MagicMock(org_id="eval")
+    overrides = dict(app.dependency_overrides)
+    app.dependency_overrides[verify_api_key] = lambda: None
+    try:
+        with (
+            patch("app.api.router.check_quota", return_value=True),
+            patch("app.api.router.increment"),
+            patch("app.api.router.record_event"),
+            patch("app.platform.tenant_context.get_tenant", return_value=tenant),
+        ):
+            client = TestClient(app)
+            prev_cache = os.environ.get("SEMANTIC_CACHE_ENABLED")
+            os.environ["SEMANTIC_CACHE_ENABLED"] = "false"
+            try:
+                resp = client.post(
+                    "/chat",
+                    json={"repo_id": repo_id, "question": question},
+                )
+            finally:
+                if prev_cache is None:
+                    os.environ.pop("SEMANTIC_CACHE_ENABLED", None)
+                else:
+                    os.environ["SEMANTIC_CACHE_ENABLED"] = prev_cache
+
+        if resp.status_code != 200:
+            raise EvalPipelineError(
+                f"/chat returned HTTP {resp.status_code}: {resp.text[:500]}",
+                diagnostics={"repo_id": repo_id, "question": question[:120]},
+            )
+        return resp.json()
+    finally:
+        app.dependency_overrides.clear()
+        app.dependency_overrides.update(overrides)
+
+
+def state_path_consistency(question: str, repo_id: str, n_runs: int = STATE_PATH_RUNS_DEFAULT) -> bool:
+    """
+    Run the same question ``n_runs`` times; require identical state-transition sequences.
+
+    Compares ordered lists of state names from ``loop.run()``'s ``trace`` field.
+    """
+    if n_runs < 2:
+        n_runs = 2
+    paths: list[list[str]] = []
+    for i in range(n_runs):
+        if i > 0:
+            eval_question_delay()
+        res = _invoke_chat_endpoint(repo_id, question)
+        paths.append(_extract_state_path(res))
+    first = paths[0]
+    return all(p == first for p in paths[1:])
+
+
+def _find_comparable_baseline(prior_runs: list[dict], question_count: int) -> dict | None:
     for run in reversed(prior_runs):
         prev_n = (run.get("diagnostics") or {}).get("question_count")
         if prev_n == question_count and run.get("ragas_scores"):
@@ -55,10 +160,7 @@ def _find_comparable_baseline(
     return None
 
 
-def _check_regressions(
-    prev_scores: dict[str, float],
-    curr_scores: dict[str, float],
-) -> list[str]:
+def _check_ragas_regressions(prev_scores: dict[str, float], curr_scores: dict[str, float]) -> list[str]:
     regressions: list[str] = []
     for metric, prev_val in prev_scores.items():
         curr_val = curr_scores.get(metric, 0.0)
@@ -71,15 +173,11 @@ def _check_regressions(
     return regressions
 
 
-def _extract_ragas_scores(ragas_result, metrics_list: list[str]) -> dict[str, float]:
-    """
-    Version-robust extraction of mean per-metric scores.
+# Backward-compatible alias (test_fix_regressions.py)
+_check_regressions = _check_ragas_regressions
 
-    RAGAS >= 0.1 returns an EvaluationResult object (not a dict), so the old
-    `result.items()` access raises 'EvaluationResult has no attribute items'.
-    The canonical, stable API across 0.2/0.3 is `.to_pandas()`; we fall back to
-    subscript access only if that is unavailable.
-    """
+
+def _extract_ragas_scores(ragas_result, metrics_list: list[str]) -> dict[str, float]:
     scores: dict[str, float] = {}
     df = None
     try:
@@ -101,7 +199,45 @@ def _extract_ragas_scores(ragas_result, metrics_list: list[str]) -> dict[str, fl
     return scores
 
 
-def run_eval(dataset_path: str = "tests/eval_set.json") -> dict:
+def _per_row_ragas_scores(ragas_result, metrics_list: list[str]) -> list[dict[str, float]]:
+    rows: list[dict[str, float]] = []
+    try:
+        df = ragas_result.to_pandas()
+        for _, row in df.iterrows():
+            rows.append({m: float(row[m]) if m in row and row[m] == row[m] else 0.0 for m in metrics_list})
+    except Exception:
+        rows = []
+    return rows
+
+
+def _flag_gated_regressions(
+    per_question: list[dict[str, Any]],
+    golden_entries: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Flag golden questions that flipped to gated=true when not expected."""
+    flags: list[dict[str, Any]] = []
+    for pq, case in zip(per_question, golden_entries):
+        expected_gated = bool(case.get("expected_gated", False))
+        actual_gated = bool(pq.get("gated", False))
+        pq["expected_gated"] = expected_gated
+        pq["gated_regression"] = (not expected_gated) and actual_gated
+        if pq["gated_regression"]:
+            flags.append({
+                "question": pq.get("question", case.get("question", "")),
+                "type": "gated_flip",
+                "message": "Golden question returned gated=true unexpectedly — manual review required",
+                "expected_gated": expected_gated,
+                "actual_gated": actual_gated,
+            })
+    return flags
+
+
+def run_golden_set(golden_path: str | Path | None = None) -> dict[str, Any]:
+    """
+    Module #28 entry point — score Golden Set via live /chat + RAGAS + state-path checks.
+
+    Returns structured report (per-question + aggregate) consumable by compare_runs.py.
+    """
     from datasets import Dataset
     from ragas import evaluate
     from ragas.metrics import (
@@ -112,23 +248,13 @@ def run_eval(dataset_path: str = "tests/eval_set.json") -> dict:
     )
     try:
         from ragas.run_config import RunConfig
-    except Exception:  # pragma: no cover - older ragas
+    except Exception:
         RunConfig = None
     from eval.ragas_providers import get_judge_llm, get_judge_embeddings
 
-    eval_set_path = Path(dataset_path)
-    if not eval_set_path.exists():
-        raise FileNotFoundError(f"{eval_set_path} not found")
+    path = _resolve_golden_path(golden_path)
+    eval_data = load_golden_set(path)
 
-    with eval_set_path.open("r", encoding="utf-8") as f:
-        eval_data = json.load(f)
-        if isinstance(eval_data, dict) and "entries" in eval_data:
-            eval_data = eval_data["entries"]
-
-    if not eval_data:
-        raise ValueError("Eval set is empty")
-
-    # Free-tier Groq trips on bursts; allow shrinking the set for a smoke run.
     try:
         max_q = int(os.environ.get("EVAL_MAX_QUESTIONS", "0"))
     except ValueError:
@@ -136,7 +262,10 @@ def run_eval(dataset_path: str = "tests/eval_set.json") -> dict:
     if max_q > 0:
         eval_data = eval_data[:max_q]
 
-    job_id = eval_data[0].get("repo_id", "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d")
+    if not eval_data:
+        raise ValueError("Golden set is empty")
+
+    job_id = eval_data[0].get("repo_id", "")
     meta, asset_repo_id = resolve_asset_repo_id(job_id)
     if not meta or meta.sync_status != "synced":
         raise ValueError(
@@ -146,72 +275,75 @@ def run_eval(dataset_path: str = "tests/eval_set.json") -> dict:
 
     health = check_index_health(asset_repo_id)
     health.raise_if_failed()
-    if not os.environ.get("EVAL_SKIP_AGENT_PROBE", "1").strip().lower() in ("0", "false", "no"):
-        agent_health = check_agent_probe(asset_repo_id)
-        agent_health.raise_if_failed()
-    if asset_repo_id != job_id:
-        print(f"Resolved job_id {job_id[:12]}... -> asset_repo_id {asset_repo_id[:12]}...")
+    if os.environ.get("EVAL_SKIP_AGENT_PROBE", "1").strip().lower() in ("0", "false", "no"):
+        check_agent_probe(asset_repo_id).raise_if_failed()
 
-    try:
-        require_groq_quota()
-    except GroqQuotaError as exc:
-        raise EvalPipelineError(str(exc), diagnostics=exc.details) from exc
+    require_groq_quota()
 
-    questions = []
-    answers = []
-    contexts = []
-    ground_truths = []
-    
-    total_iterations = 0
+    questions: list[str] = []
+    answers: list[str] = []
+    contexts: list[list[str]] = []
+    ground_truths: list[str] = []
+
     total_confidence = 0.0
-    total_invalid_ratio = 0.0
     total_precision_at_3 = 0.0
-
     gated_count = 0
     empty_source_count = 0
     sentinel_context_count = 0
     rate_limited_count = 0
-    per_question: list[dict] = []
+    per_question: list[dict[str, Any]] = []
+    state_path_failures: list[dict[str, Any]] = []
 
-    print(f"Running eval against {len(eval_data)} questions on asset {asset_repo_id}...")
+    print(f"Running golden set ({len(eval_data)} questions) via POST /chat on {asset_repo_id}...")
 
     for i, case in enumerate(eval_data):
         if i > 0:
             eval_question_delay()
+
         question = case["question"]
-        # Hit the LIVE pipeline directly (no semantic cache bypasses here!)
-        res = answer_question(question, repo_id=asset_repo_id)
+        case_repo = case.get("repo_id", job_id)
+        _, case_asset = resolve_asset_repo_id(case_repo)
+        chat_repo = case_asset or asset_repo_id
+
+        paths: list[list[str]] = []
+        res: dict[str, Any] = {}
+        for run_idx in range(STATE_PATH_RUNS_DEFAULT):
+            if i > 0 or run_idx > 0:
+                eval_question_delay()
+            res = _invoke_chat_endpoint(chat_repo, question)
+            paths.append(_extract_state_path(res))
+
+        consistent = all(p == paths[0] for p in paths[1:])
+        state_path = paths[0] if paths else []
+        if not consistent:
+            state_path_failures.append({
+                "question": question,
+                "repo_id": chat_repo,
+                "observed_paths": paths,
+                "message": "State-transition sequence differed across repeated runs",
+            })
 
         ans_text = res.get("answer", "")
-        if res.get("rate_limited"):
+        if res.get("rate_limited") or "rate-limited" in ans_text.lower():
             rate_limited_count += 1
-        elif "rate-limited" in ans_text.lower():
-            rate_limited_count += 1
+
         ctx_list, used_sentinel = build_ragas_contexts(res)
         if used_sentinel:
             sentinel_context_count += 1
-
         if res.get("gated"):
             gated_count += 1
         if not res.get("sources"):
             empty_source_count += 1
 
-        questions.append(question)
-        answers.append(ans_text)
-        contexts.append(ctx_list)
-        # RAGAS >= 0.2.x expects a string for reference/ground_truth, not a list.
-        ground_truths.append(case["ground_truth_answer_summary"])
-
-        total_iterations += len(res.get("trace", []))
-        total_confidence += res.get("confidence_score", 0.0)
-        total_invalid_ratio += (res.get("invalid_reference_ratio") or 0.0)
-
         gt_files = case.get("ground_truth_files", [])
         p_at_3, top_files, gt_hit = precision_at_k(res, gt_files, k=3)
         total_precision_at_3 += p_at_3
+        total_confidence += float(res.get("confidence_score") or 0.0)
 
-        per_question.append({
+        pq = {
             "question": question,
+            "repo_id": chat_repo,
+            "expected_citations": gt_files,
             "precision_at_3": round(p_at_3, 4),
             "top_files": top_files,
             "ground_truth_files": gt_files,
@@ -221,43 +353,35 @@ def run_eval(dataset_path: str = "tests/eval_set.json") -> dict:
             "context_count": len(ctx_list),
             "used_sentinel": used_sentinel,
             "rate_limited": bool(res.get("rate_limited")),
-        })
+            "state_path": state_path,
+            "state_path_consistent": consistent,
+        }
+        per_question.append(pq)
 
-    N = len(eval_data)
+        questions.append(question)
+        answers.append(ans_text)
+        contexts.append(ctx_list)
+        ground_truths.append(case.get("ground_truth_answer_summary", ""))
 
+    n = len(eval_data)
     if rate_limited_count > 0:
         raise EvalPipelineError(
-            f"Evaluation aborted: Groq API quota exhausted during agent phase "
-            f"({rate_limited_count}/{N} questions rate-limited).\n"
-            "Fix: wait for daily reset, switch LLM_MODEL to llama-3.1-8b-instant in .env, "
-            "or upgrade Groq tier. Scores were not stored.",
-            diagnostics={
-                "rate_limited_count": rate_limited_count,
-                "question_count": N,
-                "asset_repo_id": asset_repo_id,
-            },
+            f"Evaluation aborted: Groq quota exhausted ({rate_limited_count}/{n} rate-limited).",
+            diagnostics={"rate_limited_count": rate_limited_count, "question_count": n},
         )
-    
-    # Build Dataset
+
+    gated_regressions = _flag_gated_regressions(per_question, eval_data)
+
     dataset = Dataset.from_dict({
         "question": questions,
         "answer": answers,
         "contexts": contexts,
-        "ground_truth": ground_truths
+        "ground_truth": ground_truths,
     })
 
-    # Execute Ragas explicitly passing judges
     judge_llm = get_judge_llm()
     judge_embeddings = get_judge_embeddings()
-
-    # CRITICAL: serialize judge calls. RAGAS defaults to ~16 concurrent workers,
-    # which instantly trips the free Groq tier tokens-per-minute limit and makes
-    # every metric return NaN -> 0.000. max_workers=1 + retries trades speed for
-    # a deterministic, rate-limit-safe run.
-    eval_kwargs: dict = {
-        "llm": judge_llm,
-        "embeddings": judge_embeddings,
-    }
+    eval_kwargs: dict[str, Any] = {"llm": judge_llm, "embeddings": judge_embeddings}
     if RunConfig is not None:
         eval_kwargs["run_config"] = RunConfig(
             timeout=300,
@@ -266,132 +390,149 @@ def run_eval(dataset_path: str = "tests/eval_set.json") -> dict:
             max_workers=1,
         )
 
+    metrics_list = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
     ragas_result = evaluate(
         dataset,
-        metrics=[
-            faithfulness,
-            answer_relevancy,
-            context_precision,
-            context_recall,
-        ],
+        metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
         **eval_kwargs,
     )
 
-    metrics_list = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
     ragas_scores = _extract_ragas_scores(ragas_result, metrics_list)
+    row_scores = _per_row_ragas_scores(ragas_result, metrics_list)
+    for pq, rs in zip(per_question, row_scores):
+        pq["ragas_scores"] = rs
 
-    # Get git SHA and version
-    _project_root = Path(__file__).resolve().parent.parent
-    try:
-        git_sha = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"],
-            cwd=_project_root,
-            stderr=subprocess.DEVNULL,
-        ).decode().strip()
-    except Exception:
-        git_sha = "unknown"
-
-    try:
-        git_short = subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"],
-            cwd=_project_root,
-            stderr=subprocess.DEVNULL,
-        ).decode().strip()
-    except Exception:
-        git_short = "unknown"
-
-    if git_short == "unknown":
-        from app.observability.logging_config import logger
-        fallback_version = f"eval_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
-        logger.warning("git_not_available_using_fallback", fallback_version=fallback_version)
-        version = os.environ.get("EVAL_VERSION", fallback_version)
-    else:
-        version = os.environ.get("EVAL_VERSION", git_short)
-
-    diagnostics = {
-        "job_id": job_id,
-        "asset_repo_id": asset_repo_id,
-        "question_count": N,
+    state_passed = sum(1 for pq in per_question if pq.get("state_path_consistent"))
+    aggregate = {
+        "ragas_scores": ragas_scores,
+        "mean_confidence_score": total_confidence / n,
+        "retrieval_precision_at_3": total_precision_at_3 / n,
+        "state_path_consistency_rate": state_passed / n if n else 0.0,
+        "state_path_consistency_passed": state_passed,
+        "state_path_consistency_total": n,
         "gated_count": gated_count,
-        "empty_source_count": empty_source_count,
-        "sentinel_context_count": sentinel_context_count,
-        "mean_confidence_score": total_confidence / N,
-        "retrieval_precision_at_3": total_precision_at_3 / N,
+    }
+
+    regression_flags = {
+        "gated_flips": gated_regressions,
+        "state_path_failures": state_path_failures,
+    }
+
+    version, git_sha = _git_version()
+
+    report: dict[str, Any] = {
+        "version": version,
+        "git_sha": git_sha,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "golden_set_path": str(path),
         "per_question": per_question,
+        "aggregate": aggregate,
+        "ragas_scores": ragas_scores,
+        "mean_confidence_score": aggregate["mean_confidence_score"],
+        "retrieval_precision_at_3": aggregate["retrieval_precision_at_3"],
+        "state_path_consistency": {
+            "passed": state_passed,
+            "total": n,
+            "rate": aggregate["state_path_consistency_rate"],
+            "failures": state_path_failures,
+        },
+        "regression_flags": regression_flags,
+        "diagnostics": {
+            "job_id": job_id,
+            "asset_repo_id": asset_repo_id,
+            "question_count": n,
+            "gated_count": gated_count,
+            "empty_source_count": empty_source_count,
+            "sentinel_context_count": sentinel_context_count,
+            "per_question": per_question,
+            "gated_regressions": gated_regressions,
+            "state_path_failures": state_path_failures,
+        },
     }
 
     is_failure, failure_reason = diagnose_pipeline_failure(
         ragas_scores,
-        question_count=N,
+        question_count=n,
         gated_count=gated_count,
         empty_source_count=empty_source_count,
         sentinel_context_count=sentinel_context_count,
-        retrieval_precision_at_3=total_precision_at_3 / N,
-        mean_confidence=total_confidence / N,
+        retrieval_precision_at_3=total_precision_at_3 / n,
+        mean_confidence=total_confidence / n,
     )
     if is_failure:
         raise EvalPipelineError(
-            "Evaluation aborted: pipeline failure detected (scores not stored).\n"
-            f"Reason: {failure_reason}\n"
-            f"Diagnostics: gated={gated_count}/{N}, empty_sources={empty_source_count}/{N}, "
-            f"sentinel_contexts={sentinel_context_count}/{N}, P@3={total_precision_at_3 / N:.3f}",
-            diagnostics={**diagnostics, "ragas_scores": ragas_scores, "failure_reason": failure_reason},
+            f"Evaluation aborted: pipeline failure — {failure_reason}",
+            diagnostics={**report["diagnostics"], "ragas_scores": ragas_scores},
         )
 
-    record = {
-        "version": version,
-        "git_sha": git_sha,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "ragas_scores": ragas_scores,
-        "mean_confidence_score": total_confidence / N,
-        "average_iterations": total_iterations / N,
-        "invalid_reference_rate": total_invalid_ratio / N,
-        "retrieval_precision_at_3": total_precision_at_3 / N,
-        "diagnostics": diagnostics,
-    }
+    append_run(report)
 
-    previous_runs = load_runs()
-    append_run(record)
-
-    # Regression check — only vs same question-count baseline (3-Q vs 10-Q is not comparable)
-    baseline = _find_comparable_baseline(previous_runs, N)
+    baseline = _find_comparable_baseline(load_runs(), n)
     if baseline:
-        prev_scores = baseline.get("ragas_scores", {})
-        curr_scores = record.get("ragas_scores", {})
-        regressions = _check_regressions(prev_scores, curr_scores)
-        if regressions:
-            diag_lines = [
-                f"gated {gated_count}/{N}",
-                f"empty sources {empty_source_count}/{N}",
-                f"P@3 {total_precision_at_3 / N:.3f}",
-                f"asset_repo_id {asset_repo_id[:16]}...",
-                f"compared_to {baseline.get('version', 'prior')} (n={N})",
-            ]
-            msg = "Regression detected in evaluation:\n" + "\n".join(regressions)
-            msg += "\n\nDiagnostics: " + ", ".join(diag_lines)
-            record["regression_warning"] = msg
-            record["regression_baseline_version"] = baseline.get("version")
+        ragas_regressions = _check_ragas_regressions(
+            baseline.get("ragas_scores", {}),
+            ragas_scores,
+        )
+        if ragas_regressions:
+            msg = "RAGAS regression detected:\n" + "\n".join(ragas_regressions)
+            report["regression_warning"] = msg
+            report["regression_baseline_version"] = baseline.get("version")
             update_last_run({
                 "regression_warning": msg,
                 "regression_baseline_version": baseline.get("version"),
             })
 
-    return record
+    if gated_regressions or state_path_failures:
+        report["manual_review_required"] = True
+        parts = []
+        if gated_regressions:
+            parts.append(f"{len(gated_regressions)} gated flip(s)")
+        if state_path_failures:
+            parts.append(f"{len(state_path_failures)} state-path failure(s)")
+        report["regression_warning"] = report.get("regression_warning", "") + (
+            "\nManual review: " + ", ".join(parts)
+        ).strip()
+
+    return report
+
+
+def _git_version() -> tuple[str, str]:
+    root = Path(__file__).resolve().parent.parent
+    try:
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root, stderr=subprocess.DEVNULL
+        ).decode().strip()
+        git_short = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"], cwd=root, stderr=subprocess.DEVNULL
+        ).decode().strip()
+    except Exception:
+        return os.environ.get("EVAL_VERSION", "unknown"), "unknown"
+    version = os.environ.get("EVAL_VERSION", git_short if git_short != "unknown" else f"eval_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}")
+    return version, git_sha
+
+
+def run_eval(dataset_path: str | None = None) -> dict[str, Any]:
+    """Backward-compatible alias — delegates to ``run_golden_set()``."""
+    path = dataset_path or str(_resolve_golden_path(None))
+    return run_golden_set(path)
+
 
 if __name__ == "__main__":
     import sys
+
     try:
-        result = run_eval()
-        print(result)
+        result = run_golden_set()
+        print(json.dumps(result, indent=2, default=str))
+        if result.get("manual_review_required"):
+            print("\n[WARN] Manual review required — see regression_flags")
         if result.get("regression_warning"):
             print(f"\n[WARN] {result['regression_warning']}")
-            sys.exit(0)
-    except RegressionError as e:
-        print(f"\n[FAIL] {e}")
+    except RegressionError as exc:
+        print(f"\n[FAIL] {exc}")
         sys.exit(1)
-    except EvalPipelineError as e:
-        print(f"\n[PIPELINE FAIL] {e}")
+    except EvalPipelineError as exc:
+        print(f"\n[PIPELINE FAIL] {exc}")
         sys.exit(2)
-    except GroqQuotaError as e:
-        print(f"\n[QUOTA BLOCKED] {e}")
+    except GroqQuotaError as exc:
+        print(f"\n[QUOTA BLOCKED] {exc}")
         sys.exit(3)

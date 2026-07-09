@@ -104,12 +104,13 @@ def test_ec2_zero_edge():
     print("\n--- EC2: Zero-edge subgraph test ---")
     data = {
         "nodes": [{"id": "isolated_node"}],
-        "edges": []
+        "edges": [],
+        "entry_point": "isolated_node",
     }
     res = graph_to_mermaid(data, 1, 1)
     
-    assert_ok(res.get("empty") is False, "empty flag should be False when nodes render")
-    assert_ok("graph TD" in (res.get("mermaid") or ""), "Mermaid should render isolated nodes")
+    assert_ok(res.get("empty") is True, "empty flag should be True when no connections")
+    assert_ok("no connections found" in (res.get("mermaid") or ""), "Mermaid should label isolated entry")
     
     print(f"{PASS} EC2: Zero-edge subgraph renders isolated nodes in Mermaid")
 

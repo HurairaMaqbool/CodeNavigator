@@ -7,6 +7,9 @@
 app/api/status_router.py
 ------------------------
 Public status page data (SLA-lite / uptime transparency).
+
+Does not expose whether optional integrations (Stripe, OIDC, GitHub App)
+are configured — that is internal operational detail.
 """
 from __future__ import annotations
 
@@ -22,7 +25,7 @@ router = APIRouter(prefix="/status", tags=["status"])
 
 @router.get("/public")
 def public_status() -> dict[str, Any]:
-    """Unauthenticated service status for customers and status pages."""
+    """Unauthenticated service health for customers and status pages."""
     from app.platform.db.postgres import check_connection as pg_ok
     from app.platform.db.connection import postgres_enabled
     from app.redis_client import ping_redis
@@ -30,28 +33,31 @@ def public_status() -> dict[str, Any]:
     chroma_ok = False
     try:
         from app.retrieval.vector_store import _get_client
+
         _get_client()
         chroma_ok = True
     except Exception:
-        pass
+        chroma_ok = False
+
+    redis_ok = ping_redis()
+    if postgres_enabled():
+        postgres_state = "operational" if pg_ok() else "degraded"
+    else:
+        postgres_state = "optional_unavailable"
 
     components = {
         "api": "operational",
         "chroma": "operational" if chroma_ok else "degraded",
-        "redis": "operational" if ping_redis() else "optional_unavailable",
-        "postgres": (
-            "operational" if postgres_enabled() and pg_ok() else
-            "not_configured" if not postgres_enabled() else "degraded"
-        ),
-        "stripe": "configured" if settings.STRIPE_SECRET_KEY else "not_configured",
-        "oidc": "configured" if settings.OIDC_CLIENT_ID else "not_configured",
-        "github_app": "configured" if settings.GITHUB_APP_ID else "not_configured",
+        "redis": "operational" if redis_ok else "optional_unavailable",
+        "postgres": postgres_state,
     }
     degraded = any(v == "degraded" for v in components.values())
+    env = (settings.ENVIRONMENT or "development").lower()
     return {
         "service": "CodeNavigator",
         "version": "2.0.0",
-        "environment": settings.ENVIRONMENT,
+        # Only expose coarse environment class — not internal feature flags.
+        "environment": "production" if env == "production" else "non_production",
         "overall": "degraded" if degraded else "operational",
         "components": components,
         "timestamp": datetime.now(timezone.utc).isoformat(),

@@ -48,9 +48,18 @@ def _get_model() -> SentenceTransformer:
         logger.info("loading_embedding_model", model_name=model_name)
         # Device is auto-selected by sentence-transformers (CUDA/MPS/CPU).
         # We don't hardcode it so it runs optimally on the deployment host.
-        _MODEL = SentenceTransformer(model_name)
-        logger.info("embedding_model_loaded", model_name=model_name)
+        try:
+            _MODEL = SentenceTransformer(model_name)
+            logger.info("embedding_model_loaded", model_name=model_name)
+        except Exception as exc:
+            logger.error("embedding_model_load_failed", model_name=model_name, error=str(exc))
+            raise RuntimeError(f"Failed to load embedding model: {exc}") from exc
     return _MODEL
+
+
+def get_model() -> SentenceTransformer:
+    """Return the global SentenceTransformer, initializing it if necessary."""
+    return _get_model()
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +69,7 @@ def _get_model() -> SentenceTransformer:
 import hashlib
 import shelve
 from pathlib import Path
+from typing import Any
 
 def _get_cache_path() -> Path:
     cache_dir = Path(settings.CHROMA_DB_PATH).parent / "embedding_cache"
@@ -91,10 +101,42 @@ def embed_batch(texts: Sequence[str]) -> list[list[float]]:
                 
         if uncached_texts:
             model = _get_model()
-            new_embeddings = model.encode(list(uncached_texts)).tolist()
+            new_embeddings = model.encode(list(uncached_texts), normalize_embeddings=True).tolist()
             for idx, emb, t_hash in zip(uncached_indices, new_embeddings, [text_hashes[i] for i in uncached_indices]):
                 results[idx] = emb
                 cache[t_hash] = emb
                 
     return results
+
+
+def embed_chunks(chunks: list[Any]) -> list[Any]:
+    """
+    Generate normalized embeddings for a list of Chunk objects and attach them
+    under the .vector attribute.
+    """
+    valid_chunks = []
+    valid_texts = []
+    for chunk in chunks:
+        txt = getattr(chunk, "text", getattr(chunk, "chunk_text", ""))
+        if not txt or not txt.strip():
+            logger.warning("empty_chunk_text_skipped", chunk_id=getattr(chunk, "fingerprint", "unknown"))
+            continue
+        valid_chunks.append(chunk)
+        valid_texts.append(txt)
+
+    if valid_texts:
+        vectors = embed_batch(valid_texts)
+        for chunk, vector in zip(valid_chunks, vectors):
+            chunk.vector = vector
+
+    return chunks
+
+
+def embed_query(text: str) -> list[float]:
+    """
+    Generate a normalized embedding vector for a raw query string.
+    """
+    if not text or not text.strip():
+        raise ValueError("Query text cannot be empty or whitespace")
+    return embed(text)
 

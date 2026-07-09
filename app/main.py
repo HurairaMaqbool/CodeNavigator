@@ -6,73 +6,137 @@
 """
 app/main.py
 -----------
-FastAPI application entry-point.
+FastAPI application entry-point — Module 2 (Layer 1: Configuration & Bootstrap).
 
-Module 2 additions:
-  - configure_logging() called once at startup (before middleware registration).
-  - RequestIDMiddleware: generates UUID4 per request, binds request_id + path
-    into structlog contextvars, echoes X-Request-ID response header.
-  - /health endpoint for liveness checks and middleware verification.
+Import order rule (enforced):
+  1. app/config.py settings singleton  ← validated before ANY other import
+  2. Logging configuration              ← must fire before any log call
+  3. Middleware, exception handlers, routers
 
-Later modules will add their own routers via app.include_router(…).
+Public API for tests and external wiring:
+  create_app()      → FastAPI   factory so tests build isolated instances
+  on_startup()      → None      warms embedding + reranker models (side effects only)
+  global_exception_handler(request, exc) → JSONResponse  (never leaks stack traces)
+
+The app singleton at module-level is the uvicorn target: app.main:app
 """
 
 from __future__ import annotations
 
 import os
 
-# Disable Chroma telemetry noise in local/dev runs.
+# ---------------------------------------------------------------------------
+# ① Chroma telemetry silencer — must run before chromadb is imported anywhere.
+#    This is a process-level env flag, not business config, so it precedes
+#    the settings import deliberately.
+# ---------------------------------------------------------------------------
 os.environ.setdefault("ANONYMIZED_TELEMETRY", "False")
 import app.chroma_client  # noqa: F401 — disables PostHog before any chromadb import
 
-from contextlib import asynccontextmanager
+# ---------------------------------------------------------------------------
+# ② CONFIG FIRST — the single mandatory prerequisite before everything else.
+#    If settings validation fails (bad env), the import raises immediately and
+#    the process exits before any router, model, or middleware is wired up.
+# ---------------------------------------------------------------------------
+from app.config import settings  # noqa: E402  (must come before all downstream imports)
 
+# ---------------------------------------------------------------------------
+# ③ LOGGING — configure structlog before any log call fires, including those
+#    inside lifespan/startup handlers or middleware constructors.
+# ---------------------------------------------------------------------------
+from app.observability.logging_config import configure_logging, logger  # noqa: E402
+
+configure_logging()
+
+# ---------------------------------------------------------------------------
+# ④ Standard library + third-party imports (safe now that config is valid)
+# ---------------------------------------------------------------------------
 import uuid
+from contextlib import asynccontextmanager
 from typing import Any
 
 import structlog
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
+
 from app.api.rate_limiter import limiter
 
-from app.observability.logging_config import configure_logging, logger
-from app.config import settings
 
-# ---------------------------------------------------------------------------
-# Logging must be configured before any log call, including any that fire
-# during module import or lifespan startup. Do it here, at the top, before
-# the app object is even created.
-# ---------------------------------------------------------------------------
-configure_logging()
+# ===========================================================================
+# MODEL WARM-UP
+# ===========================================================================
 
-# ---------------------------------------------------------------------------
-# Application instance
-# ---------------------------------------------------------------------------
+def on_startup() -> None:
+    """
+    Preload the embedding model and Cross-Encoder reranker into memory so
+    the very first real request is not slowed by a cold model initialisation.
 
-def _warm_models() -> None:
+    Spec contract
+    -------------
+    * Runs exactly once at process start, inside the FastAPI lifespan event.
+    * Runs in a background daemon thread so it does not block request
+      acceptance while models download/load.
+    * Any individual warm-up failure is logged as a WARNING — the process
+      continues serving requests (degraded search quality is preferable to
+      refusing all traffic).
+    * COST NOTE: both models are local HuggingFace models — zero Groq calls,
+      zero external API cost.
+
+    Forward-import note
+    -------------------
+    Modules #12 (embeddings.py) and #16 (reranker.py) are not yet built in
+    the current iteration of the build order. The private _get_model accessors
+    are the agreed public interface these modules will expose once built.
+    Until then the imports are wrapped in try/except so a missing module
+    never crashes startup.
+    """
+    # Embedding model warm-up (Module #12: app/retrieval/embeddings.py)
     try:
-        from app.retrieval.embeddings import _get_model as _get_embedder
+        from app.retrieval.embeddings import get_model as _get_embedder  # type: ignore[import]
         _get_embedder()
+        logger.info("embedding_model_warmed")
     except Exception as exc:
         logger.warning("embedding_warmup_failed", error=str(exc))
+
+    # Cross-Encoder reranker warm-up (Module #16: app/retrieval/reranker.py)
     try:
-        from app.retrieval.reranker import _get_model as _get_reranker
+        from app.retrieval.reranker import get_model as _get_reranker  # type: ignore[import]
         if settings.ENABLE_RERANKER:
             _get_reranker()
+            logger.info("reranker_model_warmed")
     except Exception as exc:
         logger.warning("reranker_warmup_failed", error=str(exc))
+
     logger.info("model_warmup_complete")
 
 
+# ===========================================================================
+# LIFESPAN (FastAPI 0.93+ async context manager — replaces on_event hooks)
+# ===========================================================================
+
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
+    """
+    Async lifespan context manager.
+
+    Startup sequence:
+    1. Optional: initialise PostgreSQL schema if DATABASE_URL is configured.
+    2. Kick off model warm-up in a daemon thread (non-blocking).
+
+    Shutdown: no explicit teardown needed for stateless in-process state.
+
+    Error handling: any startup step failure is caught individually and logged;
+    the process never enters a silently half-broken state where some resources
+    are ready and others are not without a trace in the logs.
+    """
     import threading
 
+    # Optional PostgreSQL schema bootstrap (platform tier only)
     if settings.DATABASE_URL:
         try:
             from app.platform.db.postgres import apply_schema, check_connection
@@ -84,51 +148,229 @@ async def _lifespan(_app: FastAPI):
         except Exception as exc:
             logger.warning("postgres_init_failed", error=str(exc))
 
+    # Model warm-up — daemon thread so startup doesn't block request acceptance
     logger.info("model_warmup_started")
-    threading.Thread(target=_warm_models, daemon=True).start()
+    threading.Thread(target=on_startup, daemon=True, name="model-warmup").start()
+
     yield
+    # No shutdown teardown required for current scope
 
 
-_configure_docs = not (
-    settings.ENVIRONMENT.lower() == "production" and settings.DISABLE_OPENAPI_IN_PRODUCTION
-)
+# ===========================================================================
+# APPLICATION FACTORY
+# ===========================================================================
 
-app = FastAPI(
-    title="CodeNavigator",
-    description="AI-powered codebase onboarding assistant.",
-    version="1.0.0",
-    docs_url="/docs" if _configure_docs else None,
-    redoc_url="/redoc" if _configure_docs else None,
-    openapi_url="/openapi.json" if _configure_docs else None,
-    lifespan=_lifespan,
-)
+def create_app(override_settings=None) -> FastAPI:
+    """
+    FastAPI application factory.
 
-# ---------------------------------------------------------------------------
-# Observability Init
-# ---------------------------------------------------------------------------
-from app.observability.tracing import setup_tracing
-setup_tracing()
+    Parameters
+    ----------
+    override_settings : Settings | None
+        When provided, replaces the process-wide ``settings`` singleton for
+        the duration of this app instance. Intended exclusively for test
+        isolation — never pass this in production code.
 
-if settings.SENTRY_DSN:
-    import sentry_sdk
-    sentry_sdk.init(
-        dsn=settings.SENTRY_DSN,
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
+    Returns
+    -------
+    FastAPI
+        A fully wired ASGI application with middleware, exception handlers,
+        and all routers registered. Ready to pass to uvicorn or an ASGI test
+        client.
+
+    Design note
+    -----------
+    Using a factory pattern (rather than a bare module-level ``app`` object)
+    means pytest can spin up a fresh, isolated FastAPI instance for each test
+    suite with a different ``override_settings``, preventing state leakage
+    between test runs.
+    """
+    _cfg = override_settings or settings
+
+    # Conditionally expose OpenAPI docs (hidden in production per spec)
+    _show_docs = not (
+        _cfg.ENVIRONMENT.lower() == "production" and _cfg.DISABLE_OPENAPI_IN_PRODUCTION
     )
-    logger.info("sentry_enabled")
 
-try:
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    FastAPIInstrumentor.instrument_app(app)
-except Exception:
-    pass
+    _app = FastAPI(
+        title="CodeNavigator",
+        description="AI-powered codebase onboarding assistant.",
+        version="1.0.0",
+        docs_url="/docs" if _show_docs else None,
+        redoc_url="/redoc" if _show_docs else None,
+        openapi_url="/openapi.json" if _show_docs else None,
+        lifespan=_lifespan,
+    )
 
-try:
-    from prometheus_fastapi_instrumentator import Instrumentator
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
-except Exception:
-    pass
+    # ── Observability ────────────────────────────────────────────────────────
+    from app.observability.tracing import setup_tracing
+    setup_tracing()
+
+    if _cfg.SENTRY_DSN:
+        try:
+            import sentry_sdk
+            sentry_sdk.init(
+                dsn=_cfg.SENTRY_DSN,
+                traces_sample_rate=1.0,
+                profiles_sample_rate=1.0,
+            )
+            logger.info("sentry_enabled")
+        except Exception as exc:
+            logger.warning("sentry_init_failed", error=str(exc))
+
+    try:
+        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+        FastAPIInstrumentor.instrument_app(_app)
+    except Exception:
+        pass  # OTel is optional — absence must never crash startup
+
+    try:
+        from prometheus_fastapi_instrumentator import Instrumentator
+        Instrumentator().instrument(_app).expose(_app, endpoint="/metrics")
+    except Exception:
+        pass  # Prometheus is optional
+
+    # ── Rate limiter ─────────────────────────────────────────────────────────
+    _app.state.limiter = limiter
+    _app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+    # ── CORS middleware ───────────────────────────────────────────────────────
+    _app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cfg.ALLOWED_ORIGINS,
+        allow_methods=["GET", "POST"],
+        allow_headers=["X-API-Key", "Content-Type", "X-Hub-Signature-256"],
+    )
+
+    # ── Request-ID middleware (added after CORS, applied inner-first) ─────────
+    _app.add_middleware(RequestIDMiddleware)
+
+    # ── Metrics auth middleware ───────────────────────────────────────────────
+    _app.add_middleware(MetricsAuthMiddleware)
+
+    # ── Exception handlers ───────────────────────────────────────────────────
+    _app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    _app.add_exception_handler(Exception, global_exception_handler)
+
+    # ── Routers (Module #3: app/api/router.py — forward import) ──────────────
+    # Each router is imported lazily so a missing module during incremental
+    # builds raises an ImportError with a clear message rather than a
+    # cryptic AttributeError at request time.
+    _register_routers(_app)
+
+    return _app
+
+
+def _register_routers(_app: FastAPI) -> None:
+    """
+    Mount all API and webhook routers onto the app instance.
+
+    Routers are imported here (not at module top-level) so each can be
+    independently stubbed or replaced during testing.
+    """
+    # Public status MUST mount before /status/{job_id} or "public" is captured as a job_id.
+    from app.api.status_router import router as status_router
+    _app.include_router(status_router)
+
+    # Core REST API (Module #3 — app/api/router.py)
+    from app.api.router import router as api_router
+    _app.include_router(api_router)
+
+    # Platform / billing / auth (higher-tier features)
+    from app.api.platform_router import router as platform_router
+    _app.include_router(platform_router)
+
+    from app.api.billing_router import router as billing_router
+    _app.include_router(billing_router)
+
+    from app.api.sso_router import router as sso_router
+    _app.include_router(sso_router)
+
+    from app.api.saml_router import router as saml_router
+    _app.include_router(saml_router)
+
+    # Webhook handlers
+    from app.webhook.github_webhook import router as webhook_router
+    _app.include_router(webhook_router)
+
+    from app.webhook.github_app_webhook import router as github_app_webhook_router
+    _app.include_router(github_app_webhook_router)
+
+    from app.webhook.stripe_webhook import router as stripe_webhook_router
+    _app.include_router(stripe_webhook_router)
+
+    # Built-in health endpoint
+    @_app.get("/health", tags=["observability"])
+    async def health() -> JSONResponse:
+        """
+        Liveness check.
+
+        Verification targets for Module 2:
+        - Response carries X-Request-ID header (set by RequestIDMiddleware).
+        - Each call produces a distinct request_id in stdout JSON logs.
+        - No stack traces leak in the response body.
+        """
+        logger.info("health_check")
+        return JSONResponse({"status": "ok", "version": _app.version})
+
+
+# ===========================================================================
+# MIDDLEWARE
+# ===========================================================================
+
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    """
+    Per-request UUID4 tracing middleware.
+
+    For every HTTP request:
+    1. Generate a fresh UUID4 as ``request_id``.
+    2. Bind ``request_id`` + ``path`` into structlog contextvars so every
+       log line emitted anywhere during that request carries both fields
+       automatically — no extra instrumentation at call sites.
+    3. Echo ``X-Request-ID`` on the response for client-side bug reporting.
+    4. Clear contextvars after the response to prevent context leaking into
+       the next request on the same asyncio task / thread.
+    """
+
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
+        request_id = str(uuid.uuid4())
+
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(
+            request_id=request_id,
+            path=request.url.path,
+        )
+
+        logger.info("request_started", method=request.method)
+
+        try:
+            response: Response = await call_next(request)
+        except Exception as exc:
+            logger.exception("unhandled_exception_in_middleware", error=str(exc))
+            detail = (
+                str(exc)
+                if settings.ENVIRONMENT.lower() != "production"
+                else "Internal server error"
+            )
+            response = JSONResponse(
+                status_code=500,
+                content={
+                    "error": "An unexpected server error occurred. Please check the logs.",
+                    "error_code": "INTERNAL_ERROR",
+                    "message": detail,
+                    "detail": detail,
+                },
+            )
+
+        logger.info(
+            "request_finished",
+            method=request.method,
+            status_code=response.status_code,
+        )
+
+        response.headers["X-Request-ID"] = request_id
+        structlog.contextvars.clear_contextvars()
+        return response
 
 
 class MetricsAuthMiddleware(BaseHTTPMiddleware):
@@ -143,174 +385,70 @@ class MetricsAuthMiddleware(BaseHTTPMiddleware):
             from app.platform.api_keys import resolve_api_key
             key = request.headers.get("X-API-Key", "")
             if resolve_api_key(key) is None:
-                return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+                return JSONResponse(
+                    status_code=403,
+                    content={"error": "Forbidden", "error_code": "FORBIDDEN", "message": "Valid API key required"},
+                )
         return await call_next(request)
 
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST"],
-    allow_headers=["X-API-Key", "Content-Type", "X-Hub-Signature-256"],
-)
+# ===========================================================================
+# EXCEPTION HANDLERS
+# ===========================================================================
 
-# ---------------------------------------------------------------------------
-# Request-ID middleware
-# ---------------------------------------------------------------------------
-
-class RequestIDMiddleware(BaseHTTPMiddleware):
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     """
-    For every incoming HTTP request:
+    Handle HTTP 4xx/5xx exceptions raised by FastAPI/Starlette route handlers.
 
-    1. Generate a fresh UUID4 as ``request_id``.
-    2. Bind ``request_id`` and ``path`` into structlog's contextvars so every
-       log line emitted *anywhere* during that request — ingestion, agent loop,
-       tool calls — automatically carries both fields with zero extra code at
-       the call site.
-    3. Clear the contextvars after the response is sent so leaked context
-       never bleeds into a subsequent request on the same thread/task.
-    4. Echo ``X-Request-ID`` on the response so callers can hand back the
-       exact ID when reporting a bug.
+    Returns a single {error, error_code, message} shape — consistent with the
+    global_exception_handler so clients never have to parse two different
+    error envelopes.
     """
-
-    async def dispatch(self, request: Request, call_next: Any) -> Response:
-        request_id = str(uuid.uuid4())
-
-        # Bind into structlog contextvars for this request's lifetime.
-        # structlog.contextvars.bind_contextvars is async-safe (uses
-        # contextvars.ContextVar under the hood, so each asyncio task gets
-        # its own copy — no cross-request leakage).
-        structlog.contextvars.clear_contextvars()
-        structlog.contextvars.bind_contextvars(
-            request_id=request_id,
-            path=request.url.path,
-        )
-
-        logger.info(
-            "request_started",
-            method=request.method,
-        )
-
-        try:
-            response: Response = await call_next(request)
-        except Exception as exc:
-            from fastapi.exceptions import HTTPException as FastAPIHTTPException
-            from starlette.exceptions import HTTPException as StarletteHTTPException
-            if isinstance(exc, (FastAPIHTTPException, StarletteHTTPException)):
-                response = JSONResponse(
-                    status_code=exc.status_code,
-                    content={"error": exc.detail, "code": "HTTP_ERROR", "detail": exc.detail}
-                )
-            else:
-                logger.exception("unhandled_exception", error=str(exc))
-                detail = str(exc) if settings.ENVIRONMENT.lower() != "production" else "Internal server error"
-                response = JSONResponse(
-                    status_code=500,
-                    content={
-                        "error": "An unexpected server error occurred. Please check the logs.",
-                        "code": "INTERNAL_ERROR",
-                        "detail": detail,
-                    },
-                )
-
-        logger.info(
-            "request_finished",
-            method=request.method,
-            status_code=response.status_code,
-        )
-
-        # Echo the ID so clients can quote it in bug reports.
-        response.headers["X-Request-ID"] = request_id
-
-        # Clean up — prevents context leaking to the next request if the
-        # event loop reuses the same task for a different connection.
-        structlog.contextvars.clear_contextvars()
-
-        return response
-
-
-
-
-app.add_middleware(RequestIDMiddleware)
-app.add_middleware(MetricsAuthMiddleware)
-
-
-# ---------------------------------------------------------------------------
-# Global Exception Handler
-# ---------------------------------------------------------------------------
-
-from starlette.exceptions import HTTPException as StarletteHTTPException
-
-@app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "error": exc.detail,
-            "detail": exc.detail
-        }
+            "error_code": f"HTTP_{exc.status_code}",
+            "message": str(exc.detail),
+            "detail": exc.detail,
+        },
     )
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    import structlog
-    log = structlog.get_logger()
-    
-    log.exception("unhandled_exception", error=str(exc))
+
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """
+    Catch-all handler for unhandled exceptions that escape route handlers.
+
+    Spec requirements
+    -----------------
+    * Never leak a stack trace to the client response.
+    * Log the full trace server-side, bound to the current request_id.
+    * Return a single {error, error_code, message} JSON envelope so the
+      API surface is consistent regardless of exception type.
+    """
+    # Full trace goes to the log, never to the HTTP response
+    logger.exception("unhandled_exception", error=str(exc))
+
     ctx = structlog.contextvars.get_contextvars()
     req_id = ctx.get("request_id", "unknown")
-    
+
     return JSONResponse(
         status_code=500,
         content={
-            "error": "Internal server error",
-            "request_id": req_id
-        }
+            "error": "An unexpected server error occurred. Please check the logs.",
+            "error_code": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred. Please quote the request_id when reporting.",
+            "detail": str(exc),
+            "request_id": req_id,
+        },
     )
 
-# ---------------------------------------------------------------------------
-# Routes — specific paths before parameterized /status/{job_id}
-# ---------------------------------------------------------------------------
 
-from app.api.status_router import router as status_router
-app.include_router(status_router)
+# ===========================================================================
+# MODULE-LEVEL APP SINGLETON
+# ===========================================================================
 
-from app.api.router import router as api_router
-app.include_router(api_router)
-
-from app.api.platform_router import router as platform_router
-app.include_router(platform_router)
-
-from app.api.billing_router import router as billing_router
-app.include_router(billing_router)
-
-from app.api.sso_router import router as sso_router
-app.include_router(sso_router)
-
-from app.webhook.stripe_webhook import router as stripe_webhook_router
-app.include_router(stripe_webhook_router)
-
-from app.webhook.github_app_webhook import router as github_app_webhook_router
-app.include_router(github_app_webhook_router)
-
-from app.webhook.github_webhook import router as webhook_router
-app.include_router(webhook_router)
-
-from app.api.saml_router import router as saml_router
-app.include_router(saml_router)
-
-
-@app.get("/health", tags=["observability"])
-async def health() -> JSONResponse:
-    """
-    Liveness check.
-
-    Also serves as the manual verification target for Module 2:
-    - The stdout JSON log should include ``request_id`` and ``path``.
-    - The response should carry the ``X-Request-ID`` header.
-    - Each call should produce a *distinct* ``request_id``.
-    """
-    logger.info("health_check")
-    return JSONResponse({"status": "ok", "version": app.version})
+# This is the uvicorn target: uvicorn app.main:app
+# It is also importable by tests that want the pre-built singleton rather
+# than constructing a fresh app via create_app().
+app: FastAPI = create_app()

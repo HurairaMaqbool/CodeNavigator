@@ -22,6 +22,11 @@ def test_public_status():
     body = resp.json()
     assert body["overall"] in ("operational", "degraded")
     assert "components" in body
+    # Public surface must not leak optional integration config flags.
+    for secret_key in ("stripe", "oidc", "github_app"):
+        assert secret_key not in body["components"]
+    assert set(body["components"].keys()) >= {"api", "chroma", "redis", "postgres"}
+    assert body["environment"] in ("production", "non_production")
 
 
 def test_stripe_price_ids_from_env(monkeypatch):

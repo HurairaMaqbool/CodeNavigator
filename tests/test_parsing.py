@@ -287,5 +287,117 @@ class TestChunkingProcess(unittest.TestCase):
         self.assertEqual(len(chunks), 0)
 
 
+class TestModule10Parsers(unittest.TestCase):
+    def test_go_fallback_parsing(self):
+        content = """package main
+import "fmt"
+import (
+    "os"
+    "time"
+)
+type User struct {
+    Name string
+}
+func main() {
+    fmt.Println("hello")
+}
+func (u *User) String() string {
+    return u.Name
+}
+"""
+        parsed = parse_file("main.go", content, "go")
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.language, "go")
+        self.assertEqual(len(parsed.imports), 3)
+        self.assertEqual(parsed.imports[0].module, "fmt")
+        self.assertEqual(parsed.imports[1].module, "os")
+        self.assertEqual(parsed.imports[2].module, "time")
+        
+        self.assertEqual(len(parsed.classes), 1)
+        self.assertEqual(parsed.classes[0].name, "User")
+        
+        self.assertEqual(len(parsed.functions), 2)
+        self.assertEqual(parsed.functions[0].name, "main")
+        self.assertEqual(parsed.functions[1].name, "String")
+
+    def test_java_fallback_parsing(self):
+        content = """package com.example;
+import java.util.List;
+import java.util.ArrayList;
+
+class App {
+    public static void main(String[] args) {
+        System.out.println("Hello");
+    }
+}
+interface Service {
+    void process();
+}
+"""
+        parsed = parse_file("App.java", content, "java")
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.language, "java")
+        self.assertEqual(len(parsed.imports), 2)
+        self.assertEqual(parsed.imports[0].module, "java.util.List")
+        self.assertEqual(parsed.imports[1].module, "java.util.ArrayList")
+        
+        self.assertEqual(len(parsed.classes), 2)
+        self.assertEqual(parsed.classes[0].name, "App")
+        self.assertEqual(parsed.classes[1].name, "Service")
+        
+        self.assertEqual(len(parsed.functions), 1)
+        self.assertEqual(parsed.functions[0].name, "main")
+
+    def test_rust_fallback_parsing(self):
+        content = """use std::collections::HashMap;
+use std::io;
+
+struct Config {
+    port: u16,
+}
+enum Option<T> {
+    Some(T),
+    None,
+}
+fn run() -> io::Result<()> {
+    Ok(())
+}
+pub fn main() {}
+"""
+        parsed = parse_file("main.rs", content, "rust")
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.language, "rust")
+        self.assertEqual(len(parsed.imports), 2)
+        self.assertEqual(parsed.imports[0].module, "std::collections::HashMap")
+        self.assertEqual(parsed.imports[1].module, "std::io")
+        
+        self.assertEqual(len(parsed.classes), 2)
+        self.assertEqual(parsed.classes[0].name, "Config")
+        self.assertEqual(parsed.classes[1].name, "Option<T>")
+        
+        self.assertEqual(len(parsed.functions), 2)
+        self.assertEqual(parsed.functions[0].name, "run")
+        self.assertEqual(parsed.functions[1].name, "main")
+
+    def test_extract_definitions(self):
+        from app.parsing.tree_sitter_parser import extract_definitions
+        content = "def hello():\n    pass\n"
+        parsed = parse_file("test.py", content, "python")
+        self.assertIsNotNone(parsed)
+        
+        # Test passing ParsedFile
+        defs1 = extract_definitions(parsed)
+        self.assertEqual(len(defs1), 1)
+        self.assertEqual(defs1[0]["name"], "hello")
+        self.assertEqual(defs1[0]["type"], "function")
+        self.assertEqual(defs1[0]["start_line"], 1)
+        self.assertEqual(defs1[0]["end_line"], 2)
+
+    def test_unsupported_language_fails_loudly(self):
+        # file_filter doesn't allow .txt so trying to parse it with autodetect should fail loudly
+        with self.assertRaises(ValueError):
+            parse_file("notes.txt", "some text")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

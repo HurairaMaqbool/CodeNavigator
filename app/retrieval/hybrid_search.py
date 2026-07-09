@@ -279,3 +279,123 @@ def search_code(
     )
 
     return final_list
+
+
+# ---------------------------------------------------------------------------
+# Module #15 Additions: search and deduplicate
+# ---------------------------------------------------------------------------
+
+import concurrent.futures
+import app.retrieval.vector_store as vector_store
+import app.retrieval.bm25_store as bm25_store
+from app.retrieval.embeddings import embed_query
+
+
+def deduplicate(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Deduplicate a list of search hits using stable chunk identity: (file_path, start_line, end_line).
+    If duplicate identities are found, keeps the one with the highest score.
+    """
+    seen = {}
+    for hit in results:
+        meta = hit.get("chunk_metadata") or {}
+        key = (meta.get("file_path", ""), meta.get("start_line", 0), meta.get("end_line", 0))
+        if key not in seen or hit["score"] > seen[key]["score"]:
+            seen[key] = hit
+    return list(seen.values())
+
+
+def search(
+    repo_id: str,
+    query_text: str,
+    top_k: int = 20,
+) -> list[dict[str, Any]]:
+    """
+    Execute hybrid search over repo_id, returning up to top_k RRF-fused results.
+
+    Forward Interface Contract:
+    --------------------------
+    Returns a list of dicts:
+        [
+            {
+                "chunk": str,  # The document/chunk text
+                "chunk_metadata": {
+                    "file_path": str,
+                    "display_path": str,
+                    "function_name": str,
+                    "start_line": int,
+                    "end_line": int,
+                    "type": str,
+                    "language": str,
+                    "fingerprint": str,
+                },
+                "score": float  # The fused RRF score
+            },
+            ...
+        ]
+    This is directly consumable by app/retrieval/reranker.py.
+    """
+    log = logger.bind(repo_id=repo_id, query=query_text)
+    
+    # 1. Embed query
+    try:
+        query_vector = embed_query(query_text)
+    except Exception as exc:
+        log.warning("hybrid_search_query_embedding_failed", error=str(exc))
+        return []
+
+    # 2. Query vector and bm25 stores concurrently
+    # Fetch a candidate pool of max(top_k * 2, 50) to prevent starvation in RRF ranking
+    n_candidates = max(top_k * 2, 50)
+
+    v_results = []
+    b_results = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        future_v = executor.submit(vector_store.query, repo_id, query_vector, n_candidates)
+        future_b = executor.submit(bm25_store.query, repo_id, query_text, n_candidates)
+        try:
+            v_results = future_v.result()
+        except Exception as exc:
+            log.warning("vector_store_query_failed", error=str(exc))
+        try:
+            b_results = future_b.result()
+        except Exception as exc:
+            log.warning("bm25_store_query_failed", error=str(exc))
+
+    if not v_results and not b_results:
+        return []
+
+    # 3. Apply Reciprocal Rank Fusion (RRF) with constant k=60
+    k = 60.0
+    fused: dict[tuple[str, int, int], dict[str, Any]] = {}
+
+    def _merge_rrf(hit: dict[str, Any], rank: int):
+        meta = hit.get("chunk_metadata") or {}
+        key = (meta.get("file_path", ""), meta.get("start_line", 0), meta.get("end_line", 0))
+        rrf_contrib = 1.0 / (k + rank)
+        
+        if key not in fused:
+            fused[key] = {
+                "chunk": hit.get("chunk", ""),
+                "chunk_metadata": meta,
+                "score": rrf_contrib
+            }
+        else:
+            fused[key]["score"] += rrf_contrib
+
+    # RRF rank is 1-indexed
+    for idx, hit in enumerate(v_results):
+        _merge_rrf(hit, idx + 1)
+
+    for idx, hit in enumerate(b_results):
+        _merge_rrf(hit, idx + 1)
+
+    # 4. Sort and return top_k
+    sorted_fused = sorted(
+        fused.values(),
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    return sorted_fused[:top_k]

@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from app.observability.logging_config import logger
@@ -78,10 +79,30 @@ try:
     _TS_LANGUAGE = Language(_tstypescript.language_typescript())
     _TSX_LANGUAGE = Language(_tstypescript.language_tsx())
 
+    try:
+        import tree_sitter_go as _tsgo
+        _GO_LANGUAGE: Language | None = Language(_tsgo.language())
+    except (ImportError, AttributeError):
+        _GO_LANGUAGE = None
+
+    try:
+        import tree_sitter_java as _tsjava
+        _JAVA_LANGUAGE: Language | None = Language(_tsjava.language())
+    except (ImportError, AttributeError):
+        _JAVA_LANGUAGE = None
+
+    try:
+        import tree_sitter_rust as _tsrust
+        _RUST_LANGUAGE: Language | None = Language(_tsrust.language())
+    except (ImportError, AttributeError):
+        _RUST_LANGUAGE = None
+
     _PARSERS_AVAILABLE = True
 except ImportError as _e:
     _IMPORT_ERROR_MSG = str(_e)
     Language = Parser = None  # type: ignore[assignment, misc]
+    _PY_LANGUAGE = _JS_LANGUAGE = _TS_LANGUAGE = _TSX_LANGUAGE = None
+    _GO_LANGUAGE = _JAVA_LANGUAGE = _RUST_LANGUAGE = None
 
 
 # ---------------------------------------------------------------------------
@@ -641,46 +662,74 @@ def get_parser(language: str) -> Parser | None:
         ts_language = _TS_LANGUAGE
     elif language == "tsx":
         ts_language = _TSX_LANGUAGE
+    elif language == "go":
+        ts_language = _GO_LANGUAGE
+    elif language == "java":
+        ts_language = _JAVA_LANGUAGE
+    elif language == "rust":
+        ts_language = _RUST_LANGUAGE
     else:
         return None
         
+    if ts_language is None:
+        return None
+
     parser = Parser(ts_language)
     return parser
 
 def parse_file(
     file_path: str,
-    content: str,
-    language: str,
+    content: str | None = None,
+    language: str | None = None,
 ) -> ParsedFile | None:
     """
-    Parse *content* using the tree-sitter grammar for *language*.
+    Parse *content* (or read from *file_path*) using the tree-sitter grammar for *language*.
 
     Parameters
     ----------
     file_path:
-        The ``display_path`` from Module 4's :class:`~app.ingestion.file_filter.FileRecord`.
-        Used as-is in the returned :class:`ParsedFile` so downstream modules
-        can reference the original file path.
+        The file path to be parsed.
     content:
-        Decoded file content from Module 4's :func:`~app.ingestion.file_filter.safe_decode`.
+        Optional file content. If None, read from file_path.
     language:
-        One of ``"python"``, ``"javascript"``, ``"typescript"``, ``"tsx"``.
+        Optional language name. If None, auto-detected from file extension.
 
     Returns
     -------
     ParsedFile | None
-        ``None`` on any parse failure — the caller must handle this and
-        continue with remaining files.
-
-    Raises
-    ------
-    ParserUnavailableError
-        If tree-sitter packages are not installed (run ``pip install -r requirements.txt``).
+        None on any parse failure.
     """
+    if content is None:
+        try:
+            content = Path(file_path).read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            logger.warning("file_read_failed_for_parser", file_path=file_path, error=str(exc))
+            return None
+
+    if language is None:
+        suffix = Path(file_path).suffix.lower()
+        ext_map = {
+            ".py": "python",
+            ".js": "javascript",
+            ".jsx": "javascript",
+            ".ts": "typescript",
+            ".tsx": "tsx",
+            ".go": "go",
+            ".java": "java",
+            ".rs": "rust",
+        }
+        language = ext_map.get(suffix)
+        if not language:
+            # Treat as filter-layer bug and fail loudly in tests
+            raise ValueError(f"Unsupported language extension: {suffix}")
+
     log = logger.bind(file_path=file_path, language=language)
 
     parser = get_parser(language)
     if not parser:
+        if language in ("go", "java", "rust"):
+            log.info("falling_back_to_regex_parser", language=language)
+            return _parse_file_regex_fallback(file_path, content, language)
         log.warning("unsupported_language_for_parser", language=language)
         return None
 
@@ -702,6 +751,7 @@ def parse_file(
             functions=functions,
             classes=classes,
             imports=imports,
+            normalized_path=file_path.lower(),
         )
         log.debug(
             "file_parsed",
@@ -720,3 +770,226 @@ def parse_file(
             exc_info=True,
         )
         return None
+
+
+def _parse_file_regex_fallback(file_path: str, content: str, language: str) -> ParsedFile:
+    """
+    Regex-based fallback parser for Go, Java, and Rust when tree-sitter grammars are missing.
+    Ensures these files can be chunked and indexed rather than skipped entirely.
+    """
+    functions: list[ParsedFunction] = []
+    classes: list[ParsedClass] = []
+    imports: list[ParsedImport] = []
+
+    lines = content.splitlines()
+    
+    # 1. Imports
+    if language == "go":
+        in_import_block = False
+        for idx, line in enumerate(lines):
+            line_num = idx + 1
+            line_stripped = line.strip()
+            if line_stripped.startswith('import "') or line_stripped.startswith("import `"):
+                parts = line_stripped.split()
+                if len(parts) >= 2:
+                    mod = parts[1].strip('"`')
+                    imports.append(ParsedImport(module=mod, names=[], line=line_num))
+            elif line_stripped == "import (":
+                in_import_block = True
+            elif in_import_block and line_stripped == ")":
+                in_import_block = False
+            elif in_import_block:
+                mod = line_stripped.strip('"`')
+                if mod:
+                    imports.append(ParsedImport(module=mod, names=[], line=line_num))
+    elif language == "java":
+        for idx, line in enumerate(lines):
+            line_num = idx + 1
+            line_stripped = line.strip()
+            if line_stripped.startswith("import ") and line_stripped.endswith(";"):
+                parts = line_stripped[7:-1].strip().split()
+                if parts:
+                    imports.append(ParsedImport(module=parts[-1], names=[], line=line_num))
+    elif language == "rust":
+        for idx, line in enumerate(lines):
+            line_num = idx + 1
+            line_stripped = line.strip()
+            if line_stripped.startswith("use ") and line_stripped.endswith(";"):
+                mod = line_stripped[4:-1].strip()
+                imports.append(ParsedImport(module=mod, names=[], line=line_num))
+
+    # 2. Functions & Classes / Structs
+    if language == "go":
+        for idx, line in enumerate(lines):
+            line_num = idx + 1
+            line_stripped = line.strip()
+            if line_stripped.startswith("func "):
+                parts = line_stripped.split()
+                # Find the part that has '(' which is the start of parameters
+                for idx_p, part in enumerate(parts):
+                    if idx_p > 0 and "(" in part:
+                        name = part.split("(")[0]
+                        if name:
+                            functions.append(ParsedFunction(name=name, start_line=line_num, end_line=line_num + 5))
+                            break
+                        else:
+                            # Receiver matched, e.g. parts = ["func", "(u", "*User)", "String()"]
+                            if idx_p + 2 < len(parts):
+                                # check parts[idx_p + 1] or parts[idx_p + 2]
+                                next_part = parts[idx_p + 1]
+                                if ")" in next_part:
+                                    if idx_p + 2 < len(parts):
+                                        next_part = parts[idx_p + 2]
+                                name2 = next_part.split("(")[0]
+                                if name2:
+                                    functions.append(ParsedFunction(name=name2, start_line=line_num, end_line=line_num + 5))
+                                    break
+            elif "struct" in line_stripped and line_stripped.startswith("type "):
+                parts = line_stripped.split()
+                if len(parts) >= 2:
+                    classes.append(ParsedClass(name=parts[1], start_line=line_num, end_line=line_num + 10))
+
+    elif language == "java":
+        for idx, line in enumerate(lines):
+            line_num = idx + 1
+            line_stripped = line.strip()
+            if "class " in line_stripped or "interface " in line_stripped:
+                parts = line_stripped.split()
+                try:
+                    idx_cls = parts.index("class")
+                    name = parts[idx_cls + 1].split("{")[0]
+                    classes.append(ParsedClass(name=name, start_line=line_num, end_line=line_num + 15))
+                except ValueError:
+                    try:
+                        idx_inf = parts.index("interface")
+                        name = parts[idx_inf + 1].split("{")[0]
+                        classes.append(ParsedClass(name=name, start_line=line_num, end_line=line_num + 15))
+                    except ValueError:
+                        pass
+            elif "(" in line_stripped and ")" in line_stripped and "new " not in line_stripped and "=" not in line_stripped and not line_stripped.endswith(";"):
+                parts = line_stripped.split("(")
+                before_paren = parts[0].strip().split()
+                if before_paren and not any(k in before_paren for k in ["if", "for", "while", "switch", "return"]):
+                    name = before_paren[-1]
+                    if name.isidentifier():
+                        functions.append(ParsedFunction(name=name, start_line=line_num, end_line=line_num + 10))
+
+    elif language == "rust":
+        for idx, line in enumerate(lines):
+            line_num = idx + 1
+            line_stripped = line.strip()
+            if line_stripped.startswith("fn ") or (line_stripped.startswith("pub fn ") or line_stripped.startswith("pub(crate) fn ")):
+                parts = line_stripped.split("fn ")
+                if len(parts) >= 2:
+                    name = parts[1].split("(")[0].strip()
+                    if name.isidentifier():
+                        functions.append(ParsedFunction(name=name, start_line=line_num, end_line=line_num + 8))
+            elif "struct " in line_stripped or "enum " in line_stripped:
+                parts = line_stripped.split()
+                try:
+                    idx_struct = parts.index("struct")
+                    name = parts[idx_struct + 1].split("{")[0].split(";")[0]
+                    classes.append(ParsedClass(name=name, start_line=line_num, end_line=line_num + 12))
+                except ValueError:
+                    try:
+                        idx_enum = parts.index("enum")
+                        name = parts[idx_enum + 1].split("{")[0]
+                        classes.append(ParsedClass(name=name, start_line=line_num, end_line=line_num + 12))
+                    except ValueError:
+                        pass
+
+    return ParsedFile(
+        file_path=file_path,
+        language=language,
+        functions=functions,
+        classes=classes,
+        imports=imports,
+        normalized_path=file_path.lower(),
+    )
+
+
+def extract_definitions(ast: Any) -> list[dict[str, Any]]:
+    """
+    Walk the AST and collect function, class, and import nodes.
+    Returns list of dicts with: {name, type, start_line, end_line}.
+    Line numbers are 1-indexed.
+    """
+    if isinstance(ast, ParsedFile):
+        # Allow passing the parsed output representation directly
+        results = []
+        for f in ast.functions:
+            results.append({"name": f.name, "type": "function", "start_line": f.start_line, "end_line": f.end_line})
+        for c in ast.classes:
+            results.append({"name": c.name, "type": "class", "start_line": c.start_line, "end_line": c.end_line})
+        for i in ast.imports:
+            results.append({"name": i.module, "type": "import", "start_line": i.line, "end_line": i.line})
+        return results
+
+    if hasattr(ast, "root_node"):
+        root = ast.root_node
+    else:
+        root = ast
+
+    if not root:
+        return []
+
+    # Map node types to normalized type
+    type_map = {
+        # Python
+        "function_definition": "function",
+        "class_definition": "class",
+        "import_statement": "import",
+        "import_from_statement": "import",
+        # Javascript / TypeScript
+        "function_declaration": "function",
+        "generator_function_declaration": "function",
+        "arrow_function": "function",
+        "method_definition": "function",
+        "class_declaration": "class",
+        "class": "class",
+        # Go
+        "function_declaration": "function",
+        "method_declaration": "function",
+        "import_declaration": "import",
+        # Java
+        "method_declaration": "function",
+        "class_declaration": "class",
+        "interface_declaration": "class",
+        "import_declaration": "import",
+        # Rust
+        "function_item": "function",
+        "struct_item": "class",
+        "enum_item": "class",
+        "impl_item": "class",
+        "use_declaration": "import",
+    }
+
+    results = []
+
+    def walk(node):
+        ntype = node.type
+        if ntype in type_map:
+            name = ""
+            name_node = node.child_by_field_name("name")
+            if name_node:
+                name = _node_text(name_node)
+            else:
+                for child in node.named_children:
+                    if child.type == "identifier":
+                        name = _node_text(child)
+                        break
+            if not name:
+                name = ntype
+
+            results.append({
+                "name": name,
+                "type": type_map[ntype],
+                "start_line": node.start_point[0] + 1,
+                "end_line": node.end_point[0] + 1,
+            })
+        
+        for child in node.children:
+            walk(child)
+
+    walk(root)
+    return results

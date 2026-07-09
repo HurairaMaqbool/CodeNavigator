@@ -261,6 +261,10 @@ class CodeChunk:
     fingerprint: str          # sha256(normalized_path + function_name + masked_body)
     class_name: str | None    # set only when type == "method"
 
+    @property
+    def token_count(self) -> int:
+        return get_token_count(self.chunk_text)
+
 
 # ---------------------------------------------------------------------------
 # Internal chunk builders
@@ -562,5 +566,542 @@ def chunk_all_files(
         total_chunks=len(all_chunks),
         total_files=sum(1 for p in parsed_files if p is not None),
     )
+
+    return all_chunks
+
+
+# ---------------------------------------------------------------------------
+# Module #11 Additions: AST-aware chunking and packing
+# ---------------------------------------------------------------------------
+
+class Chunk:
+    """
+    A chunk object returned by chunk_definitions.
+    Conforms to the data contract: {text, metadata, token_count}.
+    """
+    def __init__(self, text: str, metadata: dict[str, Any], token_count: int):
+        self.text = text
+        self.metadata = metadata
+        self.token_count = token_count
+
+    # Properties to support downstream compatibility with CodeChunk
+    @property
+    def chunk_text(self) -> str:
+        return self.text
+
+    @property
+    def fingerprint(self) -> str:
+        return self.metadata.get("fingerprint", "")
+
+    @property
+    def file_path(self) -> str:
+        return self.metadata.get("file_path", "")
+
+    @property
+    def display_path(self) -> str:
+        return self.metadata.get("display_path", "")
+
+    @property
+    def normalized_path(self) -> str:
+        return self.metadata.get("normalized_path", "")
+
+    @property
+    def function_name(self) -> str:
+        return self.metadata.get("function_name", "")
+
+    @property
+    def start_line(self) -> int:
+        return self.metadata.get("start_line", 0)
+
+    @property
+    def end_line(self) -> int:
+        return self.metadata.get("end_line", 0)
+
+    @property
+    def type(self) -> str:
+        return self.metadata.get("type", "")
+
+    @property
+    def language(self) -> str:
+        return self.metadata.get("language", "")
+
+    @property
+    def class_name(self) -> str | None:
+        return self.metadata.get("class_name", None)
+
+
+def get_token_count(text: str) -> int:
+    """
+    Count tokens using tiktoken (cl100k_base).
+    Falls back to whitespace/character approximation if tiktoken is not available.
+    """
+    try:
+        import tiktoken
+        encoding = tiktoken.get_encoding("cl100k_base")
+        return len(encoding.encode(text))
+    except Exception:
+        return max(1, len(text) // 4)
+
+
+def build_chunk_metadata(chunk: Any) -> dict[str, Any]:
+    """
+    Build metadata for a chunk to be cited back to the user as a source.
+    """
+    if hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
+        metadata = chunk.metadata
+    else:
+        metadata = {}
+
+    file_path = getattr(chunk, "file_path", metadata.get("file_path", ""))
+    start_line = getattr(chunk, "start_line", metadata.get("start_line", 0))
+    end_line = getattr(chunk, "end_line", metadata.get("end_line", 0))
+    language = getattr(chunk, "language", metadata.get("language", ""))
+
+    definition_names = metadata.get("definition_names", [])
+    if not definition_names:
+        func_name = getattr(chunk, "function_name", metadata.get("function_name", ""))
+        if func_name:
+            definition_names = [func_name]
+
+    return {
+        "file_path": file_path,
+        "start_line": start_line,
+        "end_line": end_line,
+        "definition_names": definition_names,
+        "language": language,
+    }
+
+
+def get_statement_segments(
+    file_path: str,
+    content: str,
+    start_line: int,
+    end_line: int,
+    language: str,
+    parent_name: str,
+    parent_type: str,
+) -> list[dict[str, Any]]:
+    """
+    Extract child statements within the given range using tree-sitter AST.
+    """
+    from app.parsing.tree_sitter_parser import get_parser
+    parser = None
+    try:
+        parser = get_parser(language)
+    except Exception:
+        pass
+    if not parser:
+        return []
+
+    try:
+        tree = parser.parse(content.encode("utf-8"))
+    except Exception:
+        return []
+
+    target_node = None
+    min_diff = 999999
+
+    def find_target(node):
+        nonlocal target_node, min_diff
+        s = node.start_point[0] + 1
+        e = node.end_point[0] + 1
+        if s <= end_line and e >= start_line:
+            if node.type in (
+                "function_definition", "class_definition", 
+                "function_declaration", "class_declaration", 
+                "method_definition", "struct_item", "impl_item"
+            ):
+                diff = abs(s - start_line)
+                if diff < min_diff:
+                    min_diff = diff
+                    target_node = node
+            for child in node.named_children:
+                find_target(child)
+
+    find_target(tree.root_node)
+    if not target_node:
+        return []
+
+    block_node = None
+    for child in target_node.named_children:
+        if child.type in ("block", "statement_block"):
+            block_node = child
+            break
+
+    if not block_node:
+        block_node = target_node
+
+    statement_nodes = [c for c in block_node.named_children]
+    if not statement_nodes:
+        return []
+
+    statement_nodes.sort(key=lambda n: n.start_point[0])
+
+    segments = []
+    lines = content.splitlines()
+
+    current_line = start_line
+    for node in statement_nodes:
+        n_start = node.start_point[0] + 1
+        n_end = node.end_point[0] + 1
+
+        if n_start > current_line:
+            gap_text = "\n".join(lines[current_line - 1 : n_start - 1])
+            if gap_text.strip():
+                segments.append({
+                    "text": gap_text,
+                    "start_line": current_line,
+                    "end_line": n_start - 1,
+                    "names": [parent_name],
+                    "type": parent_type,
+                })
+
+        clamped_end = min(n_end, end_line)
+        if clamped_end >= n_start:
+            node_text = "\n".join(lines[n_start - 1 : clamped_end])
+            segments.append({
+                "text": node_text,
+                "start_line": n_start,
+                "end_line": clamped_end,
+                "names": [parent_name],
+                "type": parent_type,
+            })
+            current_line = clamped_end + 1
+
+    if current_line <= end_line:
+        epilogue_text = "\n".join(lines[current_line - 1 : end_line])
+        if epilogue_text.strip():
+            segments.append({
+                "text": epilogue_text,
+                "start_line": current_line,
+                "end_line": end_line,
+                "names": [parent_name],
+                "type": parent_type,
+            })
+
+    return segments
+
+
+def split_non_def_segment(
+    text: str,
+    start: int,
+    end: int,
+    parent_def: dict[str, Any],
+    max_tokens: int,
+    file_content: str | None,
+) -> list[dict[str, Any]]:
+    """
+    Split a segment of code that is not a definition.
+    """
+    if get_token_count(text) <= max_tokens:
+        return [{
+            "text": text,
+            "start_line": start,
+            "end_line": end,
+            "names": [parent_def["name"]],
+            "type": parent_def["type"],
+            "class_name": parent_def.get("class_name"),
+        }]
+
+    language = parent_def.get("language", "")
+    if file_content and language:
+        stmt_segs = get_statement_segments(
+            file_path=parent_def.get("file_path", ""),
+            content=file_content,
+            start_line=start,
+            end_line=end,
+            language=language,
+            parent_name=parent_def["name"],
+            parent_type=parent_def["type"],
+        )
+        if stmt_segs:
+            res = []
+            for seg in stmt_segs:
+                if get_token_count(seg["text"]) <= max_tokens:
+                    res.append({
+                        "text": seg["text"],
+                        "start_line": seg["start_line"],
+                        "end_line": seg["end_line"],
+                        "names": seg["names"],
+                        "type": seg["type"],
+                        "class_name": parent_def.get("class_name"),
+                    })
+                else:
+                    pieces = split_with_overlap(seg["text"], max_tokens=max_tokens)
+                    lines_in_piece = max(1, (seg["end_line"] - seg["start_line"] + 1) // len(pieces))
+                    for idx, piece in enumerate(pieces):
+                        p_start = seg["start_line"] + idx * lines_in_piece
+                        p_end = min(seg["end_line"], p_start + lines_in_piece - 1) if idx < len(pieces) - 1 else seg["end_line"]
+                        res.append({
+                            "text": piece,
+                            "start_line": p_start,
+                            "end_line": p_end,
+                            "names": seg["names"],
+                            "type": seg["type"],
+                            "class_name": parent_def.get("class_name"),
+                        })
+            return res
+
+    pieces = split_with_overlap(text, max_tokens=max_tokens)
+    res = []
+    lines_in_piece = max(1, (end - start + 1) // len(pieces))
+    for idx, piece in enumerate(pieces):
+        p_start = start + idx * lines_in_piece
+        p_end = min(end, p_start + lines_in_piece - 1) if idx < len(pieces) - 1 else end
+        res.append({
+            "text": piece,
+            "start_line": p_start,
+            "end_line": p_end,
+            "names": [parent_def["name"]],
+            "type": parent_def["type"],
+            "class_name": parent_def.get("class_name"),
+        })
+    return res
+
+
+def split_definition_recursive(
+    d: dict[str, Any],
+    all_definitions: list[dict[str, Any]],
+    max_tokens: int,
+    file_content: str | None,
+) -> list[dict[str, Any]]:
+    """
+    Recursively split a definition into smaller segments.
+    """
+    d_start = d.get("start_line", 0)
+    d_end = d.get("end_line", 0)
+
+    children = []
+    for other in all_definitions:
+        s = other.get("start_line", 0)
+        e = other.get("end_line", 0)
+        if s >= d_start and e <= d_end and other is not d:
+            children.append(other)
+
+    children.sort(key=lambda x: x.get("start_line", 0))
+
+    direct_children = []
+    for c in children:
+        is_nested = False
+        for c2 in children:
+            if c2 is c:
+                continue
+            if c2.get("start_line", 0) <= c.get("start_line", 0) and c2.get("end_line", 0) >= c.get("end_line", 0):
+                if c2.get("end_line", 0) - c2.get("start_line", 0) > c.get("end_line", 0) - c.get("start_line", 0):
+                    is_nested = True
+                    break
+                elif c2.get("end_line", 0) - c2.get("start_line", 0) == c.get("end_line", 0) - c.get("start_line", 0):
+                    if children.index(c2) < children.index(c):
+                        is_nested = True
+                        break
+        if not is_nested:
+            direct_children.append(c)
+
+    if direct_children:
+        parent_lines = d["raw_text"].splitlines(keepends=True)
+        segments = []
+        current_line = d_start
+
+        for c in direct_children:
+            c_start = c["start_line"]
+            c_end = c["end_line"]
+
+            if c_start > current_line:
+                gap_lines = parent_lines[current_line - d_start : c_start - d_start]
+                gap_text = "".join(gap_lines)
+                if gap_text.strip():
+                    segments.extend(split_non_def_segment(gap_text, current_line, c_start - 1, d, max_tokens, file_content))
+
+            segments.extend(split_definition_recursive(c, all_definitions, max_tokens, file_content))
+            current_line = c_end + 1
+
+        if d_end >= current_line:
+            gap_lines = parent_lines[current_line - d_start : d_end - d_start + 1]
+            gap_text = "".join(gap_lines)
+            if gap_text.strip():
+                segments.extend(split_non_def_segment(gap_text, current_line, d_end, d, max_tokens, file_content))
+
+        return segments
+
+    # No direct children definitions, try statement splitting
+    language = d.get("language", "")
+    if file_content and language:
+        stmt_segs = get_statement_segments(
+            file_path=d.get("file_path", ""),
+            content=file_content,
+            start_line=d_start,
+            end_line=d_end,
+            language=language,
+            parent_name=d["name"],
+            parent_type=d["type"],
+        )
+        if stmt_segs:
+            res = []
+            for seg in stmt_segs:
+                if get_token_count(seg["text"]) <= max_tokens:
+                    res.append({
+                        "text": seg["text"],
+                        "start_line": seg["start_line"],
+                        "end_line": seg["end_line"],
+                        "names": seg["names"],
+                        "type": seg["type"],
+                        "class_name": d.get("class_name"),
+                    })
+                else:
+                    res.extend(split_non_def_segment(seg["text"], seg["start_line"], seg["end_line"], d, max_tokens, file_content))
+            return res
+
+    pieces = split_with_overlap(d["raw_text"], max_tokens=max_tokens)
+    res = []
+    lines_in_piece = max(1, (d_end - d_start + 1) // len(pieces))
+    for idx, piece in enumerate(pieces):
+        p_start = d_start + idx * lines_in_piece
+        p_end = min(d_end, p_start + lines_in_piece - 1) if idx < len(pieces) - 1 else d_end
+        res.append({
+            "text": piece,
+            "start_line": p_start,
+            "end_line": p_end,
+            "names": [d["name"]],
+            "type": d["type"],
+            "class_name": d.get("class_name"),
+        })
+    return res
+
+
+def create_chunk_from_pack(pack: list[dict[str, Any]], file_key: tuple[str, str, str, str]) -> Chunk:
+    """
+    Combine multiple packed segments into a single Chunk.
+    """
+    file_path, display_path, normalized_path, language = file_key
+
+    joined_text = "\n".join(seg["text"] for seg in pack)
+
+    names = []
+    for seg in pack:
+        for name in seg.get("names", []):
+            if name and name not in names:
+                names.append(name)
+
+    joined_names = ", ".join(names)
+    header = f"# File: {display_path} | Definitions: {joined_names}"
+    full_text = f"{header}\n{joined_text}"
+
+    masked_text = mask_secrets(full_text)
+    fp = compute_fingerprint(normalized_path, joined_names, masked_text)
+
+    start_line = min(seg["start_line"] for seg in pack)
+    end_line = max(seg["end_line"] for seg in pack)
+
+    if len(pack) == 1:
+        chunk_type = pack[0].get("type", "function")
+    else:
+        chunk_type = "packed"
+
+    metadata = {
+        "file_path": file_path,
+        "display_path": display_path,
+        "normalized_path": normalized_path,
+        "function_name": joined_names,
+        "start_line": start_line,
+        "end_line": end_line,
+        "type": chunk_type,
+        "language": language,
+        "fingerprint": fp,
+        "class_name": pack[0].get("class_name") if len(pack) == 1 else None,
+        "definition_names": names,
+    }
+
+    token_count = get_token_count(masked_text)
+
+    return Chunk(text=masked_text, metadata=metadata, token_count=token_count)
+
+
+def chunk_definitions(definitions: list[dict[str, Any]], max_tokens: int | None = None) -> list[Chunk]:
+    """
+    AST-aware chunking: Groups small adjacent definitions into one chunk up to max_tokens,
+    and splits oversized definitions at child AST / statement boundaries.
+    """
+    if max_tokens is None:
+        max_tokens = settings.CHUNK_MAX_TOKENS
+
+    valid_defs = []
+    for d in definitions:
+        name = d.get("name")
+        dtype = d.get("type")
+        raw_text = d.get("raw_text")
+        if not raw_text or not raw_text.strip():
+            logger.warning("unparseable_or_empty_definition", name=name, type=dtype)
+            continue
+        valid_defs.append(d)
+
+    from collections import defaultdict
+    files_groups = defaultdict(list)
+    for d in valid_defs:
+        fpath = d.get("file_path") or ""
+        dpath = d.get("display_path") or ""
+        npath = d.get("normalized_path") or ""
+        lang = d.get("language") or ""
+        files_groups[(fpath, dpath, npath, lang)].append(d)
+
+    all_chunks = []
+    for (fpath, dpath, npath, lang), file_defs in files_groups.items():
+        content = None
+        if fpath:
+            try:
+                content = Path(fpath).read_text(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+        file_defs.sort(key=lambda x: x.get("start_line", 0))
+
+        top_levels = []
+        for d in file_defs:
+            is_child = False
+            for other in file_defs:
+                if other is d:
+                    continue
+                if (other.get("start_line", 0) <= d.get("start_line", 0) and
+                    other.get("end_line", 0) >= d.get("end_line", 0)):
+                    if other.get("end_line", 0) - other.get("start_line", 0) > d.get("end_line", 0) - d.get("start_line", 0):
+                        is_child = True
+                        break
+                    elif other.get("end_line", 0) - other.get("start_line", 0) == d.get("end_line", 0) - d.get("start_line", 0):
+                        if file_defs.index(other) < file_defs.index(d):
+                            is_child = True
+                            break
+            if not is_child:
+                top_levels.append(d)
+
+        segments = []
+        for tl in top_levels:
+            tl["file_path"] = tl.get("file_path") or fpath
+            tl["display_path"] = tl.get("display_path") or dpath
+            tl["normalized_path"] = tl.get("normalized_path") or npath
+            tl["language"] = tl.get("language") or lang
+
+            segments.extend(split_definition_recursive(tl, file_defs, max_tokens, content))
+
+        packed_chunks = []
+        current_pack = []
+        current_tokens = 0
+
+        file_key = (fpath, dpath, npath, lang)
+
+        for seg in segments:
+            seg_text = seg["text"]
+            seg_tokens = get_token_count(seg_text)
+
+            if current_pack and current_tokens + seg_tokens > max_tokens:
+                packed_chunks.append(create_chunk_from_pack(current_pack, file_key))
+                current_pack = [seg]
+                current_tokens = seg_tokens
+            else:
+                current_pack.append(seg)
+                current_tokens += seg_tokens
+
+        if current_pack:
+            packed_chunks.append(create_chunk_from_pack(current_pack, file_key))
+
+        all_chunks.extend(packed_chunks)
 
     return all_chunks

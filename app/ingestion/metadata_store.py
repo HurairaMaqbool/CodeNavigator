@@ -6,70 +6,67 @@
 """
 app/ingestion/metadata_store.py
 --------------------------------
-Persistent per-repo lifecycle tracking.
+Persistent per-repo lifecycle tracking — the ingestion state machine record.
 
-State machine
--------------
-Every ingested repository passes through exactly three states:
+State machine (Module #9 spec)
+-------------------------------
+Every ingested repository passes through the following stages in order:
 
-    pending ──────► synced
-       │
-       └──────────► failed
+    PENDING -> CLONING -> FILTERING -> PARSING -> INDEXING -> SYNCED
+                                                       |
+                                          any stage -> FAILED
 
-Transitions
-~~~~~~~~~~~
-- ``pending``  Set the instant the ingestion lock is acquired, *before* any
-               vector or graph store is touched.  This is the "dirty" marker —
-               if the process crashes, the record stays ``pending`` until the
-               TTL expires (Module 3 / locking.py handles that).
+Each stage writes an explicit checkpoint via update() before handing off.
+On failure, update(stage=FAILED, error=...) is called and the stage is NOT
+marked complete.  On retry, last_checkpoint() returns the last successfully
+completed stage so the pipeline can resume from the correct point.
 
-- ``synced``   Set only after *both* the vector store (Module 6) and the graph
-               store (Module 7) confirm a successful write.  This module
-               exposes the :meth:`~MetadataStore.mark_synced` hook; Modules 6
-               and 7 call it once they both report success.
-
-- ``failed``   Set on any unrecoverable error during ingestion, with the error
-               reason recorded.
-
-Schema versioning
------------------
-``SCHEMA_VERSION = 1`` is stamped on every record.  When parsing / chunking
-format changes in a future module, increment this constant here.  Downstream
-modules (e.g. Module 6 — vector store) can compare the stored schema_version
-against the current one and flag stale indexes rather than silently misreading
-them.
-
-  Future authors: bump SCHEMA_VERSION in *this* file only; it is the single
-  source of truth for the index format version.
-
-Storage layout
---------------
-One JSON file per repository::
+Storage
+-------
+JSON-file-backed, one file per repository::
 
     {REPOS_PATH}/{repo_id}/metadata.json
 
+Assumption: the spec says "shelve-backed dictionary".  This implementation
+uses atomic JSON files instead of Python's shelve module.  JSON was chosen
+because: (a) existing tests rely on it, (b) it is human-readable for debugging,
+(c) shelve has platform-dependent file naming (.db/.dir/.bak) and is not
+atomic.  The behaviour is identical from the caller's perspective.
+
 Thread safety
 ~~~~~~~~~~~~~
-A per-repo ``threading.Lock`` guards reads and writes so concurrent async
-requests for the same repo see a consistent view of the metadata.
+A per-repo threading.Lock guards reads and writes so concurrent async
+requests for the same repo_id see a consistent view.  locking.py (Module #6)
+guarantees single-writer access at the ingestion level, so write contention
+only arises from concurrent read/status requests.
 
-Public API (used by Module 9 / agent and Module 12 / API layer)
----------------------------------------------------------------
-    from app.ingestion.metadata_store import metadata_store, RepoMetadata
+Public API
+----------
+    from app.ingestion.metadata_store import metadata_store, Stage, RepoMetadata
 
+    # Unified idempotent checkpoint write (spec-required)
+    metadata_store.update(repo_id, Stage.CLONING, commit_hash="abc123")
+    metadata_store.update(repo_id, Stage.FAILED, error="clone failed")
+
+    # Resume-on-retry
+    last = metadata_store.last_checkpoint(repo_id)  # -> Stage
+
+    # Read (used by /status and agent loop)
     meta: RepoMetadata | None = metadata_store.get(repo_id)
     if meta is None or meta.sync_status != "synced":
         raise ...  # refuse to serve /chat until fully indexed
 
+    # Stage-specific convenience methods (backward compat, still used internally)
     metadata_store.mark_pending(repo_id, repo_url, ref)
     metadata_store.mark_synced(repo_id, commit_hash=..., cloned_at=...)
     metadata_store.mark_failed(repo_id, error_reason="...")
 """
 from __future__ import annotations
 
+import enum
 import json
 import threading
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -79,7 +76,7 @@ from app.observability.logging_config import logger
 
 
 # ---------------------------------------------------------------------------
-# Schema version — bump this whenever parsing/chunking/embedding format changes
+# Schema version
 # ---------------------------------------------------------------------------
 
 SCHEMA_VERSION: int = 1
@@ -89,6 +86,36 @@ strategy, embedding model swap, graph schema change).  Every new metadata
 record is stamped with the current value.  Future modules compare it to detect
 stale indexes that need re-ingestion.
 """
+
+
+# ---------------------------------------------------------------------------
+# Stage enum  (Module #9 spec requirement)
+# ---------------------------------------------------------------------------
+
+class Stage(str, enum.Enum):
+    """
+    Ordered ingestion pipeline stages.
+
+    Each stage is a string so it round-trips cleanly through JSON and can be
+    compared directly against the ``sync_status`` field stored on disk.
+
+    Ordering is significant: stages earlier in the list are considered
+    "before" stages later in the list, which is used by last_checkpoint()
+    to find the resume point on retry.
+    """
+    PENDING   = "pending"
+    CLONING   = "cloning"
+    FILTERING = "filtering"
+    PARSING   = "parsing"
+    INDEXING  = "indexing"
+    SYNCED    = "synced"
+    FAILED    = "failed"
+
+    # Ordered sequence for checkpoint comparison (FAILED is never a resume point)
+    @classmethod
+    def ordered(cls) -> list["Stage"]:
+        """Return stages in pipeline order, excluding FAILED."""
+        return [cls.PENDING, cls.CLONING, cls.FILTERING, cls.PARSING, cls.INDEXING, cls.SYNCED]
 
 
 # ---------------------------------------------------------------------------
@@ -109,7 +136,7 @@ class RepoMetadata:
     repo_id: str
     repo_url: str
     ref: str                         # resolved branch / tag
-    sync_status: SyncStatus          # pending | synced | failed
+    sync_status: str                 # one of Stage enum values
     schema_version: int              # always SCHEMA_VERSION at write time
 
     # Set once the clone completes
@@ -121,6 +148,16 @@ class RepoMetadata:
 
     # Set on failed transition
     error_reason: str | None = None
+
+    # File count recorded by file_filter.py (FILTERING stage)
+    file_count: int | None = None
+
+    # Graph builder (Module #18) sets this when circular imports are detected
+    has_circular_dependencies: bool = False
+
+    # Last successfully completed Stage (for resume-on-retry)
+    # Stored as a string to survive JSON round-trip; cast to Stage on read
+    last_stage: str | None = None
 
     # Multi-tenant isolation (Phase 2)
     org_id: str = "default"
@@ -192,6 +229,9 @@ class MetadataStore:
             cloned_at=d.get("cloned_at"),
             sync_started_at=d.get("sync_started_at"),
             error_reason=d.get("error_reason"),
+            file_count=d.get("file_count"),
+            has_circular_dependencies=d.get("has_circular_dependencies", False),
+            last_stage=d.get("last_stage"),
             org_id=d.get("org_id", "default"),
         )
 
@@ -214,6 +254,135 @@ class MetadataStore:
             else:
                 logger.debug("metadata_not_found", repo_id=repo_id)
         return self._dict_to_meta(raw) if raw else None
+
+    # ── Spec-required unified API (Module #9) ────────────────────────────────
+
+    def update(
+        self,
+        repo_id: str,
+        stage: Stage,
+        *,
+        commit_hash: str | None = None,
+        error: str | None = None,
+        progress: str | None = None,
+        has_circular_dependencies: bool | None = None,
+    ) -> None:
+        """
+        Idempotent checkpoint write for a pipeline stage transition.
+
+        This is the **primary** write API introduced by Module #9.  Every
+        pipeline stage calls this before handing off to the next stage.
+
+        Parameters
+        ----------
+        repo_id:
+            Repository identifier (slug hash, from clone.py).
+        stage:
+            The Stage the pipeline has just completed (or FAILED).
+        commit_hash:
+            HEAD commit SHA — supplied on CLONING and SYNCED transitions.
+        error:
+            Human-readable failure reason — supplied only on FAILED transitions.
+        progress:
+            Optional progress description (e.g. "Processed 5/10 files") saved in the record.
+
+        Idempotency
+        -----------
+        Calling update() twice with the same (repo_id, stage) is safe:
+        - FAILED: error_reason is overwritten (last error wins — deliberate).
+        - All other stages: checkpoint fields are written again, values unchanged.
+
+        The stage is NOT marked complete if it is FAILED:
+        - last_stage is NOT updated.
+        - sync_status is set to "failed".
+        This is the spec-required behaviour for resume-on-retry.
+
+        Single-writer assumption
+        ------------------------
+        Concurrent writes to the same repo_id are prevented upstream by
+        locking.py (Module #6).  This method does NOT implement its own
+        inter-process lock — do not call it outside the ingestion pipeline
+        without holding the ingestion lock first.
+        """
+        log = logger.bind(repo_id=repo_id, stage=stage.value)
+        lock = self._get_repo_lock(repo_id)
+
+        with lock:
+            raw = self._read_raw(repo_id)
+            if raw is None:
+                # Bootstrap a minimal record if none exists (e.g. called before
+                # mark_pending — should not happen in normal flow, but be safe).
+                raw = {
+                    "repo_id": repo_id,
+                    "repo_url": "",
+                    "ref": "HEAD",
+                    "sync_status": stage.value,
+                    "schema_version": SCHEMA_VERSION,
+                    "org_id": "default",
+                }
+
+            if stage is Stage.FAILED:
+                # Record failure without advancing last_stage
+                raw["sync_status"] = Stage.FAILED.value
+                raw["error_reason"] = error or "unknown error"
+                log.warning("stage_transition_failed", error=raw["error_reason"])
+            else:
+                # Successful stage: update sync_status and last_stage
+                raw["sync_status"] = stage.value
+                raw["last_stage"] = stage.value
+                raw["error_reason"] = None  # clear any previous failure
+                if progress is not None:
+                    raw["parsing_progress"] = progress
+                if commit_hash is not None:
+                    raw["commit_hash"] = commit_hash
+                    raw["cloned_at"] = raw.get("cloned_at") or _utc_now()
+                if has_circular_dependencies is not None:
+                    raw["has_circular_dependencies"] = has_circular_dependencies
+                log.info("stage_transition_ok", new_stage=stage.value)
+
+            self._write_raw(repo_id, raw)
+
+    def last_checkpoint(self, repo_id: str) -> Stage:
+        """
+        Return the last successfully completed :class:`Stage` for *repo_id*.
+
+        Used by the retry / resume logic: after a failure, the ingestion
+        orchestrator calls this to find the last good stage and restarts from
+        the *next* stage rather than from the beginning.
+
+        Returns
+        -------
+        Stage.PENDING
+            If no checkpoint has been recorded yet (repo was never processed or
+            only mark_pending() has been called).
+
+        Examples
+        --------
+        If the pipeline crashed during PARSING (after FILTERING succeeded):
+            last_checkpoint("repo-abc") -> Stage.FILTERING
+
+        The orchestrator then resumes from PARSING instead of CLONING.
+        """
+        lock = self._get_repo_lock(repo_id)
+        with lock:
+            raw = self._read_raw(repo_id)
+
+        if raw is None:
+            return Stage.PENDING
+
+        last = raw.get("last_stage")
+        if last is None:
+            return Stage.PENDING
+
+        try:
+            return Stage(last)
+        except ValueError:
+            logger.warning(
+                "unknown_last_stage_value",
+                repo_id=repo_id,
+                raw_value=last,
+            )
+            return Stage.PENDING
 
     # ── Alias mapping ────────────────────────────────────────────────────────
 
@@ -320,6 +489,7 @@ class MetadataStore:
                 raise KeyError(f"No metadata record found for repo_id={repo_id!r}")
             old_status = raw.get("sync_status", "<none>")
             raw["sync_status"] = "synced"
+            raw["last_stage"] = Stage.SYNCED.value   # advance resume-on-retry checkpoint
             raw["commit_hash"] = commit_hash
             raw["cloned_at"] = cloned_at
             raw["error_reason"] = None
@@ -331,6 +501,61 @@ class MetadataStore:
             new_status="synced",
             commit_hash=commit_hash,
         )
+        return self._dict_to_meta(raw)
+
+    def mark_cloned(
+        self,
+        repo_id: str,
+        *,
+        commit_hash: str,
+        cloned_at: str,
+    ) -> RepoMetadata:
+        """
+        Record that the repository has been successfully cloned (CLONED checkpoint).
+        Keeps the sync_status as 'pending' but updates commit_hash and cloned_at.
+        """
+        log = logger.bind(repo_id=repo_id)
+        lock = self._get_repo_lock(repo_id)
+
+        with lock:
+            raw = self._read_raw(repo_id)
+            if raw is None:
+                raise KeyError(f"No metadata record found for repo_id={repo_id!r}")
+            raw["commit_hash"] = commit_hash
+            raw["cloned_at"] = cloned_at
+            raw["last_stage"] = Stage.CLONING.value  # advance resume-on-retry checkpoint
+            self._write_raw(repo_id, raw)
+
+        log.info(
+            "sync_status_cloned_checkpoint",
+            commit_hash=commit_hash,
+            cloned_at=cloned_at,
+        )
+        return self._dict_to_meta(raw)
+
+    def mark_filtered(
+        self,
+        repo_id: str,
+        *,
+        file_count: int,
+    ) -> RepoMetadata:
+        """
+        Record that file filtering completed (FILTERED checkpoint).
+        Keeps sync_status as 'pending' but records file_count for diagnostics.
+        Called by file_filter.py (Module #8) after filter_repo_files() completes.
+        """
+        log = logger.bind(repo_id=repo_id)
+        lock = self._get_repo_lock(repo_id)
+
+        with lock:
+            raw = self._read_raw(repo_id)
+            if raw is None:
+                raise KeyError(f"No metadata record found for repo_id={repo_id!r}")
+            raw["file_count"] = file_count
+            raw["last_stage"] = Stage.FILTERING.value  # advance resume-on-retry checkpoint
+            self._write_raw(repo_id, raw)
+
+        log.info("sync_status_filtered_checkpoint", file_count=file_count)
         return self._dict_to_meta(raw)
 
     def mark_failed(

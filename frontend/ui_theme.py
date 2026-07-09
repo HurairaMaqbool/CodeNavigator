@@ -6,7 +6,8 @@
 """
 frontend/ui_theme.py
 --------------------
-Professional UI styling and reusable layout components for Streamlit.
+Layout helpers for Streamlit. Visual tokens come from ``frontend/theme.py``
+(Module #34) — this module must not hardcode palette/font/spacing values.
 """
 from __future__ import annotations
 
@@ -14,167 +15,32 @@ from typing import Any
 
 import streamlit as st
 
+try:
+    from theme import active_theme, apply_branding, boot_theme
+except ImportError:
+    from frontend.theme import active_theme, apply_branding, boot_theme
+
 APP_VERSION = "1.0.0"
 
 
 def inject_styles() -> None:
-    st.markdown(
-        """
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-#MainMenu, footer, header { visibility: hidden; height: 0; }
-
-.block-container {
-    padding-top: 1.25rem;
-    padding-bottom: 2rem;
-    max-width: 1200px;
-}
-
-.hero-banner {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #6366f1 100%);
-    border-radius: 16px;
-    padding: 1.75rem 2rem;
-    margin-bottom: 1.5rem;
-    color: white;
-    box-shadow: 0 10px 40px rgba(79, 70, 229, 0.25);
-}
-
-.hero-banner h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 0.35rem 0;
-    color: white !important;
-}
-
-.hero-banner p {
-    margin: 0;
-    opacity: 0.92;
-    font-size: 0.95rem;
-}
-
-.stat-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-    height: 100%;
-}
-
-.stat-card .label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    margin-bottom: 0.25rem;
-}
-
-.stat-card .value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #0f172a;
-}
-
-.pill {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.pill-success { background: #dcfce7; color: #166534; }
-.pill-warning { background: #fef3c7; color: #92400e; }
-.pill-error   { background: #fee2e2; color: #991b1b; }
-.pill-info    { background: #e0e7ff; color: #3730a3; }
-
-.section-header {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #0f172a;
-    margin: 1.5rem 0 0.75rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.ingest-panel {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 1.25rem 1.5rem;
-    margin-bottom: 1.25rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-}
-
-.sidebar-brand {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #6366f1;
-    margin-bottom: 0.5rem;
-}
-
-div[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-}
-
-div[data-testid="stSidebar"] .stMarkdown,
-div[data-testid="stSidebar"] label,
-div[data-testid="stSidebar"] .stCaption {
-    color: #e2e8f0 !important;
-}
-
-div[data-testid="stSidebar"] .stButton > button {
-    width: 100%;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-.stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    background: transparent;
-}
-
-.stTabs [data-baseweb="tab"] {
-    border-radius: 8px 8px 0 0;
-    padding: 0.6rem 1.25rem;
-    font-weight: 600;
-}
-
-.chat-empty {
-    text-align: center;
-    padding: 3rem 2rem;
-    color: #64748b;
-    border: 2px dashed #cbd5e1;
-    border-radius: 14px;
-    background: #f8fafc;
-}
-
-.footer-bar {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 0.8rem;
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e2e8f0;
-}
-</style>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Boot the shared design system once (dark default) and inject CSS."""
+    boot_theme()
 
 
 def render_hero() -> None:
+    theme = active_theme()
     st.markdown(
-        """
+        f"""
 <div class="hero-banner">
-  <h1>CodeNavigator</h1>
-  <p>Ingest any GitHub repo · Ask architecture questions · Run RAGAS eval · Golden-set CI</p>
+  <div class="hero-brand"><span class="mark">{theme.brand_logo}</span>{theme.brand_name}</div>
+  <p class="hero-tagline">{theme.brand_tagline}. Ask architecture questions, explore call graphs, and verify answers with citations.</p>
+  <div class="hero-cta-row">
+    <span class="hero-chip">Hybrid RAG</span>
+    <span class="hero-chip">Live agent steps</span>
+    <span class="hero-chip">Voice in / out</span>
+    <span class="hero-chip">RAGAS eval</span>
+  </div>
 </div>
         """,
         unsafe_allow_html=True,
@@ -219,9 +85,17 @@ def render_backend_status() -> bool:
         online = False
 
     if online:
-        st.sidebar.markdown("🟢 **Backend online**", help=api_client.API_BASE_URL)
+        st.sidebar.markdown(
+            f'<span class="pill pill-success">● API online</span>',
+            unsafe_allow_html=True,
+        )
+        st.sidebar.caption(api_client.API_BASE_URL)
     else:
-        st.sidebar.error("Backend offline — start uvicorn on :8000")
+        st.sidebar.markdown(
+            '<span class="pill pill-error">● API offline</span>',
+            unsafe_allow_html=True,
+        )
+        st.sidebar.caption("Start uvicorn on :8000")
     return online
 
 
@@ -232,11 +106,32 @@ def section_header(title: str, caption: str | None = None) -> None:
 
 
 def render_empty_chat() -> None:
+    open_tag = apply_branding("chat")
+    st.markdown(
+        f"""
+{open_tag}
+<div class="chat-empty">
+  <p class="empty-title">Ask anything about this codebase</p>
+  <p class="empty-hint">Every answer cites real files and lines. Start with a prompt below — or type your own.</p>
+  <div class="prompt-row">
+    <span class="prompt-chip">How does Session.send work?</span>
+    <span class="prompt-chip">Where is HTTPBasicAuth defined?</span>
+    <span class="prompt-chip">What calls the login flow?</span>
+  </div>
+</div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_empty_workspace() -> None:
+    """Shown before a repository is ingested — one clear next step."""
     st.markdown(
         """
-<div class="chat-empty">
-  <p style="font-size:1.1rem;margin-bottom:0.5rem;">💬 Ask anything about the codebase</p>
-  <p style="font-size:0.9rem;margin:0;">Try: <em>How does Session.send work?</em> or <em>Where is HTTPBasicAuth defined?</em></p>
+<div class="chat-empty" style="margin-top:0.5rem">
+  <p class="empty-title">Ingest a repository to begin</p>
+  <p class="empty-hint">Paste a public GitHub URL above, or pick a Quick start repo in the sidebar. Chat, diagrams, and eval unlock once indexing finishes.</p>
 </div>
         """,
         unsafe_allow_html=True,
@@ -246,14 +141,21 @@ def render_empty_chat() -> None:
 def render_ragas_chart(scores: dict[str, Any]) -> None:
     import pandas as pd
 
+    try:
+        from theme import active_theme
+    except ImportError:
+        from frontend.theme import active_theme
+
     if not scores:
         return
     df = pd.DataFrame(list(scores.items()), columns=["Metric", "Score"])
-    st.bar_chart(df.set_index("Metric"), color="#6366f1", height=280)
+    accent = active_theme().colors.teal_400
+    st.bar_chart(df.set_index("Metric"), color=accent, height=280)
 
 
 def render_footer() -> None:
+    theme = active_theme()
     st.markdown(
-        f'<div class="footer-bar">CodeNavigator v{APP_VERSION} · Hybrid RAG · Groq/Ollama</div>',
+        f'<div class="footer-bar">{theme.brand_name} v{APP_VERSION} · Hybrid RAG · Citations · Eval</div>',
         unsafe_allow_html=True,
     )

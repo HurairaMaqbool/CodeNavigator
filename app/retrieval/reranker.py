@@ -206,3 +206,125 @@ def cross_encoder_rerank(
     logger.info("reranker_completed", time_ms=round(elapsed * 1000, 2), hits=len(results))
     
     return results
+
+
+# ---------------------------------------------------------------------------
+# Module #16 Additions: get_model and rerank
+# ---------------------------------------------------------------------------
+
+def get_model() -> Any:
+    """
+    Return the global cached CrossEncoder singleton instance,
+    loading it once on first call (warm-up).
+    """
+    return _get_model()
+
+
+def rerank(
+    query_text: str,
+    results: list[dict[str, Any]],
+    top_n: int = 5,
+) -> list[dict[str, Any]]:
+    """
+    Re-score query-chunk pairs in results using a local Cross-Encoder.
+
+    Forward Interface Contract:
+    --------------------------
+    Returns a list of dicts:
+        [
+            {
+                "chunk": str,
+                "chunk_metadata": {
+                    "file_path": str,
+                    "display_path": str,
+                    "function_name": str,
+                    "start_line": int,
+                    "end_line": int,
+                    "type": str,
+                    "language": str,
+                    "fingerprint": str,
+                },
+                "score": float  # The cross-encoder score
+            },
+            ...
+        ]
+    This is ready to be consumed by app/agent/loop.py.
+    """
+    if not results:
+        return []
+
+    if not settings.ENABLE_RERANKER:
+        # Graceful degradation: return input candidates with their existing scores, sorted
+        out = [{
+            "chunk": r["chunk"],
+            "chunk_metadata": r["chunk_metadata"],
+            "score": r["score"]
+        } for r in results]
+        out.sort(key=lambda x: x["score"], reverse=True)
+        return out[:top_n]
+
+    start_time = time.perf_counter()
+    model = get_model()
+
+    # Concatenate query and candidate text pairs for single-batch prediction
+    pairs = [[query_text, r["chunk"]] for r in results]
+    scores = model.predict(pairs, show_progress_bar=False)
+
+    if hasattr(scores, "tolist"):
+        scores = scores.tolist()
+    elif not isinstance(scores, list):
+        scores = [float(scores)]
+
+    if not scores:
+        return [{
+            "chunk": r["chunk"],
+            "chunk_metadata": r["chunk_metadata"],
+            "score": 0.5
+        } for r in results][:top_n]
+
+    import math
+    import os
+
+    def _sigmoid(x: float) -> float:
+        if x >= 0:
+            z = math.exp(-x)
+            return 1.0 / (1.0 + z)
+        z = math.exp(x)
+        return z / (1.0 + z)
+
+    norm_scores = [_sigmoid(float(s)) for s in scores]
+    now = time.time()
+    fused_results = []
+
+    for r, score in zip(results, norm_scores):
+        meta = r["chunk_metadata"]
+        file_path = meta.get("file_path")
+        recency_boost = 0.0
+        
+        if file_path and os.path.exists(file_path):
+            try:
+                mtime = os.path.getmtime(file_path)
+                age_days = (now - mtime) / 86400.0
+                if age_days < 7.0:
+                    recency_boost = 0.10 * (1.0 - (age_days / 7.0))
+            except Exception:
+                pass
+
+        final_score = min(
+            1.0,
+            max(0.0, score + recency_boost + _source_path_boost(meta) + _definition_boost(query_text, meta, r["chunk"])),
+        )
+
+        fused_results.append({
+            "chunk": r["chunk"],
+            "chunk_metadata": meta,
+            "score": final_score
+        })
+
+    # Sort descending by Cross-Encoder score
+    fused_results.sort(key=lambda x: x["score"], reverse=True)
+    
+    elapsed = time.perf_counter() - start_time
+    logger.info("rerank_function_completed", time_ms=round(elapsed * 1000, 2), hits=len(fused_results))
+
+    return fused_results[:top_n]

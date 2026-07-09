@@ -19,6 +19,7 @@ from dataclasses import dataclass
 import json
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, Request, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, HttpUrl, Field
 
 from app.config import settings
@@ -41,9 +42,9 @@ from app.graph.builder import build_graph
 from app.graph.queries import get_subgraph
 
 # Chat & Diagram
-from app.agent.semantic_cache import answer_question_cached
+from app.agent.loop import run
 from app.agent.llm_client import RateLimitError
-from app.diagrams.mermaid_generator import graph_to_mermaid
+from app.diagrams.mermaid_generator import graph_to_mermaid, generate_mermaid
 from app.api.rate_limiter import limiter
 
 router = APIRouter()
@@ -61,6 +62,40 @@ class ChatRequest(BaseModel):
     repo_id: str
     question: str = Field(min_length=5, max_length=settings.MAX_QUESTION_LENGTH)
     session_id: str | None = Field(default=None, description="Optional session ID for multi-turn chat memory")
+
+class ChatSource(BaseModel):
+    file_path: str
+    function_name: str
+    start_line: int
+    end_line: int
+
+class ChatResponse(BaseModel):
+    answer: str
+    sources: list[ChatSource] = []
+    confidence_score: float = 0.0
+    gated: bool = False
+
+class DiagramRequest(BaseModel):
+    repo_id: str
+    entry_point: str
+    direction: str = "both"  # callers | callees | both
+
+class DiagramResponse(BaseModel):
+    mermaid_markdown: str
+
+class OnboardingPathRequest(BaseModel):
+    repo_id: str
+    role: str
+    experience_level: str
+
+class OnboardingPathStep(BaseModel):
+    file_path: str
+    why_it_matters: str
+    suggested_order: int
+    related_functions: list[str]
+
+class OnboardingPathResponse(BaseModel):
+    onboarding_path: list[OnboardingPathStep]
 
 @dataclass
 class IngestJobResponse:
@@ -293,8 +328,21 @@ def _enforce_repo_org(meta: Any) -> None:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
 
+@router.get("/status/public")
+def get_public_status_alias():
+    """Explicit path so ``/status/public`` is never captured by ``/status/{job_id}``."""
+    from app.api.status_router import public_status
+
+    return public_status()
+
+
 @router.get("/status/{job_id}", dependencies=[Depends(verify_api_key)])
 def get_ingest_status(job_id: str):
+    if job_id == "public":
+        from app.api.status_router import public_status
+
+        return public_status()
+
     meta, asset_repo_id = _resolve_repo_meta(job_id)
 
     if not meta:
@@ -309,6 +357,7 @@ def get_ingest_status(job_id: str):
         "ref": meta.ref,
         "commit_hash": meta.commit_hash,
         "sync_status": meta.sync_status,
+        "error": getattr(meta, "error_reason", None),
         # Default fillers if not synced yet
         "files_parsed": 0,
         "chunks_created": 0,
@@ -321,6 +370,7 @@ def get_ingest_status(job_id: str):
     elif meta.sync_status == "failed":
         resp["status"] = "failed"
         resp["error_reason"] = meta.error_reason
+        resp["error"] = meta.error_reason
     elif meta.sync_status == "synced":
         resp["status"] = "ready"
         # Extract graph info
@@ -342,6 +392,22 @@ def get_ingest_status(job_id: str):
             pass
 
     return resp
+
+
+@router.get("/chat/stream/{session_id}", dependencies=[Depends(verify_api_key)])
+async def chat_state_stream(request: Request, session_id: str):
+    """SSE stream of live agent state transitions for one chat session."""
+    from app.api.state_stream import async_stream
+
+    return StreamingResponse(
+        async_stream(session_id, request),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/chat", dependencies=[Depends(verify_api_key)])
@@ -379,12 +445,10 @@ def chat(request: Request, req: ChatRequest):
                 chat_history = []
 
     try:
-        # We bypass semantic cache if there is chat history, because the context implies state.
         if chat_history:
-            from app.agent.loop import answer_question
-            result = answer_question(req.question, asset_repo_id, chat_history=chat_history)
+            result = run(asset_repo_id, req.question, req.session_id, chat_history=chat_history)
         else:
-            result = answer_question_cached(req.question, asset_repo_id)
+            result = run(asset_repo_id, req.question, req.session_id)
             
         if req.session_id and "error" not in result:
             chat_history.append({"role": "user", "content": req.question})
@@ -448,6 +512,51 @@ def chat(request: Request, req: ChatRequest):
         raise
 
 
+@router.post("/diagram", response_model=DiagramResponse, dependencies=[Depends(verify_api_key)])
+@limiter.limit("5/minute")
+def generate_diagram_endpoint(request: Request, req: DiagramRequest):
+    meta, asset_repo_id = _resolve_repo_meta(req.repo_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Unknown repo_id")
+    _enforce_repo_org(meta)
+    
+    if meta.sync_status != "synced" and not meta.commit_hash:
+        raise HTTPException(status_code=409, detail=f"ingestion incomplete (status: {meta.sync_status}), re-run /ingest")
+        
+    try:
+        depth = 2
+        sub = get_subgraph(asset_repo_id, req.entry_point, direction=req.direction, max_depth=depth)
+        sub_with_entry = {**sub, "entry_point": req.entry_point}
+        mermaid_markdown = generate_mermaid(sub_with_entry, direction=req.direction, repo_id=asset_repo_id)
+        return {"mermaid_markdown": mermaid_markdown}
+    except ValueError as e:
+        if "not found in graph" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/onboarding-path", response_model=OnboardingPathResponse, dependencies=[Depends(verify_api_key)])
+@limiter.limit("5/minute")
+def generate_onboarding_path(request: Request, req: OnboardingPathRequest):
+    meta, asset_repo_id = _resolve_repo_meta(req.repo_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Unknown repo_id")
+    _enforce_repo_org(meta)
+    
+    if meta.sync_status != "synced" and not meta.commit_hash:
+        raise HTTPException(status_code=409, detail=f"ingestion incomplete (status: {meta.sync_status}), re-run /ingest")
+
+    try:
+        from app.agent.onboarding_path import build_path
+
+        path = build_path(asset_repo_id, req.role, req.experience_level)
+        return {"onboarding_path": path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/diagram/{repo_id}", dependencies=[Depends(verify_api_key)])
 def get_function_diagram_query(repo_id: str, function_name: str, depth: int = 2):
     """Backward-compatible route used by tests and older clients (function_name as query param)."""
@@ -478,7 +587,8 @@ def get_function_diagram(repo_id: str, function_name: str, depth: int = 2):
         raise HTTPException(status_code=409, detail=f"ingestion incomplete (status: {meta.sync_status}), re-run /ingest")
         
     try:
-        sub = get_subgraph(asset_repo_id, function_name, depth)
+        sub = get_subgraph(asset_repo_id, function_name, direction="both", max_depth=depth)
+        sub_with_entry = {**sub, "entry_point": function_name}
         debug_log(
             "router.py:get_function_diagram",
             "subgraph_result",
@@ -490,9 +600,14 @@ def get_function_diagram(repo_id: str, function_name: str, depth: int = 2):
             },
             hypothesis_id="B,C",
         )
-        requested = sub.get("requested_depth", depth)
-        clamped_depth = 3 if sub.get("clamped") else requested
-        return graph_to_mermaid(sub, requested, clamped_depth, max_nodes=25)
+        return graph_to_mermaid(
+            sub_with_entry,
+            sub.get("requested_depth", depth),
+            3 if sub.get("clamped") else sub.get("requested_depth", depth),
+            max_nodes=25,
+            repo_id=asset_repo_id,
+            direction="both",
+        )
     except ValueError as e: # Function not found
         if "not found in graph" in str(e):
             raise HTTPException(status_code=404, detail=str(e))

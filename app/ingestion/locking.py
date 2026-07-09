@@ -267,8 +267,33 @@ class RepoLockManager:
 
 
 # ---------------------------------------------------------------------------
+# Module-level wrappers for spec compatibility (Layer 3 Ingestion Pipeline)
+# ---------------------------------------------------------------------------
+
+def acquire_lock(repo_id: str) -> bool:
+    """
+    Acquire the ingestion lock for *repo_id* (non-blocking).
+
+    This wraps the process-local lock_manager, passing the default metadata_store.
+    If scaled to multiple worker nodes, this upgrades to a Redis-backed distributed
+    lock with the same public interface.
+    """
+    from app.ingestion.metadata_store import metadata_store
+    res = lock_manager.try_acquire(repo_id, metadata_store)
+    return res.acquired
+
+
+def release_lock(repo_id: str) -> None:
+    """
+    Release the ingestion lock for *repo_id*.
+    """
+    lock_manager.release(repo_id)
+
+
+# ---------------------------------------------------------------------------
 # Module-level singleton — import and use directly.
 #
 #     from app.ingestion.locking import lock_manager
 # ---------------------------------------------------------------------------
 lock_manager = RepoLockManager()
+

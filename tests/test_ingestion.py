@@ -516,6 +516,54 @@ class TestMetadataStore(unittest.TestCase):
             self.assertEqual(b.sync_status, "pending",
                 "Marking repo-A synced must not affect repo-B")
 
+    def test_stage_enum_and_ordering(self):
+        from app.ingestion.metadata_store import Stage
+        self.assertEqual(Stage.PENDING, "pending")
+        self.assertEqual(Stage.CLONING, "cloning")
+        self.assertEqual(Stage.FILTERING, "filtering")
+        self.assertEqual(Stage.PARSING, "parsing")
+        self.assertEqual(Stage.INDEXING, "indexing")
+        self.assertEqual(Stage.SYNCED, "synced")
+        self.assertEqual(Stage.FAILED, "failed")
+        self.assertEqual(Stage.ordered(), ["pending", "cloning", "filtering", "parsing", "indexing", "synced"])
+
+    def test_update_idempotency_and_checkpoints(self):
+        import tempfile
+        from app.ingestion.metadata_store import Stage
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
+            store = self._make_store(Path(td))
+            # Bootstrap pending
+            store.mark_pending("repo1", "https://github.com/a/b", "main")
+            self.assertEqual(store.last_checkpoint("repo1"), Stage.PENDING)
+
+            # Test cloning checkpoint
+            store.update("repo1", Stage.CLONING, commit_hash="c1")
+            meta = store.get("repo1")
+            self.assertEqual(meta.sync_status, "cloning")
+            self.assertEqual(meta.last_stage, "cloning")
+            self.assertEqual(meta.commit_hash, "c1")
+            self.assertEqual(store.last_checkpoint("repo1"), Stage.CLONING)
+
+            # Test idempotency (calling update twice with same stage is safe)
+            store.update("repo1", Stage.CLONING, commit_hash="c1")
+            meta2 = store.get("repo1")
+            self.assertEqual(meta2.sync_status, "cloning")
+            self.assertEqual(meta2.last_stage, "cloning")
+            self.assertEqual(meta2.commit_hash, "c1")
+
+            # Advance to filtering
+            store.update("repo1", Stage.FILTERING)
+            self.assertEqual(store.last_checkpoint("repo1"), Stage.FILTERING)
+
+            # Stage FAILED must not advance last_stage
+            store.update("repo1", Stage.FAILED, error="SyntaxError")
+            meta_failed = store.get("repo1")
+            self.assertEqual(meta_failed.sync_status, "failed")
+            self.assertEqual(meta_failed.error_reason, "SyntaxError")
+            # last_stage must remain FILTERING!
+            self.assertEqual(meta_failed.last_stage, "filtering")
+            self.assertEqual(store.last_checkpoint("repo1"), Stage.FILTERING)
+
 
 # ===========================================================================
 # E.  locking.py — concurrency and stale-lock recovery

@@ -151,21 +151,10 @@ def store_chunks(
     current_model = settings.EMBEDDING_MODEL
 
     if force_reindex:
-        try:
-            client.delete_collection(collection_name)
-            log.info("collection_wiped_for_reindex", collection_name=collection_name)
-        except Exception:
-            pass  # Ignored if it didn't exist
+        delete_repo(repo_id)
 
     collection = get_collection_by_name(client, collection_name)
-
-    if collection is None:
-        collection = client.get_or_create_collection(
-            name=collection_name,
-            metadata={"embedding_model_id": current_model},
-        )
-        log.info("collection_created", collection_name=collection_name, model=current_model)
-    else:
+    if collection is not None:
         # Check model lock
         stored_model = collection.metadata.get("embedding_model_id")
         if stored_model and stored_model != current_model:
@@ -175,19 +164,52 @@ def store_chunks(
                 "Pass force_reindex=True to wipe and rebuild."
             )
 
+    from app.retrieval.embeddings import embed_chunks
+    embed_chunks(chunks)
+    upsert_chunks(repo_id, chunks)
+
+
+def upsert_chunks(repo_id: str, chunks: list[Any]) -> None:
+    """
+    Replace all vectors for *repo_id* with the provided pre-embedded chunks.
+
+    Uses per-repo Chroma collections for storage-layer isolation. Re-ingestion
+    deletes the prior collection before insert so stale chunk vectors never
+    accumulate across versions.
+    """
+    log = logger.bind(repo_id=repo_id)
+    client = _get_client()
+    collection_name = _collection_name_for(repo_id)
+    current_model = settings.EMBEDDING_MODEL
+
     if not chunks:
-        log.warning("no_chunks_to_store")
+        log.warning("no_chunks_to_upsert")
         return
 
-    # Prepare batch insertion payloads
+    # Replace-semantics per repo_id: wipe then rebuild (never duplicate stale IDs).
+    delete_repo(repo_id)
+    collection = client.create_collection(
+        name=collection_name,
+        metadata={"embedding_model_id": current_model, "repo_id": repo_id},
+    )
+
     ids: list[str] = []
+    embeddings: list[list[float]] = []
     documents: list[str] = []
     metadatas: list[dict[str, Any]] = []
 
     for chunk in chunks:
-        # Unique ID combining normalized path and function name to prevent clashes
+        vector = getattr(chunk, "vector", None)
+        if vector is None:
+            logger.warning(
+                "chunk_missing_vector_attribute",
+                chunk_id=getattr(chunk, "fingerprint", "unknown"),
+            )
+            continue
+
         chunk_id = f"chunk_{chunk.fingerprint}"
         ids.append(chunk_id)
+        embeddings.append(vector)
         documents.append(chunk.chunk_text)
         metadatas.append({
             "file_path": chunk.file_path,
@@ -199,23 +221,36 @@ def store_chunks(
             "language": chunk.language,
             "fingerprint": chunk.fingerprint,
             "embedding_model_id": current_model,
+            "repo_id": repo_id,
         })
 
-    # Embed in batch for efficiency
-    log.info("computing_embeddings", n_chunks=len(documents))
-    embeddings = embed_batch(documents)
+    if ids:
+        collection.add(
+            ids=ids,
+            embeddings=embeddings,
+            documents=documents,
+            metadatas=metadatas,
+        )
+        log.info("upsert_chunks_completed", n_stored=len(ids))
 
-    # Upsert (insert or update)
-    log.info("upserting_to_chroma")
-    # Chroma handles batching internally if the payload is huge, but usually
-    # upserting thousands of items at once is fine.
-    collection.upsert(
-        ids=ids,
-        embeddings=embeddings,
-        documents=documents,
-        metadatas=metadatas,
-    )
-    log.info("store_chunks_completed", n_stored=len(ids))
+    from app.ingestion.metadata_store import metadata_store, Stage
+    try:
+        metadata_store.update(repo_id, Stage.INDEXING, progress="Indexed chunks in vector store")
+    except Exception as exc:
+        logger.warning("failed_to_write_indexing_progress_checkpoint", error=str(exc))
+
+
+def delete_repo(repo_id: str) -> None:
+    """
+    Wipe the collection for repo_id from the vector store.
+    """
+    client = _get_client()
+    collection_name = _collection_name_for(repo_id)
+    try:
+        client.delete_collection(collection_name)
+        logger.info("collection_deleted", collection_name=collection_name)
+    except Exception as exc:
+        logger.debug("delete_collection_skipped", collection_name=collection_name, error=str(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -231,13 +266,79 @@ class VectorSearchResult:
     metadata: dict[str, Any]
 
 
+def query(
+    repo_id: str,
+    query_vector: list[float],
+    top_k: int = 20,
+) -> list[dict[str, Any]]:
+    """
+    Search the vector store for nearest neighbors of query_vector inside repo_id.
+
+    Forward Interface Contract:
+    --------------------------
+    Returns a list of dicts:
+        [
+            {
+                "chunk_metadata": {
+                    "file_path": str,
+                    "display_path": str,
+                    "function_name": str,
+                    "start_line": int,
+                    "end_line": int,
+                    "type": str,
+                    "language": str,
+                    "fingerprint": str,
+                },
+                "score": float
+            },
+            ...
+        ]
+    Where score is the similarity score (cosine similarity or normalized distance).
+    """
+    collection = get_collection(repo_id)
+    if collection is None:
+        return []
+
+    actual_top_k = min(top_k, collection.count())
+    if actual_top_k == 0:
+        return []
+
+    results = collection.query(
+        query_embeddings=[query_vector],
+        n_results=actual_top_k,
+        include=["documents", "metadatas", "distances"],
+    )
+
+    if not results or not results["ids"] or not results["ids"][0]:
+        return []
+
+    out = []
+    ids = results["ids"][0]
+    distances = results["distances"][0] if results["distances"] else [2.0] * len(ids)
+    metas = results["metadatas"][0] if results["metadatas"] else [{}] * len(ids)
+
+    for i in range(len(ids)):
+        # Calculate cosine similarity from L2 distance
+        l2_sq = float(distances[i])
+        cosine_sim = 1.0 - (l2_sq / 2.0)
+        cosine_sim = max(0.0, min(1.0, cosine_sim))
+
+        out.append({
+            "chunk": results["documents"][0][i] if (results.get("documents") and results["documents"][0]) else "",
+            "chunk_metadata": metas[i],
+            "score": cosine_sim,
+        })
+
+    return out
+
+
 def search_vectors(
     repo_id: str,
-    query: str,
+    query_str: str,
     n_results: int = 20,
 ) -> list[VectorSearchResult]:
     """
-    Search the vector store for *query* and return the top *n_results*.
+    Search the vector store for *query_str* and return the top *n_results*.
 
     Returns an empty list if the collection does not exist.
     """
@@ -245,15 +346,13 @@ def search_vectors(
     if collection is None:
         return []
 
-    query_embedding = embed(query)
+    from app.retrieval.embeddings import embed
+    query_embedding = embed(query_str)
 
-    # Clamp n_results to avoid HNSW "Cannot return the results in a contigious 2D array" error on small repos
     actual_n_results = min(n_results, collection.count())
     if actual_n_results == 0:
         return []
 
-    # Query Chroma
-    # Default metric is L2 distance, so lower distance = better match.
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=actual_n_results,
@@ -263,7 +362,6 @@ def search_vectors(
     if not results or not results["ids"] or not results["ids"][0]:
         return []
 
-    # Flatten the results (Chroma returns lists of lists because it supports multi-query)
     out: list[VectorSearchResult] = []
     ids = results["ids"][0]
     distances = results["distances"][0] if results["distances"] else [0.0]*len(ids)
@@ -273,8 +371,6 @@ def search_vectors(
     for i, _id in enumerate(ids):
         out.append(VectorSearchResult(
             id=_id,
-            # We negate the L2 distance so that higher is better, making it
-            # semantically compatible with min-max normalization where 1 is best.
             score=-float(distances[i]),
             document=str(docs[i]),
             metadata=metas[i],

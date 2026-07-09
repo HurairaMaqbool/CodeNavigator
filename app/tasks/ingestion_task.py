@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 from app.tasks.celery_app import celery_app
 from app.observability.logging_config import logger
-from app.ingestion.metadata_store import metadata_store
+from app.ingestion.metadata_store import metadata_store, Stage
 from app.ingestion.locking import lock_manager
 from app.ingestion.clone import clone_repo, RepoNotFoundError, PrivateRepoError, NetworkTimeoutError, RepoTooLargeError, IngestionError
 from app.ingestion.file_filter import filter_repo_files, safe_decode
@@ -104,7 +104,8 @@ def run_ingestion_sync(
         file_records = {}
         parsed_files = []
 
-        for f in files:
+        total_files = len(files)
+        for idx, f in enumerate(files):
             text, decode_err = safe_decode(Path(f.path))
             if decode_err or not text:
                 continue
@@ -115,6 +116,16 @@ def run_ingestion_sync(
             if parsed:
                 parsed.file_path = f.display_path
                 parsed_files.append(parsed)
+
+            # Write a PARSING-progress checkpoint (files processed / total) to metadata_store
+            try:
+                metadata_store.update(
+                    resolved_repo_id or job_id,
+                    Stage.PARSING,
+                    progress=f"Processed {idx + 1}/{total_files} files"
+                )
+            except Exception as meta_exc:
+                logger.warning("failed_to_write_parsing_progress_checkpoint", error=str(meta_exc))
 
         chunks = chunk_all_files(parsed_files, contents, file_records)
 

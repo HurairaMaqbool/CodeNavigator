@@ -100,7 +100,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("ingestion incomplete (status: pending)", resp.json()["error"])
 
     @patch("app.api.router.metadata_store.get")
-    @patch("app.api.router.answer_question_cached")
+    @patch("app.api.router.run")
     @patch("app.api.router.metadata_store.get_alias")
     def test_chat_success(self, mock_alias, mock_answer, mock_meta_get):
         mock_alias.return_value = None
@@ -135,7 +135,7 @@ class TestAPIEndpoints(unittest.TestCase):
             self.assertEqual(resp.json()["error"], "An unexpected server error occurred. Please check the logs.")
 
     @patch("app.api.router.metadata_store.get")
-    @patch("app.api.router.answer_question_cached")
+    @patch("app.api.router.run")
     @patch("app.api.router.metadata_store.get_alias")
     def test_chat_rate_limit_returns_429(self, mock_alias, mock_answer, mock_meta_get):
         """POST /chat returns 429 (safety-net path) when RateLimitError escapes the loop."""
@@ -156,7 +156,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("rate", resp.json()["detail"].lower())
 
     @patch("app.api.router.metadata_store.get")
-    @patch("app.api.router.answer_question_cached")
+    @patch("app.api.router.run")
     @patch("app.api.router.metadata_store.get_alias")
     def test_chat_rate_limited_dict_returns_429(self, mock_alias, mock_answer, mock_meta_get):
         """POST /chat returns 429 (primary path) when the loop returns rate_limited=True dict."""
@@ -188,7 +188,7 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertIn("30 seconds", detail)
 
     @patch("app.api.router.metadata_store.get")
-    @patch("app.api.router.answer_question_cached")
+    @patch("app.api.router.run")
     @patch("app.api.router.metadata_store.get_alias")
     def test_chat_timed_out_returns_504(self, mock_alias, mock_answer, mock_meta_get):
         """POST /chat returns 504 when the loop returns timed_out=True dict."""
