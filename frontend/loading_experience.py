@@ -80,6 +80,21 @@ def _skeleton_css() -> str:
   color: {t["text"]};
   margin-bottom: 0.35rem;
   font-family: {t["font_family"]};
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}}
+.le-step-badge {{
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: {t["accent_strong"]};
+  color: {t["text_inverse"]};
 }}
 .le-progress .le-icon {{
   display: inline-block;
@@ -114,7 +129,8 @@ def render_state(placeholder: Any, state: str, label: str) -> None:
     icon = STATE_ICONS.get(state, "⏳")
     step = _step_number(state)
     if step is not None and state != "RESPOND":
-        line = f"Step {step} of {TOTAL_STEPS} — <span class='le-icon'>{icon}</span> {label}"
+        badge = f"<span class='le-step-badge'>{step}/{TOTAL_STEPS}</span>"
+        line = f"{badge}<span class='le-icon'>{icon}</span> {label}"
     elif state == "RESPOND":
         line = f"<span class='le-icon'>{icon}</span> {label}"
     else:

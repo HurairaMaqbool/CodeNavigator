@@ -104,6 +104,7 @@ def create_mock_llm_response(text: str):
         content=[{"type": "text", "text": text}],
         stop_reason="end_turn", usage={}
     )
+    llm.stream_text.return_value = (text, {"sdk_attempts": 1, "estimated_input_tokens": 10})
     return llm
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,9 @@
 [theme]
-primaryColor = "#6366f1"
-backgroundColor = "#f8fafc"
-secondaryBackgroundColor = "#ffffff"
-textColor = "#0f172a"
+# Native Streamlit chrome — detailed tokens in frontend/theme.py CSS
+primaryColor = "#6366F1"
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#0F172A"
 font = "sans serif"
 
 [server]

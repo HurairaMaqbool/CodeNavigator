@@ -23,13 +23,19 @@ import api_client
 from ui_theme import (
     APP_VERSION,
     inject_styles,
+    render_alert,
     render_backend_status,
+    render_citation_chips,
     render_empty_chat,
+    render_empty_stats,
     render_empty_workspace,
     render_footer,
     render_hero,
+    render_ingest_stepper,
     render_ragas_chart,
+    render_sidebar_nav,
     render_stat_card,
+    render_top_header,
     section_header,
     status_pill_html,
 )
@@ -82,6 +88,26 @@ if "voice_output_enabled" not in st.session_state:
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _format_api_error(e: api_client.APIError) -> tuple[str, str]:
+    """Return (alert_level, message) for APIError."""
+    if e.status_code == 409:
+        return "info", "Repository is still indexing — try again shortly."
+    if e.status_code == 429:
+        wait = e.retry_after_s or 30
+        return (
+            "error",
+            e.message
+            or f"The AI provider is temporarily rate-limited. Please wait about {wait} seconds and try again.",
+        )
+    if e.status_code == 504:
+        return (
+            "error",
+            e.message
+            or "The request took too long. Try a simpler, more specific question.",
+        )
+    return "error", e.message
+
+
 def _run_chat_exchange(question: str) -> None:
     """Shared typed + voice chat path — POST /chat with loading experience."""
     st.session_state.chat_history.append({"role": "user", "content": question})
@@ -108,19 +134,26 @@ def _run_chat_exchange(question: str) -> None:
             elapsed = time.time() - t0
             text = ans.get("answer", "")
             gated = ans.get("gated", False)
-            (st.warning if gated else st.markdown)(text)
-            # Speak only final verified (non-gated) answers after RESPOND.
+            is_timeout = any(
+                x in (text or "").lower()
+                for x in ("timed out", "too slow", "rate-limited", "rate limit")
+            )
+            if gated and is_timeout:
+                render_alert("error", text or "Request failed.", icon="⚠️")
+            elif gated:
+                render_alert("warning", text or "Could not verify citations.", icon="🛡️")
+            else:
+                st.markdown(text)
             if text and not gated:
                 render_read_aloud_controls(text)
             st.caption(
                 "⚡ Cached" if ans.get("cache_hit") else f"Completed in {elapsed:.1f}s"
             )
             if ans.get("sources"):
-                with st.expander("Sources"):
-                    for s in ans["sources"]:
-                        st.markdown(f"`{s['file_path']}` · `{s.get('function_name', '—')}`")
+                with st.expander("▸ Sources", expanded=False):
+                    render_citation_chips(ans["sources"])
             if ans.get("trace"):
-                with st.expander("Agent trace"):
+                with st.expander("▸ Agent trace", expanded=False):
                     st.json(ans["trace"])
             st.session_state.chat_history.append({
                 "role": "assistant",
@@ -133,22 +166,21 @@ def _run_chat_exchange(question: str) -> None:
         except api_client.APIError as e:
             progress_slot.empty()
             skeleton_slot.empty()
-            if e.status_code == 409:
-                st.info("Repository is still indexing — try again shortly.")
-            elif e.status_code == 429:
-                st.warning("Rate limit reached — wait a minute.")
-            else:
-                st.error(e.message)
+            level, msg = _format_api_error(e)
+            render_alert(level, msg)
         except Exception as e:
             progress_slot.empty()
             skeleton_slot.empty()
             import requests as _req
             if isinstance(e, (_req.exceptions.Timeout, _req.exceptions.ReadTimeout)):
-                st.warning("Request timed out — try a simpler question.")
+                render_alert(
+                    "error",
+                    "Request timed out — try a simpler, more specific question.",
+                )
             elif isinstance(e, _req.exceptions.ConnectionError):
-                st.error("Cannot reach backend on port 8000.")
+                render_alert("error", "Cannot reach backend on port 8000.")
             else:
-                st.error(str(e))
+                render_alert("error", str(e))
 
 
 def _run_diagram_for_symbol(symbol: str, depth: int = 2) -> None:
@@ -161,13 +193,13 @@ def _run_diagram_for_symbol(symbol: str, depth: int = 2) -> None:
             )
             mermaid_code = diag_res.get("mermaid")
             if not mermaid_code or str(mermaid_code).strip() in ("", "graph TD"):
-                st.warning("No graph found for this symbol.")
+                render_alert("info", "No graph found for this symbol.")
             else:
                 if diag_res.get("clamped"):
                     st.caption("Depth clamped for readability.")
                 render_mermaid(mermaid_code)
         except api_client.APIError as e:
-            st.error(e.message)
+            render_alert("error", e.message)
 
 
 def render_mermaid(mermaid_code: str) -> None:
@@ -190,16 +222,21 @@ def render_mermaid(mermaid_code: str) -> None:
 def display_status_badges(meta: dict[str, Any]) -> None:
     status = meta.get("sync_status", "unknown")
     st.markdown(status_pill_html(status), unsafe_allow_html=True)
+    render_ingest_stepper(status)
 
+    files = meta.get("files_parsed")
+    chunks = meta.get("chunks_created")
     if status == "synced":
         cols = st.columns(2)
-        cols[0].caption(f"**Files** {meta.get('files_parsed', '—')}")
-        cols[1].caption(f"**Chunks** {meta.get('chunks_created', '—')}")
+        render_stat_card("Files", str(files if files is not None else "—"), cols[0])
+        render_stat_card("Chunks", str(chunks if chunks is not None else "—"), cols[1])
+    elif status in ("pending", "indexing", "parsing", "filtering", "cloning"):
+        render_empty_stats()
     elif status == "failed":
-        st.error(meta.get("error_reason") or "Ingestion failed")
+        render_alert("error", meta.get("error_reason") or "Ingestion failed.")
 
     if meta.get("graph_truncated"):
-        st.warning("Graph truncated (size limit)")
+        render_alert("warning", "Graph truncated (size limit).")
     if meta.get("has_circular_dependencies") is True:
         st.caption("Import cycles detected (shown in diagrams)")
 
@@ -276,7 +313,6 @@ def _poll_ingestion(job_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
-st.sidebar.markdown(apply_branding("sidebar") + "</div>", unsafe_allow_html=True)
 backend_ok = render_backend_status()
 
 st.sidebar.divider()
@@ -284,22 +320,15 @@ render_theme_mode_toggle()
 render_voice_output_toggle()
 
 st.sidebar.divider()
-page = st.sidebar.radio(
-    "Navigate",
-    ["Workspace", "Evaluation & QA", "Platform"],
-    format_func=lambda p: {
-        "Workspace": "◆  Workspace",
-        "Evaluation & QA": "◇  Evaluation",
-        "Platform": "▣  Platform",
-    }.get(p, p),
-)
+page = render_sidebar_nav(st.session_state.get("active_page", "Workspace"))
+st.session_state.active_page = page
 
 if st.session_state.repo_id:
     st.sidebar.markdown("---")
     st.sidebar.caption("Active repository")
     short = st.session_state.repo_id
     st.sidebar.code((short[:22] + "…") if len(short) > 22 else short, language=None)
-    if st.sidebar.button("Clear session", use_container_width=True):
+    if st.sidebar.button("Clear session", use_container_width=True, type="secondary"):
         st.session_state.repo_id = None
         st.session_state.chat_history = []
         st.session_state.session_id = str(uuid.uuid4())
@@ -332,6 +361,7 @@ for label, url in [
 # ---------------------------------------------------------------------------
 # Main content
 # ---------------------------------------------------------------------------
+render_top_header(backend_ok)
 render_hero()
 
 if page == "Workspace":
@@ -355,7 +385,7 @@ if page == "Workspace":
     if submitted and repo_url:
         url_clean = repo_url.strip()
         if not url_clean.startswith("https://github.com"):
-            st.warning("Enter a valid `https://github.com/...` URL")
+            render_alert("warning", "Enter a valid `https://github.com/...` URL")
         elif backend_ok:
             try:
                 res = api_client.ingest(url_clean, ref or None)
@@ -363,20 +393,19 @@ if page == "Workspace":
                 _poll_ingestion(res["job_id"])
                 st.rerun()
             except api_client.APIError as e:
-                if e.status_code == 429:
-                    st.error("Rate or monthly quota exceeded — wait a minute or reset usage in Platform tab.")
-                else:
-                    st.error(f"Ingest failed: {e.message}")
+                level, msg = _format_api_error(e)
+                render_alert(level, msg)
             except Exception as e:
                 import requests as _req
                 if isinstance(e, (_req.exceptions.Timeout, _req.exceptions.ReadTimeout)):
-                    st.warning(
+                    render_alert(
+                        "error",
                         "Backend took too long to start ingest. "
                         "Ensure the API is running on port 8000 and Redis is up (or disabled). "
-                        "Retry in a few seconds."
+                        "Retry in a few seconds.",
                     )
                 else:
-                    st.error(str(e))
+                    render_alert("error", str(e))
         else:
             st.error("Backend is offline. Run: `python -m uvicorn app.main:app --port 8000`")
 
@@ -395,19 +424,23 @@ if page == "Workspace":
 
     col_main, col_side = st.columns([2.2, 1])
     with col_side:
+        st.markdown('<div class="cn-panel-card">', unsafe_allow_html=True)
         section_header("Status")
         display_status_badges(meta)
-        st.divider()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown('<div class="cn-panel-card">', unsafe_allow_html=True)
         section_header("Call graph")
         diag_func = st.text_input("Symbol", placeholder="Session.send")
         diag_depth = st.slider("Depth", 1, 5, 2)
-        if st.button("Generate diagram", use_container_width=True):
+        if st.button("Generate diagram", use_container_width=True, type="secondary"):
             if not is_ready:
-                st.warning("Wait until indexing completes.")
+                render_alert("warning", "Wait until indexing completes.")
             elif not diag_func.strip():
-                st.warning("Enter a function or class name.")
+                render_alert("info", "Enter a function or class name.")
             else:
                 _run_diagram_for_symbol(diag_func.strip(), diag_depth)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_main:
         section_header("Chat")
@@ -416,21 +449,25 @@ if page == "Workspace":
 
         for msg in st.session_state.chat_history:
             with st.chat_message(msg["role"]):
-                if msg.get("gated"):
-                    st.warning(msg["content"])
+                content = msg.get("content") or ""
+                gated = msg.get("gated", False)
+                is_timeout = gated and any(
+                    x in content.lower()
+                    for x in ("timed out", "too slow", "rate-limited", "rate limit")
+                )
+                if gated and is_timeout:
+                    render_alert("error", content or "Request failed.", icon="⚠️")
+                elif gated:
+                    render_alert("warning", content or "Could not verify citations.", icon="🛡️")
                 else:
-                    st.markdown(msg["content"])
+                    st.markdown(content)
                 if msg.get("cache_hit"):
                     st.caption("⚡ Cache hit")
                 if msg.get("sources"):
-                    with st.expander("Sources"):
-                        for s in msg["sources"]:
-                            st.markdown(
-                                f"`{s['file_path']}` · `{s.get('function_name', '—')}` · "
-                                f"L{s.get('lines', '—')}"
-                            )
+                    with st.expander("▸ Sources", expanded=False):
+                        render_citation_chips(msg["sources"])
                 if msg.get("trace"):
-                    with st.expander("Agent trace"):
+                    with st.expander("▸ Agent trace", expanded=False):
                         st.json(msg["trace"])
 
         from voice_input import (
@@ -490,9 +527,9 @@ elif page == "Evaluation & QA":
             render_stat_card("Probe hits", str(details.get("probe_hit_count", "—")), c3)
             if not eval_ready:
                 for err in eval_health.get("errors") or []:
-                    st.warning(err)
+                    render_alert("error", str(err))
         except Exception as err:
-            st.warning(f"Health check: {err}")
+            render_alert("error", f"Health check: {err}")
     else:
         st.info("Ingest a repo on the Workspace tab first.")
 
@@ -637,7 +674,7 @@ elif page == "Evaluation & QA":
 elif page == "Platform":
     section_header("Platform & billing", "Usage, subscription, audit trail")
     if not backend_ok:
-        st.warning("Start the backend to view platform data.")
+        render_alert("info", "Start the backend to view platform data.")
     else:
         try:
             usage = api_client.get_platform_usage()

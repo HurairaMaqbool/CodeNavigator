@@ -29,18 +29,147 @@ def inject_styles() -> None:
 
 
 def render_hero() -> None:
+    """Compact hero — main brand lives in top bar; this shows feature chips only."""
     theme = active_theme()
     st.markdown(
         f"""
-<div class="hero-banner">
-  <div class="hero-brand"><span class="mark">{theme.brand_logo}</span>{theme.brand_name}</div>
-  <p class="hero-tagline">{theme.brand_tagline}. Ask architecture questions, explore call graphs, and verify answers with citations.</p>
+<div class="hero-banner" style="padding:1.5rem 1.75rem;margin-bottom:1.25rem">
   <div class="hero-cta-row">
     <span class="hero-chip">Hybrid RAG</span>
     <span class="hero-chip">Live agent steps</span>
-    <span class="hero-chip">Voice in / out</span>
+    <span class="hero-chip">Verified citations</span>
     <span class="hero-chip">RAGAS eval</span>
   </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_top_header(online: bool) -> None:
+    """Branded header with API status pill — persistent top-right visibility."""
+    theme = active_theme()
+    import api_client
+
+    pill_class = "online" if online else "offline"
+    label = "API online" if online else "API offline"
+    st.markdown(
+        f"""
+<div class="cn-topbar">
+  <div>
+    <div class="cn-topbar-brand">
+      <span class="mark">{theme.brand_logo}</span>
+      <span>{theme.brand_name}</span>
+    </div>
+    <p class="cn-topbar-tagline">{theme.brand_tagline}</p>
+  </div>
+  <div class="cn-api-pill {pill_class}">
+    <span class="dot"></span>
+    <span>{label}</span>
+  </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if online:
+        st.caption(api_client.API_BASE_URL)
+
+
+def render_sidebar_nav(current: str) -> str:
+    """Vertical nav with icon + label; returns selected page id."""
+    labels = {
+        "Workspace": "◈  Workspace",
+        "Evaluation & QA": "◇  Evaluation",
+        "Platform": "▣  Platform",
+    }
+    pages = list(labels.keys())
+    choice = st.sidebar.radio(
+        "Navigate",
+        pages,
+        index=pages.index(current) if current in pages else 0,
+        format_func=lambda p: labels[p],
+        key="cn_nav_radio",
+    )
+    return choice
+
+
+def render_ingest_stepper(sync_status: str) -> None:
+    """Multi-step ingest progress: Clone → Filter → Parse → Chunk → Index → Synced."""
+    steps = [
+        ("clone", "Clone"),
+        ("filter", "Filter"),
+        ("parse", "Parse"),
+        ("chunk", "Chunk"),
+        ("index", "Index"),
+        ("synced", "Synced"),
+    ]
+    order = [s[0] for s in steps]
+    active_idx = 0
+    if sync_status == "synced":
+        active_idx = len(steps)
+    elif sync_status in ("indexing", "parsing", "filtering", "cloning"):
+        mapping = {
+            "cloning": 0,
+            "filtering": 1,
+            "parsing": 2,
+            "indexing": 4,
+        }
+        active_idx = mapping.get(sync_status, 3) + 1
+
+    html_parts = ['<div class="cn-stepper">']
+    for i, (_, label) in enumerate(steps):
+        if i < active_idx:
+            cls = "done"
+        elif i == active_idx and sync_status != "synced":
+            cls = "active"
+        elif sync_status == "synced":
+            cls = "done"
+        else:
+            cls = ""
+        html_parts.append(f'<div class="cn-step {cls}">{label}</div>')
+    html_parts.append("</div>")
+    st.markdown("".join(html_parts), unsafe_allow_html=True)
+
+
+def render_alert(kind: str, message: str, *, icon: str = "") -> None:
+    """Semantic alert — error / warning / info (never reuse yellow for both)."""
+    icons = {"error": "⚠️", "warning": "⏳", "info": "ℹ️"}
+    ic = icon or icons.get(kind, "•")
+    css = f"cn-alert cn-alert-{kind}" if kind in ("error", "warning", "info") else "cn-alert cn-alert-info"
+    st.markdown(
+        f'<div class="{css}"><span>{ic}</span><span>{message}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_citation_chips(sources: list[dict]) -> None:
+    """Inline citation chips for source panel — monospace file:line."""
+    if not sources:
+        return
+    chips = []
+    for s in sources:
+        path = s.get("file_path", "")
+        fn = s.get("function_name") or ""
+        lines = s.get("lines") or s.get("start_line")
+        if lines and isinstance(lines, int):
+            line_s = str(lines)
+        elif lines:
+            line_s = str(lines)
+        else:
+            line_s = "—"
+        label = f"{path}:{line_s}" if path else fn
+        if fn and path:
+            label = f"{path} · {fn}"
+        chips.append(f'<span class="cn-cite-chip">{label}</span>')
+    st.markdown("".join(chips), unsafe_allow_html=True)
+
+
+def render_empty_stats() -> None:
+    st.markdown(
+        """
+<div class="cn-empty-stat">
+  <div class="icon">📂</div>
+  <div>No files indexed yet</div>
 </div>
         """,
         unsafe_allow_html=True,
@@ -72,31 +201,22 @@ def status_pill_html(status: str) -> str:
     return f'<span class="pill {css}">{text}</span>'
 
 
-def render_backend_status() -> bool:
-    """Ping backend; show sidebar indicator. Returns True if online."""
+def check_backend_online() -> bool:
+    """Ping backend health endpoint. Returns True if online."""
     import api_client
 
     try:
         import requests
 
         r = requests.get(f"{api_client.API_BASE_URL}/health", timeout=3)
-        online = r.status_code == 200
+        return r.status_code == 200
     except Exception:
-        online = False
+        return False
 
-    if online:
-        st.sidebar.markdown(
-            f'<span class="pill pill-success">● API online</span>',
-            unsafe_allow_html=True,
-        )
-        st.sidebar.caption(api_client.API_BASE_URL)
-    else:
-        st.sidebar.markdown(
-            '<span class="pill pill-error">● API offline</span>',
-            unsafe_allow_html=True,
-        )
-        st.sidebar.caption("Start uvicorn on :8000")
-    return online
+
+def render_backend_status() -> bool:
+    """Backward-compatible alias — status pill lives in ``render_top_header``."""
+    return check_backend_online()
 
 
 def section_header(title: str, caption: str | None = None) -> None:
@@ -106,19 +226,16 @@ def section_header(title: str, caption: str | None = None) -> None:
 
 
 def render_empty_chat() -> None:
-    open_tag = apply_branding("chat")
     st.markdown(
-        f"""
-{open_tag}
+        """
 <div class="chat-empty">
-  <p class="empty-title">Ask anything about this codebase</p>
-  <p class="empty-hint">Every answer cites real files and lines. Start with a prompt below — or type your own.</p>
+  <p class="empty-title" style="font-size:1.25rem">Ask anything about this codebase</p>
+  <p class="empty-hint">Every answer cites real files and line numbers. Pick a starter prompt or type your own below.</p>
   <div class="prompt-row">
     <span class="prompt-chip">How does Session.send work?</span>
     <span class="prompt-chip">Where is HTTPBasicAuth defined?</span>
-    <span class="prompt-chip">What calls the login flow?</span>
+    <span class="prompt-chip">The role of urllib3.PoolManager</span>
   </div>
-</div>
 </div>
         """,
         unsafe_allow_html=True,

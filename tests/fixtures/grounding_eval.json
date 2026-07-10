@@ -1,0 +1,171 @@
+[
+  {
+    "id": "session_send_mechanism",
+    "question": "How does Session.send work?",
+    "expect_gated": false,
+    "expect_abstention": false,
+    "note": "Grounded factual claims with valid citations",
+    "claims": [
+      {
+        "claim": "Session.send merges environment settings before issuing the HTTP request.",
+        "citation": {"file_path": "src/requests/sessions.py", "start_line": 573, "end_line": 585}
+      },
+      {
+        "claim": "The method delegates to self.request with the prepared Request object.",
+        "citation": {"file_path": "src/requests/sessions.py", "start_line": 586, "end_line": 598}
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": true, "structural_ok": true, "similarity": 0.82},
+        {"index": 1, "supported": true, "structural_ok": true, "similarity": 0.79}
+      ],
+      "verified_count": 2,
+      "factual_count": 2
+    }
+  },
+  {
+    "id": "http_basic_auth_location",
+    "question": "Where is HTTPBasicAuth defined?",
+    "expect_gated": false,
+    "expect_abstention": false,
+    "claims": [
+      {
+        "claim": "HTTPBasicAuth is defined as a class in auth.py.",
+        "citation": {"file_path": "src/requests/auth.py", "start_line": 72, "end_line": 95}
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": true, "structural_ok": true, "similarity": 0.88}
+      ],
+      "verified_count": 1,
+      "factual_count": 1
+    }
+  },
+  {
+    "id": "urllib3_poolmanager_role",
+    "question": "What role does urllib3.PoolManager play?",
+    "expect_gated": false,
+    "expect_abstention": false,
+    "claims": [
+      {
+        "claim": "HTTPAdapter initializes a urllib3 PoolManager for connection pooling.",
+        "citation": {"file_path": "src/requests/adapters.py", "start_line": 120, "end_line": 145}
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": true, "structural_ok": true, "similarity": 0.75}
+      ],
+      "verified_count": 1,
+      "factual_count": 1
+    }
+  },
+  {
+    "id": "retry_backoff_abstain",
+    "question": "How does requests configure urllib3 retry backoff?",
+    "expect_gated": false,
+    "expect_abstention": true,
+    "note": "Context insufficient — must abstain, not hallucinate",
+    "claims": [
+      {
+        "claim": "The indexed context shows Session and HTTPAdapter but does not include urllib3 Retry/backoff configuration — I cannot confirm retry backoff behavior from the available chunks.",
+        "citation": null
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": true, "structural_ok": true, "method": "abstention"}
+      ],
+      "verified_count": 0,
+      "factual_count": 0
+    }
+  },
+  {
+    "id": "graphql_support_abstain",
+    "question": "Does this codebase include GraphQL resolvers?",
+    "expect_gated": false,
+    "expect_abstention": true,
+    "claims": [
+      {
+        "claim": "Not enough evidence in the provided context to confirm GraphQL resolver implementations.",
+        "citation": null
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": true, "structural_ok": true, "method": "abstention"}
+      ],
+      "verified_count": 0,
+      "factual_count": 0
+    }
+  },
+  {
+    "id": "generic_filler_gated",
+    "question": "What is requests?",
+    "expect_gated": true,
+    "expect_abstention": false,
+    "note": "Generic training-knowledge filler with weak cite must gate",
+    "claims": [
+      {
+        "claim": "Requests is a popular HTTP library for Python used for REST APIs.",
+        "citation": {"file_path": "README.md", "start_line": 1, "end_line": 10}
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": false, "structural_ok": false, "similarity": 0.12}
+      ],
+      "verified_count": 0,
+      "factual_count": 1
+    }
+  },
+  {
+    "id": "placeholder_path_gated",
+    "question": "How are parameters validated?",
+    "expect_gated": true,
+    "claims": [
+      {
+        "claim": "Validation happens in the handler.",
+        "citation": {"file_path": "path/to/file.py", "start_line": 10, "end_line": 20}
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": false, "structural_ok": false}
+      ],
+      "verified_count": 0,
+      "factual_count": 1
+    }
+  },
+  {
+    "id": "partial_verify_strip",
+    "question": "Explain adapters and sessions together",
+    "expect_gated": false,
+    "note": "One claim fails — strip it, keep verified portion",
+    "claims": [
+      {
+        "claim": "HTTPAdapter mounts urllib3 connection pools per scheme.",
+        "citation": {"file_path": "src/requests/adapters.py", "start_line": 80, "end_line": 100}
+      },
+      {
+        "claim": "Sessions store cookies across requests in a shared jar.",
+        "citation": {"file_path": "src/requests/sessions.py", "start_line": 400, "end_line": 420}
+      },
+      {
+        "claim": "Sessions use asyncio event loops for concurrency.",
+        "citation": {"file_path": "src/requests/sessions.py", "start_line": 1, "end_line": 5}
+      }
+    ],
+    "verification": {
+      "results": [
+        {"index": 0, "supported": true, "structural_ok": true, "similarity": 0.8},
+        {"index": 1, "supported": true, "structural_ok": true, "similarity": 0.77},
+        {"index": 2, "supported": false, "structural_ok": true, "similarity": 0.2}
+      ],
+      "verified_count": 2,
+      "factual_count": 3
+    }
+  }
+]

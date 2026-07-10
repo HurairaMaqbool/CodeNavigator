@@ -152,6 +152,10 @@ class RepoMetadata:
     # File count recorded by file_filter.py (FILTERING stage)
     file_count: int | None = None
 
+    # Final ingest tallies (set on SYNCED)
+    files_parsed: int | None = None
+    chunks_created: int | None = None
+
     # Graph builder (Module #18) sets this when circular imports are detected
     has_circular_dependencies: bool = False
 
@@ -230,6 +234,8 @@ class MetadataStore:
             sync_started_at=d.get("sync_started_at"),
             error_reason=d.get("error_reason"),
             file_count=d.get("file_count"),
+            files_parsed=d.get("files_parsed"),
+            chunks_created=d.get("chunks_created"),
             has_circular_dependencies=d.get("has_circular_dependencies", False),
             last_stage=d.get("last_stage"),
             org_id=d.get("org_id", "default"),
@@ -465,6 +471,8 @@ class MetadataStore:
         *,
         commit_hash: str,
         cloned_at: str,
+        files_parsed: int | None = None,
+        chunks_created: int | None = None,
     ) -> RepoMetadata:
         """
         Transition to ``synced``.
@@ -479,6 +487,10 @@ class MetadataStore:
             HEAD commit hexsha of the cloned repo.
         cloned_at:
             ISO-8601 UTC timestamp of when the clone completed.
+        files_parsed:
+            Number of source files indexed (for /status diagnostics).
+        chunks_created:
+            Number of chunks stored in vector + BM25 indexes.
         """
         log = logger.bind(repo_id=repo_id)
         lock = self._get_repo_lock(repo_id)
@@ -493,6 +505,11 @@ class MetadataStore:
             raw["commit_hash"] = commit_hash
             raw["cloned_at"] = cloned_at
             raw["error_reason"] = None
+            if files_parsed is not None:
+                raw["files_parsed"] = files_parsed
+                raw["file_count"] = files_parsed
+            if chunks_created is not None:
+                raw["chunks_created"] = chunks_created
             self._write_raw(repo_id, raw)
 
         log.info(

@@ -70,6 +70,33 @@ def should_expand(question: str) -> bool:
     words = question.split()
     if len(words) <= 4 or len(words) >= 25:
         return False
+
+    q_lower = question.lower()
+    # Dotted identifiers / class.method — already specific, skip expansion Groq call.
+    if "." in question and any(
+        tok[0].isupper() or "_" in tok
+        for tok in question.replace("`", "").split()
+        if "." in tok
+    ):
+        return False
+    if re.search(r"\b[A-Z][a-zA-Z0-9]*(?:\.[A-Za-z_][\w]*)+\b", question):
+        return False
+
+    # Concrete how/what questions about code mechanics — skip LLM expansion.
+    if len(words) >= 5 and re.match(
+        r"^(how|what)\b",
+        question.strip(),
+        re.IGNORECASE,
+    ):
+        q_lower = question.lower()
+        concrete_markers = (
+            "parameter", "validat", "process", "request", "response",
+            "urllib", "poolmanager", "handler", "middleware",
+            "session", "header", "cookie", "endpoint",
+            "httpbasicauth", "basicauth", "send", "adapter",
+        )
+        if any(marker in q_lower for marker in concrete_markers):
+            return False
         
     if '"' in question or "'" in question or "`" in question:
         return False

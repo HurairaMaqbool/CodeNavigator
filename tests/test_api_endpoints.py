@@ -82,9 +82,10 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["status"], "already_running")
 
+    @patch("app.api.router.run")
     @patch("app.api.router.metadata_store.get")
     @patch("app.api.router.metadata_store.get_alias")
-    def test_chat_rejects_unsynced(self, mock_alias, mock_meta_get):
+    def test_chat_rejects_unsynced(self, mock_alias, mock_meta_get, mock_run):
         mock_alias.return_value = None  # No alias resolution
         mock_meta_get.return_value = RepoMetadata(
             repo_id="repo123",
@@ -93,11 +94,18 @@ class TestAPIEndpoints(unittest.TestCase):
             sync_status="pending",
             schema_version=1
         )
+        mock_run.return_value = {
+            "answer": "This repository is still indexing (status: pending). Progress: 0 files, 0 chunks indexed so far.",
+            "sources": [],
+            "confidence_score": 0.0,
+            "gated": True,
+        }
 
         resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
 
-        self.assertEqual(resp.status_code, 409)
-        self.assertIn("ingestion incomplete (status: pending)", resp.json()["error"])
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json()["gated"])
+        self.assertIn("indexing", resp.json()["answer"].lower())
 
     @patch("app.api.router.metadata_store.get")
     @patch("app.api.router.run")

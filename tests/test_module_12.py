@@ -179,13 +179,20 @@ def test_ec7_diagram_uningested(mock_meta):
     assert_ok(res.status_code == 404, f"Expected 404, got {res.status_code}")
     print(f"{PASS} EC7: /diagram on uningested repo -> 404")
 
+@patch("app.api.router.run")
 @patch("app.api.router.metadata_store")
-def test_ec8_chat_pending(mock_meta):
+def test_ec8_chat_pending(mock_meta, mock_run):
     mock_meta.get.return_value = MagicMock(sync_status="pending", commit_hash=None)
+    mock_run.return_value = {
+        "answer": "This repository is still indexing (status: pending).",
+        "sources": [],
+        "confidence_score": 0.0,
+        "gated": True,
+    }
     res = client.post("/chat", json={"repo_id": "r", "question": "What is this?"})
-    assert_ok(res.status_code == 409, f"Expected 409, got {res.status_code}")
-    assert_ok("ingestion incomplete" in res.json()["detail"], "Missing defensive check message")
-    print(f"{PASS} EC8: /chat pending defensive check catches -> 409")
+    assert_ok(res.status_code == 200, f"Expected 200, got {res.status_code}")
+    assert_ok(res.json().get("gated") is True, "Expected gated chat while pending")
+    print(f"{PASS} EC8: /chat pending returns gated progress message -> 200")
 
 @patch("app.api.router.metadata_store")
 def test_ec9_diagram_pending(mock_meta):

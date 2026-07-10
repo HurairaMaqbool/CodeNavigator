@@ -137,10 +137,16 @@ def run_ingestion_sync(
         build_graph(clone_res.repo_id, parsed_files)
 
         # Status is keyed by job_id (provisional id from /ingest); vectors/graph use resolved repo_id.
-        metadata_store.mark_synced(
+        files_parsed = len(parsed_files) if parsed_files else len(files)
+        from app.ingestion.repo_readiness import mirror_sync_to_alias_pair
+
+        mirror_sync_to_alias_pair(
             job_id,
+            clone_res.repo_id,
             commit_hash=clone_res.commit_hash,
             cloned_at=getattr(clone_res, "cloned_at", "") or "",
+            files_parsed=files_parsed,
+            chunks_created=len(chunks),
         )
         log.info("ingest_pipeline_success")
         _refresh_golden_set_async(log)

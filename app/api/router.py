@@ -146,6 +146,48 @@ def readiness():
 # Ingestion Orchestration
 # ---------------------------------------------------------------------------
 
+# Intermediate pipeline stages (metadata_store.update sets sync_status to these).
+_INGEST_IN_PROGRESS_STATUSES = frozenset({
+    "pending",
+    "cloning",
+    "filtering",
+    "parsing",
+    "indexing",
+})
+
+
+def _celery_workers_available() -> bool:
+    """True when at least one Celery worker responds to a control ping."""
+    try:
+        from app.tasks.celery_app import celery_app
+
+        inspector = celery_app.control.inspect(timeout=1.0)
+        ping = inspector.ping()
+        return bool(ping)
+    except Exception as exc:
+        logger.debug("celery_worker_probe_failed", error=str(exc))
+        return False
+
+
+def _ingest_progress_counts(meta: Any, asset_repo_id: str) -> tuple[int, int]:
+    """Resolve files/chunks for /status from metadata with vector-store fallback."""
+    from app.ingestion.progress_counts import ingest_progress_counts
+
+    return ingest_progress_counts(meta, asset_repo_id, job_id=getattr(meta, "repo_id", None))
+
+
+def _api_status_for_sync(sync_status: str) -> str:
+    """Map metadata sync_status → API status field consumed by Streamlit polling."""
+    if sync_status == "failed":
+        return "failed"
+    if sync_status == "synced":
+        return "ready"
+    if sync_status in _INGEST_IN_PROGRESS_STATUSES:
+        return "processing"
+    logger.warning("unknown_sync_status_treated_as_processing", sync_status=sync_status)
+    return "processing"
+
+
 def _raise_for_ingestion_error(exc: IngestionError) -> None:
     """Map ingestion domain errors to HTTP responses (Module 12 contract)."""
     if isinstance(exc, InvalidURLError):
@@ -277,9 +319,11 @@ def trigger_ingest(repo_url: str, ref: str | None, force_reindex: bool, bg_tasks
     from app.redis_client import ping_redis
 
     dispatched = False
-    if ping_redis():
+    redis_up = ping_redis()
+    if redis_up and _celery_workers_available():
         try:
             from app.tasks.ingestion_task import run_ingestion
+
             run_ingestion.delay(
                 repo_url=repo_url,
                 ref=ref,
@@ -289,6 +333,15 @@ def trigger_ingest(repo_url: str, ref: str | None, force_reindex: bool, bg_tasks
             dispatched = True
         except Exception as e:
             logger.warning("celery_dispatch_failed_fallback_to_bg_tasks", error=str(e))
+    elif redis_up:
+        logger.warning(
+            "celery_workers_unavailable_fallback_to_bg_tasks",
+            repo_id=repo_id,
+            hint=(
+                "Redis is reachable but no Celery worker is consuming the ingestion queue. "
+                "Start: celery -A app.tasks.celery_app worker -l info -Q ingestion --pool=solo"
+            ),
+        )
 
     if not dispatched:
         from app.tasks.ingestion_task import run_ingestion_sync
@@ -349,7 +402,16 @@ def get_ingest_status(job_id: str):
         raise HTTPException(status_code=404, detail="Job/Repo not found.")
 
     _enforce_repo_org(meta)
-        
+
+    from app.ingestion.repo_readiness import evaluate_chat_readiness
+
+    readiness = evaluate_chat_readiness(
+        job_id, asset_repo_id=asset_repo_id, store=metadata_store,
+    )
+    meta = readiness.meta or meta
+    files_parsed = readiness.files_parsed
+    chunks_created = readiness.chunks_created
+
     # We must construct the exact response from spec
     resp = {
         "job_id": job_id,
@@ -358,21 +420,17 @@ def get_ingest_status(job_id: str):
         "commit_hash": meta.commit_hash,
         "sync_status": meta.sync_status,
         "error": getattr(meta, "error_reason", None),
-        # Default fillers if not synced yet
-        "files_parsed": 0,
-        "chunks_created": 0,
+        "files_parsed": files_parsed,
+        "chunks_created": chunks_created,
         "graph_truncated": False,
-        "has_circular_dependencies": False
+        "has_circular_dependencies": False,
+        "status": "ready" if readiness.ready else _api_status_for_sync(meta.sync_status),
     }
     
-    if meta.sync_status == "pending":
-        resp["status"] = "processing"
-    elif meta.sync_status == "failed":
-        resp["status"] = "failed"
+    if meta.sync_status == "failed":
         resp["error_reason"] = meta.error_reason
         resp["error"] = meta.error_reason
     elif meta.sync_status == "synced":
-        resp["status"] = "ready"
         # Extract graph info
         try:
             import json
@@ -388,8 +446,8 @@ def get_ingest_status(job_id: str):
                 if stored_cycles is None:
                     stored_cycles = detect_cycles(graph_repo_id)
                 resp["has_circular_dependencies"] = stored_cycles
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("status_graph_metadata_read_failed", error=str(exc))
 
     return resp
 
@@ -413,12 +471,17 @@ async def chat_state_stream(request: Request, session_id: str):
 @router.post("/chat", dependencies=[Depends(verify_api_key)])
 @limiter.limit("10/minute")
 def chat(request: Request, req: ChatRequest):
-    # Gate check
-    meta, asset_repo_id = _resolve_repo_meta(req.repo_id)
-    if not meta:
-        raise HTTPException(status_code=404, detail="Unknown repo_id")
-    _enforce_repo_org(meta)
+    from app.ingestion.repo_readiness import evaluate_chat_readiness
 
+    meta, asset_repo_id = _resolve_repo_meta(req.repo_id)
+    readiness = evaluate_chat_readiness(
+        req.repo_id, asset_repo_id=asset_repo_id, store=metadata_store,
+    )
+    if readiness.block_reason == "unknown":
+        raise HTTPException(status_code=404, detail="Unknown repo_id")
+    meta = readiness.meta or meta
+    if meta:
+        _enforce_repo_org(meta)
     from app.platform.usage_meter import check_quota, increment
     from app.platform.audit_log import record_event
     from app.platform.tenant_context import get_tenant
@@ -426,14 +489,7 @@ def chat(request: Request, req: ChatRequest):
     tenant = get_tenant()
     if not check_quota(tenant.org_id, "chat"):
         raise HTTPException(status_code=429, detail="Monthly chat quota exceeded")
-
-    if meta.sync_status != "synced" and not meta.commit_hash:
-        msg = f"ingestion incomplete (status: {meta.sync_status}), re-run /ingest"
-        if meta.error_reason:
-            msg += f" Error: {meta.error_reason}"
-        raise HTTPException(status_code=409, detail=msg)
         
-    # Handle conversation memory
     chat_history = []
     session_file = None
     if req.session_id:
@@ -446,9 +502,15 @@ def chat(request: Request, req: ChatRequest):
 
     try:
         if chat_history:
-            result = run(asset_repo_id, req.question, req.session_id, chat_history=chat_history)
+            result = run(
+                asset_repo_id,
+                req.question,
+                req.session_id,
+                job_id=req.repo_id,
+                chat_history=chat_history,
+            )
         else:
-            result = run(asset_repo_id, req.question, req.session_id)
+            result = run(asset_repo_id, req.question, req.session_id, job_id=req.repo_id)
             
         if req.session_id and "error" not in result:
             chat_history.append({"role": "user", "content": req.question})
@@ -471,12 +533,14 @@ def chat(request: Request, req: ChatRequest):
             )
 
         if result.get("rate_limited"):
+            wait = int(result.get("retry_after_s") or 30)
             raise HTTPException(
                 status_code=429,
                 detail=(
-                    "The AI provider is temporarily rate-limited. "
-                    "Please wait about 30 seconds and try again."
+                    f"The AI provider is temporarily rate-limited. "
+                    f"Please wait about {wait} seconds and try again."
                 ),
+                headers={"Retry-After": str(wait)},
             )
 
         increment(tenant.org_id, "chat")

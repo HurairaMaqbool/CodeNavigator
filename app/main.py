@@ -152,6 +152,20 @@ async def _lifespan(_app: FastAPI):
     logger.info("model_warmup_started")
     threading.Thread(target=on_startup, daemon=True, name="model-warmup").start()
 
+    def _consistency_loop() -> None:
+        import time
+
+        while True:
+            try:
+                from app.ingestion.repo_readiness import audit_all_repos_consistency
+
+                audit_all_repos_consistency()
+            except Exception as exc:
+                logger.warning("repo_consistency_audit_failed", error=str(exc))
+            time.sleep(300)
+
+    threading.Thread(target=_consistency_loop, daemon=True, name="repo-consistency-audit").start()
+
     yield
     # No shutdown teardown required for current scope
 
@@ -219,8 +233,9 @@ def create_app(override_settings=None) -> FastAPI:
             logger.warning("sentry_init_failed", error=str(exc))
 
     try:
-        from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-        FastAPIInstrumentor.instrument_app(_app)
+        if not os.environ.get("PYTEST_RUNNING"):
+            from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+            FastAPIInstrumentor.instrument_app(_app)
     except Exception:
         pass  # OTel is optional — absence must never crash startup
 

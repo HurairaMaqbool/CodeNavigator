@@ -57,8 +57,8 @@ class TestAgentLoop(unittest.TestCase):
         ), patch(
             "app.agent.loop.context_manager_assemble", return_value="ctx"
         ), patch(
-            "app.agent.loop.confidence_verify",
-            return_value=(3.0, True, "\n\n_(low confidence)_"),
+            "app.agent.confidence.evaluate",
+            return_value={"answer": "ctx", "confidence_score": 3.0, "gated": True},
         ), patch("app.agent.loop.semantic_cache_store"):
             res = answer_question("hello", "repo1", max_iterations=1)
 
@@ -96,8 +96,8 @@ class TestAgentLoop(unittest.TestCase):
         ), patch(
             "app.agent.loop._groq_text", side_effect=["YES", "Done."]
         ), patch(
-            "app.agent.loop.confidence_verify",
-            return_value=(8.5, False, ""),
+            "app.agent.confidence.evaluate",
+            return_value={"answer": "Done.", "confidence_score": 8.5, "gated": False},
         ), patch("app.agent.loop.semantic_cache_store"):
             out = answer_question("query", "repo")
 

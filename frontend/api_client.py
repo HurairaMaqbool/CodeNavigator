@@ -24,11 +24,18 @@ def _get_headers() -> dict[str, str]:
     return {"X-API-Key": API_KEY} if API_KEY else {}
 
 class APIError(Exception):
-    def __init__(self, status_code: int, message: str, raw_response: str = ""):
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        raw_response: str = "",
+        retry_after_s: int | None = None,
+    ):
         super().__init__(message)
         self.status_code = status_code
         self.message = message
         self.raw_response = raw_response
+        self.retry_after_s = retry_after_s
 
 def _handle_response(resp: requests.Response) -> dict[str, Any]:
     if 200 <= resp.status_code < 300:
@@ -42,8 +49,19 @@ def _handle_response(resp: requests.Response) -> dict[str, Any]:
         msg = err.get("detail", err.get("error", resp.text))
     except Exception:
         msg = resp.text
+
+    retry_after_s: int | None = None
+    if resp.status_code == 429:
+        raw_retry = resp.headers.get("Retry-After", "")
+        if raw_retry.isdigit():
+            retry_after_s = int(raw_retry)
+        else:
+            import re
+            m = re.search(r"wait about (\d+) seconds", str(msg), re.IGNORECASE)
+            if m:
+                retry_after_s = int(m.group(1))
         
-    raise APIError(resp.status_code, str(msg), resp.text)
+    raise APIError(resp.status_code, str(msg), resp.text, retry_after_s=retry_after_s)
 
 def ingest(repo_url: str, ref: str | None = None, force_reindex: bool = False) -> dict[str, Any]:
     payload = {"repo_url": repo_url, "force_reindex": force_reindex}

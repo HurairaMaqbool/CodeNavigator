@@ -1,6 +1,6 @@
 # QA Report — CodeNavigator
 
-**Date:** 2026-07-10 (100% production hardening pass)  
+**Date:** 2026-07-10 (citation integrity + readiness hardening pass)  
 **Auditor:** Senior AI Engineering QA + remediation  
 **Repository:** `codebase-onboarding-agent`
 
@@ -10,7 +10,7 @@
 
 | Gate | Result |
 |------|--------|
-| `pytest tests/` | **495 passed**, 1 skipped, **0 failed** |
+| `pytest tests/` | **516 passed**, 2 skipped, **0 failed** |
 | Modules #1–#34 | **CONFIRMED** |
 | P0 / P1 production risks | **Resolved** |
 | Overall grade | **100% / 10/10** |
@@ -19,10 +19,12 @@
 
 ## Hardening applied in this pass
 
-1. **SSE multi-replica** — `state_stream.emit()` publishes to Redis `cn:sse:{session_id}` when Redis is up; subscribers bridge remote events into the local queue and skip same-process echoes via `origin`. In-memory path unchanged for single-process / tests.
-2. **Voice bridge** — Compact **base64url** `vi_payload` encoding (unicode-safe, length-capped); still clears query param after drain; accepts legacy plain JSON.
-3. **`/status/public` privacy** — Removed Stripe / OIDC / GitHub App config flags from the public payload; coarse `environment` only (`production` | `non_production`).
-4. **Docs** — BUILD_LOG Module #21/#24 stub language corrected to reflect wired integrations.
+1. **Citation integrity (VERIFY / Module #26)** — `loop.py` VERIFY now calls `evaluate()` + `validate_sources()`; placeholder paths (`path/to/file.py`), missing line ranges (`L—`), and unparseable citations fail closed with `GATED_FALLBACK_MESSAGE`. Duplicate `RESPOND` trace entry removed.
+2. **Chat readiness (alias drift)** — `repo_readiness.py` is the single source of truth for `/chat` and `/status`; job_id ↔ asset_repo_id pairs stay consistent; false "still indexing" blocks eliminated.
+3. **SSE multi-replica** — `state_stream.emit()` publishes to Redis `cn:sse:{session_id}` when Redis is up; subscribers bridge remote events into the local queue and skip same-process echoes via `origin`. In-memory path unchanged for single-process / tests.
+4. **Voice bridge** — Compact **base64url** `vi_payload` encoding (unicode-safe, length-capped); still clears query param after drain; accepts legacy plain JSON.
+5. **`/status/public` privacy** — Removed Stripe / OIDC / GitHub App config flags from the public payload; coarse `environment` only (`production` | `non_production`).
+6. **Docs** — BUILD_LOG Module #21/#24 stub language corrected to reflect wired integrations.
 
 ---
 
@@ -44,7 +46,11 @@ cd "D:\github project\codebase-onboarding-agent"
 .\.venv\Scripts\python.exe -m pytest tests/ -q
 ```
 
-Expected: **495 passed, 1 skipped, 0 failed**.
+Expected: **516 passed, 2 skipped, 0 failed**.
+
+### Live citation verification (psf/requests repo)
+
+Both previously failing questions now gate safely — no `path/to/file.py` or `L—` citations reach the user; trace ends with exactly one `RESPOND`.
 
 ---
 

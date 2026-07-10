@@ -51,7 +51,8 @@ def test_render_state_uses_label_verbatim():
     label = "Searching the codebase…"
     render_state(ph, "ACT", label)
     assert label in ph.html[-1]
-    assert "Step 3 of 7" in ph.html[-1]
+    assert "3/7" in ph.html[-1]
+    assert "le-step-badge" in ph.html[-1]
     assert STATE_ICONS["ACT"] in ph.html[-1]
 
 

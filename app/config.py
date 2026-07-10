@@ -53,7 +53,43 @@ class Settings(BaseSettings):
         default=None, description="API key for Groq"
     )
     LLM_MODEL: str = Field(
-        default="llama-3.1-8b-instant", description="LLM model name"
+        default="llama-3.1-8b-instant", description="LLM model name for FINALIZE"
+    )
+    DECIDE_LLM_MODEL: str = Field(
+        default="llama-3.1-8b-instant",
+        description="Fast model for DECIDE yes/no classification",
+    )
+    GROQ_HTTP_TIMEOUT_S: float = Field(
+        default=20.0,
+        description="Per-request HTTP timeout for Groq SDK (with max_retries=0)",
+    )
+    GROQ_TTFT_TIMEOUT_S: float = Field(
+        default=12.0,
+        description="Streaming time-to-first-token ceiling",
+    )
+    GROQ_DECIDE_TIMEOUT_S: float = Field(
+        default=12.0,
+        description="Wall-clock ceiling for DECIDE streaming calls",
+    )
+    GROQ_FINALIZE_TIMEOUT_S: float = Field(
+        default=35.0,
+        description="Wall-clock ceiling for FINALIZE streaming calls",
+    )
+    CLAIM_EMBED_THRESHOLD: float = Field(
+        default=0.40,
+        description="Min embedding cosine similarity for claim↔cited-text support",
+    )
+    CLAIM_LEXICAL_THRESHOLD: float = Field(
+        default=0.18,
+        description="Min token-overlap ratio when embedding score is below threshold",
+    )
+    CLAIM_VERIFY_LLM_BATCH: bool = Field(
+        default=False,
+        description="Use a single batched LLM call for borderline claim verification",
+    )
+    CONTEXT_MAX_TOKENS: int = Field(
+        default=5000,
+        description="Hard cap on retrieval context tokens for DECIDE/FINALIZE",
     )
     EVAL_JUDGE_MODEL: Optional[str] = Field(
         default=None,
@@ -149,7 +185,15 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("MAX_ITERATIONS", "MAX_AGENT_ITERATIONS"),
         description="Hard cap on agent loop iterations (used by loop.py)",
     )
-    AGENT_MAX_SECONDS: int = Field(default=30)
+    AGENT_MAX_SECONDS: int = Field(default=60)
+    RETRIEVAL_FAST_PATH_SCORE: float = Field(
+        default=0.35,
+        description="Skip DECIDE LLM when best rerank score exceeds this",
+    )
+    MAX_QUERY_VARIANTS: int = Field(
+        default=2,
+        description="Max hybrid-search variants per ACT pass",
+    )
     MAX_TOOL_CALLS: int = Field(default=3)
     MAX_TOTAL_TOKENS: int = Field(default=6000)
 

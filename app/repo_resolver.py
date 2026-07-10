@@ -33,12 +33,21 @@ def resolve_asset_repo_id(
     """
     ms = store if store is not None else _default_store
     job_id = job_or_asset_id
-    meta = ms.get(job_id)
+    meta_job = ms.get(job_id)
     asset_repo_id = ms.get_alias(job_id) or job_id
-    if (not meta or meta.sync_status != "synced") and asset_repo_id != job_id:
-        real_meta = ms.get(asset_repo_id)
-        if real_meta:
-            meta = real_meta
+    meta_asset = ms.get(asset_repo_id) if asset_repo_id != job_id else None
+
+    # Prefer synced metadata across alias pair (job_id vs asset clone id).
+    if meta_job and meta_job.sync_status == "synced":
+        meta = meta_job
+    elif meta_asset and meta_asset.sync_status == "synced":
+        meta = meta_asset
+    elif meta_job:
+        meta = meta_job
+    elif meta_asset:
+        meta = meta_asset
+    else:
+        meta = None
     return meta, asset_repo_id
 
 

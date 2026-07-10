@@ -246,16 +246,153 @@ def _coerce_groq_text_tools(content_blocks: list[dict[str, Any]]) -> list[dict[s
 
 
 class GroqAdapter:
-    """Wraps the Groq SDK."""
+    """Wraps the Groq SDK — single HTTP attempt per call (max_retries=0 at SDK layer)."""
+
     def __init__(self, api_key: str, model: str):
         try:
             from groq import Groq, RateLimitError as GroqRateLimitError
             from groq import APIStatusError, APITimeoutError
-            self._client = Groq(api_key=api_key)
+
+            self._client = Groq(
+                api_key=api_key,
+                max_retries=0,
+                timeout=float(settings.GROQ_HTTP_TIMEOUT_S),
+            )
             self._model = model
             self._groq_errors = (GroqRateLimitError, APIStatusError, APITimeoutError)
         except ImportError:
             raise ImportError("The 'groq' package is not installed.")
+
+    def _build_messages(self, system: str, messages: list[dict]) -> list[dict[str, str]]:
+        translated_messages = _translate_anthropic_messages_to_openai(messages)
+        return [{"role": "system", "content": system}] + translated_messages
+
+    @staticmethod
+    def _retry_after_seconds(exc: Exception) -> float | None:
+        headers = getattr(exc, "response", None)
+        if headers is not None:
+            hdrs = getattr(headers, "headers", None)
+            if hdrs:
+                raw = hdrs.get("retry-after") or hdrs.get("Retry-After")
+                if raw is not None:
+                    try:
+                        return max(0.5, float(raw))
+                    except (TypeError, ValueError):
+                        pass
+        return None
+
+    def stream_text(
+        self,
+        system: str,
+        user: str,
+        *,
+        max_tokens: int = 256,
+        model: str | None = None,
+        purpose: str = "text",
+        wall_clock_timeout_s: float | None = None,
+        ttft_timeout_s: float | None = None,
+    ) -> tuple[str, dict[str, Any]]:
+        """
+        Stream a text completion; returns (text, diagnostics).
+
+        Exactly one SDK HTTP attempt per invocation — retries belong to loop.py only.
+        """
+        import time as _time
+
+        from groq import RateLimitError as GroqRateLimitError
+        from groq import APITimeoutError
+
+        use_model = model or self._model
+        api_messages = self._build_messages(
+            system,
+            [{"role": "user", "content": user}],
+        )
+        est_input_tokens = max(1, (len(system) + len(user)) // 4)
+        wall_limit = wall_clock_timeout_s or float(settings.GROQ_FINALIZE_TIMEOUT_S)
+        ttft_limit = ttft_timeout_s or float(settings.GROQ_TTFT_TIMEOUT_S)
+
+        logger.info(
+            "groq_stream_call_start",
+            purpose=purpose,
+            model=use_model,
+            max_tokens=max_tokens,
+            estimated_input_tokens=est_input_tokens,
+            sdk_max_retries=0,
+            http_timeout_s=settings.GROQ_HTTP_TIMEOUT_S,
+            wall_clock_timeout_s=wall_limit,
+            ttft_timeout_s=ttft_limit,
+        )
+
+        t0 = _time.monotonic()
+        ttft: float | None = None
+        parts: list[str] = []
+
+        try:
+            stream = self._client.chat.completions.create(
+                model=use_model,
+                messages=api_messages,
+                max_tokens=max_tokens,
+                stream=True,
+            )
+            for chunk in stream:
+                now = _time.monotonic()
+                if ttft is None:
+                    ttft = now - t0
+                    if ttft > ttft_limit:
+                        raise ProviderError(
+                            f"LLM time-to-first-token exceeded {ttft_limit:.0f}s"
+                        )
+                if now - t0 > wall_limit:
+                    raise ProviderError(
+                        f"LLM call timed out after {wall_limit:.0f}s"
+                    )
+                if not chunk.choices:
+                    continue
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    parts.append(delta)
+        except GroqRateLimitError as exc:
+            retry_after = self._retry_after_seconds(exc)
+            err_text = str(exc)
+            tpm_used = tpm_limit = None
+            import re as _re
+            m = _re.search(r"Limit (\d+), Used (\d+)", err_text)
+            if m:
+                tpm_limit, tpm_used = int(m.group(1)), int(m.group(2))
+            logger.warning(
+                "groq_rate_limit",
+                purpose=purpose,
+                retry_after_s=retry_after,
+                tpm_limit=tpm_limit,
+                tpm_used=tpm_used,
+                error=err_text[:240],
+            )
+            raise RateLimitError(
+                f"Groq API rate limit exceeded."
+                + (f" Retry after {retry_after:.0f}s." if retry_after else "")
+            ) from exc
+        except APITimeoutError as exc:
+            logger.warning("groq_http_timeout", purpose=purpose, error=str(exc))
+            raise ProviderError(f"Groq HTTP timeout: {exc}") from exc
+        except ProviderError:
+            raise
+        except Exception as exc:
+            logger.error("groq_stream_error", purpose=purpose, error=str(exc))
+            raise ProviderError(f"Groq API error: {exc}") from exc
+
+        elapsed = _time.monotonic() - t0
+        text = "".join(parts).strip()
+        meta = {
+            "purpose": purpose,
+            "model": use_model,
+            "estimated_input_tokens": est_input_tokens,
+            "elapsed_s": round(elapsed, 3),
+            "ttft_s": round(ttft or elapsed, 3),
+            "output_chars": len(text),
+            "sdk_attempts": 1,
+        }
+        logger.info("groq_stream_call_complete", **meta)
+        return text, meta
 
     def create(self, system: str, messages: list[dict], tools: list[dict] | None = None, max_tokens: int = 1024) -> LLMResponse:
         from groq import RateLimitError as GroqRateLimitError
@@ -265,10 +402,9 @@ class GroqAdapter:
         groq_tools = _translate_anthropic_tools_to_openai(tools) if tools else None
 
         # 2. Prepend system message and translate to OpenAI format
-        translated_messages = _translate_anthropic_messages_to_openai(messages)
-        api_messages = [{"role": "system", "content": system}] + translated_messages
+        api_messages = self._build_messages(system, messages)
 
-        # 3. Call API
+        # 3. Call API — exactly one SDK attempt (no tenacity; loop layer owns retries)
         try:
             kwargs = {
                 "model": self._model,
@@ -277,28 +413,20 @@ class GroqAdapter:
             }
             if groq_tools:
                 kwargs["tools"] = groq_tools
-                # "auto" means the model decides.
                 kwargs["tool_choice"] = "auto"
-                
-            from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-            
-            @retry(
-                stop=stop_after_attempt(3),
-                wait=wait_exponential(multiplier=1, min=2, max=30),
-                retry=retry_if_exception_type((GroqRateLimitError, APITimeoutError)),
-                reraise=True
-            )
-            def _call_groq():
-                return self._client.chat.completions.create(**kwargs)
-            
-            res = _call_groq()
+
+            res = self._client.chat.completions.create(**kwargs)
 
         except GroqRateLimitError as e:
-            logger.warning("groq_rate_limit", error=str(e))
-            raise RateLimitError("Groq API rate limit exceeded.") from e
+            retry_after = self._retry_after_seconds(e)
+            logger.warning("groq_rate_limit", error=str(e), retry_after_s=retry_after)
+            msg = "Groq API rate limit exceeded."
+            if retry_after:
+                msg += f" Retry after {retry_after:.0f}s."
+            raise RateLimitError(msg) from e
         except APITimeoutError as e:
             logger.warning("groq_timeout", error=str(e))
-            raise RateLimitError("Groq API timed out (treat as retryable).") from e
+            raise ProviderError(f"Groq HTTP timeout: {e}") from e
         except Exception as e:
             # Try to recover from tool_use_failed errors by parsing the malformed XML tag from failed_generation.
             try:

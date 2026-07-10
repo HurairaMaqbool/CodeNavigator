@@ -26,12 +26,13 @@ standalone utility, free of vector-store or BM25 dependencies.
 from __future__ import annotations
 
 import logging
-from typing import Sequence
-
-from sentence_transformers import SentenceTransformer
+from typing import TYPE_CHECKING, Sequence
 
 from app.config import settings
 from app.observability.logging_config import logger
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 # ---------------------------------------------------------------------------
 # Global model instance
@@ -40,10 +41,12 @@ from app.observability.logging_config import logger
 _MODEL: SentenceTransformer | None = None
 
 
-def _get_model() -> SentenceTransformer:
+def _get_model() -> "SentenceTransformer":
     """Return the global SentenceTransformer, initializing it if necessary."""
     global _MODEL
     if _MODEL is None:
+        from sentence_transformers import SentenceTransformer
+
         model_name = settings.EMBEDDING_MODEL
         logger.info("loading_embedding_model", model_name=model_name)
         # Device is auto-selected by sentence-transformers (CUDA/MPS/CPU).

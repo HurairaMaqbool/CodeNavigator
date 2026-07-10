@@ -37,14 +37,14 @@ def test_get_theme_missing_mode_falls_back_to_dark():
     assert get_theme("garbage").mode == "dark"
 
 
-def test_palette_is_navy_blue_teal_concrete_hex():
+def test_palette_is_indigo_coral_slate_concrete_hex():
     dark = get_theme("dark")
-    assert dark.colors.navy_900 == "#0B1D36"
-    assert dark.colors.blue_500 == "#2563EB"
-    assert dark.colors.teal_500 == "#0D9488"
-    assert "DM Sans" in dark.typography.font_family
-    assert dark.spacing.unit == 4
-    assert dark.spacing.xs == "4px"
+    assert dark.colors.navy_900 == "#0F172A"
+    assert dark.colors.blue_500 == "#6366F1"
+    assert dark.colors.teal_500 == "#F97316"
+    assert "Inter" in dark.typography.font_family
+    assert dark.spacing.unit == 8
+    assert dark.spacing.xs == "8px"
     assert dark.spacing.huge == "64px"
 
 
@@ -55,14 +55,14 @@ def test_get_theme_is_cached_once_per_mode():
     light = get_theme("light")
     assert light is not a
     assert light.mode == "light"
-    assert light.colors.bg == "#F4F7FB"
+    assert light.colors.bg == "#F8FAFC"
 
 
 def test_widget_style_tokens_expose_shared_palette():
     tokens = widget_style_tokens()
-    assert tokens["blue_500"] == "#2563EB"
-    assert tokens["teal_400"] in {"#2DD4BF", "#14B8A6"}
-    assert "DM Sans" in tokens["font_family"]
+    assert tokens["blue_500"] == "#6366F1"
+    assert tokens["teal_400"] == "#FB923C"
+    assert "Inter" in tokens["font_family"]
 
 
 def test_resolve_session_mode_defaults_dark_when_absent():

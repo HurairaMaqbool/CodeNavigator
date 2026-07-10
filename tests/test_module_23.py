@@ -49,15 +49,15 @@ def test_finalize_prompt_citation_format_instruction():
         "question": "Explain auth",
         "assembled_context": "### auth.py\ndef login(): pass",
     })
-    assert "`file_path:start_line-end_line`" in out
-    assert "src/auth/login.py:42-58" in out
+    assert "RESPOND WITH JSON ONLY" in out
+    assert "claims" in out
+    assert "EXAMPLE — GOOD" in out
     assert "Explain auth" in out
-    assert "RESPOND WITH JSON ONLY" not in out
 
 
-def test_finalize_system_prompt_citations():
+def test_finalize_system_prompt_json_contract():
     sys = finalize_system_prompt()
-    assert "file_path:start_line-end_line" in sys
+    assert "JSON" in sys
 
 
 def test_compress_prompt_includes_old_results_only():

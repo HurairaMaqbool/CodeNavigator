@@ -125,23 +125,22 @@ class ThemeTokens:
 
 
 _TYPOGRAPHY = TypographyTokens(
-    # Sora for brand presence; DM Sans for readable UI copy (not Inter/system).
-    font_family="'DM Sans', 'Sora', sans-serif",
-    font_mono="'JetBrains Mono', 'Consolas', monospace",
+    font_family="'Inter', 'Manrope', system-ui, sans-serif",
+    font_mono="'JetBrains Mono', 'Fira Code', Consolas, monospace",
     font_import_url=(
         "https://fonts.googleapis.com/css2?"
-        "family=Sora:wght@500;600;700&"
-        "family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;"
-        "1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        "family=Inter:wght@400;500;600;700&"
+        "family=Manrope:wght@500;600;700&"
+        "family=JetBrains+Mono:wght@400;500&display=swap"
     ),
-    size_xs="0.75rem",
-    size_sm="0.875rem",
-    size_base="1rem",
+    size_xs="0.75rem",      # 12px meta/labels
+    size_sm="0.875rem",     # 14px secondary
+    size_base="1rem",       # 16px body
     size_lg="1.125rem",
-    size_xl="1.25rem",
-    size_2xl="1.5rem",
+    size_xl="1.25rem",      # 20px section headers
+    size_2xl="1.75rem",     # 28px page title
     size_3xl="1.875rem",
-    size_display="2.75rem",
+    size_display="1.75rem",
     weight_regular=400,
     weight_medium=500,
     weight_semibold=600,
@@ -149,93 +148,93 @@ _TYPOGRAPHY = TypographyTokens(
 )
 
 _SPACING = SpacingTokens(
-    unit=4,
-    xs="4px",
+    unit=8,
+    xs="8px",
     sm="8px",
-    md="12px",
+    md="16px",
     lg="16px",
     xl="24px",
     xxl="32px",
     xxxl="48px",
     huge="64px",
-    radius_sm="10px",
-    radius_md="14px",
-    radius_lg="20px",
+    radius_sm="8px",
+    radius_md="12px",
+    radius_lg="16px",
     radius_pill="999px",
-    max_content_width="1180px",
+    max_content_width="1200px",
 )
 
-# Refined navy / blue / teal — deep ink canvas, teal accent, blue action.
+# Indigo-violet primary · coral accent · cool slate neutrals
 _DARK_COLORS = ColorTokens(
-    navy_900="#0B1D36",
-    navy_800="#12263A",
-    navy_700="#1A3655",
-    blue_600="#1D4ED8",
-    blue_500="#2563EB",
-    blue_400="#3B82F6",
-    teal_500="#0D9488",
-    teal_400="#2DD4BF",
-    bg="#071525",
-    surface="#0E2138",
-    surface_elevated="#152A45",
-    border="#243B55",
+    navy_900="#0F172A",
+    navy_800="#1E293B",
+    navy_700="#334155",
+    blue_600="#4F46E5",
+    blue_500="#6366F1",
+    blue_400="#818CF8",
+    teal_500="#F97316",
+    teal_400="#FB923C",
+    bg="#0F172A",
+    surface="#1E293B",
+    surface_elevated="#243044",
+    border="#334155",
     text="#F1F5F9",
     text_muted="#94A3B8",
-    text_inverse="#0B1D36",
-    success_bg="#0A3D32",
-    success_fg="#5EEAD4",
-    warning_bg="#4A3208",
-    warning_fg="#FBBF24",
-    danger_bg="#4C1515",
-    danger_fg="#FCA5A5",
-    info_bg="#132A4A",
-    info_fg="#93C5FD",
-    accent="#2DD4BF",
-    accent_strong="#2563EB",
-    skeleton_a="#152A45",
-    skeleton_b="#243B55",
+    text_inverse="#0F172A",
+    success_bg="#064E3B",
+    success_fg="#10B981",
+    warning_bg="#78350F",
+    warning_fg="#F59E0B",
+    danger_bg="#7F1D1D",
+    danger_fg="#EF4444",
+    info_bg="#1E3A5F",
+    info_fg="#3B82F6",
+    accent="#F97316",
+    accent_strong="#6366F1",
+    skeleton_a="#1E293B",
+    skeleton_b="#334155",
     hero_gradient=(
-        "radial-gradient(1200px 480px at 12% -10%, rgba(45,212,191,0.28), transparent 55%),"
-        "radial-gradient(900px 420px at 88% 0%, rgba(37,99,235,0.32), transparent 50%),"
-        "linear-gradient(145deg, #071525 0%, #0B1D36 42%, #12263A 100%)"
+        "radial-gradient(900px 400px at 10% -10%, rgba(99,102,241,0.35), transparent 55%),"
+        "radial-gradient(700px 360px at 90% 0%, rgba(249,115,22,0.18), transparent 50%),"
+        "linear-gradient(145deg, #0F172A 0%, #1E293B 100%)"
     ),
-    sidebar_gradient="linear-gradient(180deg, #06111F 0%, #0B1D36 48%, #0E2138 100%)",
+    sidebar_gradient="linear-gradient(180deg, #0F172A 0%, #1E293B 100%)",
 )
 
 _LIGHT_COLORS = ColorTokens(
-    navy_900="#0B1D36",
-    navy_800="#12263A",
-    navy_700="#1A3655",
-    blue_600="#1D4ED8",
-    blue_500="#2563EB",
-    blue_400="#3B82F6",
-    teal_500="#0D9488",
-    teal_400="#14B8A6",
-    bg="#F4F7FB",
+    navy_900="#0F172A",
+    navy_800="#1E293B",
+    navy_700="#334155",
+    blue_600="#4F46E5",
+    blue_500="#6366F1",
+    blue_400="#818CF8",
+    teal_500="#F97316",
+    teal_400="#F97316",
+    bg="#F8FAFC",
     surface="#FFFFFF",
     surface_elevated="#FFFFFF",
-    border="#D5DEEA",
-    text="#0B1D36",
-    text_muted="#5B6B7C",
+    border="#E2E8F0",
+    text="#0F172A",
+    text_muted="#475569",
     text_inverse="#FFFFFF",
     success_bg="#D1FAE5",
-    success_fg="#065F46",
+    success_fg="#059669",
     warning_bg="#FEF3C7",
-    warning_fg="#92400E",
+    warning_fg="#D97706",
     danger_bg="#FEE2E2",
-    danger_fg="#991B1B",
+    danger_fg="#DC2626",
     info_bg="#DBEAFE",
-    info_fg="#1E40AF",
-    accent="#0D9488",
-    accent_strong="#2563EB",
+    info_fg="#2563EB",
+    accent="#F97316",
+    accent_strong="#6366F1",
     skeleton_a="#E2E8F0",
     skeleton_b="#F1F5F9",
     hero_gradient=(
-        "radial-gradient(1000px 420px at 8% -20%, rgba(13,148,136,0.22), transparent 55%),"
-        "radial-gradient(800px 380px at 92% 0%, rgba(37,99,235,0.20), transparent 50%),"
-        "linear-gradient(145deg, #0B1D36 0%, #123A5C 48%, #0D9488 100%)"
+        "radial-gradient(900px 400px at 8% -20%, rgba(99,102,241,0.14), transparent 55%),"
+        "radial-gradient(700px 360px at 92% 0%, rgba(249,115,22,0.10), transparent 50%),"
+        "linear-gradient(145deg, #4F46E5 0%, #6366F1 48%, #818CF8 100%)"
     ),
-    sidebar_gradient="linear-gradient(180deg, #06111F 0%, #0B1D36 55%, #12263A 100%)",
+    sidebar_gradient="linear-gradient(180deg, #0F172A 0%, #1E293B 100%)",
 )
 
 
@@ -315,6 +314,8 @@ def css_variables(theme: ThemeTokens | None = None) -> str:
   --cn-text-inverse: {c.text_inverse};
   --cn-accent: {c.accent};
   --cn-accent-strong: {c.accent_strong};
+  --cn-primary-tint: {"#EEF2FF" if t.mode == "light" else "rgba(99, 102, 241, 0.16)"};
+  --cn-primary-tint-hover: {"#E0E7FF" if t.mode == "light" else "rgba(99, 102, 241, 0.28)"};
   --cn-skeleton-a: {c.skeleton_a};
   --cn-skeleton-b: {c.skeleton_b};
   --cn-success-bg: {c.success_bg};
@@ -417,6 +418,7 @@ html, body, [class*="css"], .stApp {{
 .hero-banner .hero-brand span.mark {{
     color: var(--cn-teal-400);
     margin-right: 0.35rem;
+    filter: drop-shadow(0 0 8px rgba(249,115,22,0.35));
 }}
 
 .hero-banner .hero-tagline {{
@@ -602,15 +604,33 @@ div[data-testid="stSidebar"] .stRadio > label {{
     font-weight: 600;
 }}
 
-/* Primary actions */
+/* Primary actions — indigo solid */
 .stButton > button[kind="primary"],
 button[data-testid="baseButton-primary"] {{
-    background: linear-gradient(135deg, var(--cn-blue-500), var(--cn-teal-500)) !important;
+    background: var(--cn-blue-500) !important;
     border: none !important;
     color: #FFFFFF !important;
     font-weight: 600 !important;
-    border-radius: var(--cn-radius-sm) !important;
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.28);
+    border-radius: var(--cn-radius-md) !important;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}}
+
+.stButton > button[kind="primary"]:hover,
+button[data-testid="baseButton-primary"]:hover {{
+    background: var(--cn-blue-600) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}}
+
+/* Secondary / ghost buttons */
+.stButton > button[kind="secondary"],
+button[data-testid="baseButton-secondary"] {{
+    background: transparent !important;
+    border: 1px solid var(--cn-border) !important;
+    color: var(--cn-text) !important;
+    border-radius: var(--cn-radius-md) !important;
+    font-weight: 500 !important;
 }}
 
 .stTextInput > div > div > input,
@@ -655,12 +675,21 @@ button[data-testid="baseButton-primary"] {{
 }}
 
 .chat-empty .prompt-chip {{
-    font-size: 0.78rem;
-    padding: 0.35rem 0.7rem;
+    font-size: 0.8125rem;
+    padding: 0.5rem 1rem;
     border-radius: var(--cn-radius-pill);
-    background: rgba(37, 99, 235, 0.12);
-    border: 1px solid rgba(37, 99, 235, 0.28);
-    color: var(--cn-info-fg);
+    background: var(--cn-primary-tint);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: var(--cn-blue-500);
+    font-weight: 500;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    cursor: default;
+}}
+
+.chat-empty .prompt-chip:hover {{
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.18);
+    background: var(--cn-primary-tint-hover);
 }}
 
 .footer-bar {{
@@ -709,6 +738,259 @@ div[data-testid="stStatusWidget"],
 
 /* Soften Streamlit chrome */
 [data-testid="stDecoration"] {{ display: none; }}
+
+/* —— Top header bar (brand + API status) —— */
+.cn-topbar {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--cn-space-md) 0 var(--cn-space-lg);
+    margin-bottom: var(--cn-space-sm);
+    border-bottom: 1px solid var(--cn-border);
+}}
+
+.cn-topbar-brand {{
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: var(--cn-size-2xl);
+    font-weight: 700;
+    color: var(--cn-text);
+    letter-spacing: -0.03em;
+}}
+
+.cn-topbar-brand .mark {{
+    color: var(--cn-teal-400);
+    font-size: 1.35em;
+}}
+
+.cn-topbar-tagline {{
+    font-size: var(--cn-size-sm);
+    color: var(--cn-text-muted);
+    margin: 0.15rem 0 0 0;
+    font-weight: 400;
+}}
+
+.cn-api-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--cn-radius-pill);
+    font-size: var(--cn-size-xs);
+    font-weight: 600;
+    border: 1px solid var(--cn-border);
+    background: var(--cn-surface);
+}}
+
+.cn-api-pill .dot {{
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: cn-pulse-dot 2s ease-in-out infinite;
+}}
+
+.cn-api-pill.online .dot {{ background: var(--cn-success-fg); box-shadow: 0 0 0 3px rgba(16,185,129,0.25); }}
+.cn-api-pill.offline .dot {{ background: var(--cn-danger-fg); animation: none; }}
+
+@keyframes cn-pulse-dot {{
+  0%, 100% {{ opacity: 1; }}
+  50% {{ opacity: 0.5; }}
+}}
+
+/* —— Sidebar vertical nav (Streamlit radio styled as nav) —— */
+div[data-testid="stSidebar"] .stRadio > div {{
+    flex-direction: column !important;
+    gap: 0.35rem;
+}}
+
+div[data-testid="stSidebar"] .stRadio label {{
+    display: flex !important;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem !important;
+    border-radius: var(--cn-radius-md) !important;
+    font-size: var(--cn-size-sm) !important;
+    font-weight: 500 !important;
+    color: rgba(241,245,249,0.9) !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    transition: background 0.18s ease, border-color 0.18s ease;
+    cursor: pointer;
+}}
+
+div[data-testid="stSidebar"] .stRadio label:hover {{
+    background: rgba(99, 102, 241, 0.12) !important;
+    border-color: rgba(99, 102, 241, 0.2) !important;
+}}
+
+div[data-testid="stSidebar"] .stRadio label:has(input:checked) {{
+    background: rgba(99, 102, 241, 0.22) !important;
+    border-left: 3px solid var(--cn-blue-500) !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+}}
+
+div[data-testid="stSidebar"] .stRadio label > div:first-child {{
+    display: none !important;
+}}
+
+.cn-nav {{
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin: 0.5rem 0 1rem;
+}}
+
+.cn-nav-item {{
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: var(--cn-radius-md);
+    font-size: var(--cn-size-sm);
+    font-weight: 500;
+    color: rgba(241,245,249,0.85);
+    border: 1px solid transparent;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    cursor: pointer;
+    text-decoration: none;
+}}
+
+.cn-nav-item:hover {{
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.2);
+}}
+
+.cn-nav-item.active {{
+    background: rgba(99, 102, 241, 0.22);
+    border-left: 3px solid var(--cn-blue-500);
+    color: #FFFFFF;
+    font-weight: 600;
+}}
+
+.cn-nav-icon {{
+    width: 1.25rem;
+    text-align: center;
+    opacity: 0.9;
+}}
+
+/* —— Ingest progress stepper —— */
+.cn-stepper {{
+    display: flex;
+    gap: 0.25rem;
+    margin: var(--cn-space-md) 0;
+    flex-wrap: wrap;
+}}
+
+.cn-step {{
+    flex: 1;
+    min-width: 4.5rem;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cn-text-muted);
+    position: relative;
+    padding-bottom: 0.5rem;
+}}
+
+.cn-step::after {{
+    content: "";
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--cn-border);
+    margin-top: 0.35rem;
+    transition: background 0.2s ease;
+}}
+
+.cn-step.done {{ color: var(--cn-success-fg); }}
+.cn-step.done::after {{ background: var(--cn-success-fg); }}
+.cn-step.active {{ color: var(--cn-blue-500); }}
+.cn-step.active::after {{ background: var(--cn-blue-500); }}
+
+/* —— Panel cards —— */
+.cn-panel-card {{
+    background: var(--cn-surface);
+    border: 1px solid var(--cn-border);
+    border-radius: var(--cn-radius-lg);
+    padding: var(--cn-space-lg);
+    margin-bottom: var(--cn-space-md);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}}
+
+/* —— Citation chips —— */
+.cn-cite-chip {{
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--cn-font-mono);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.55rem;
+    margin: 0.15rem 0.25rem 0.15rem 0;
+    border-radius: var(--cn-radius-sm);
+    background: var(--cn-primary-tint);
+    color: var(--cn-blue-500);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}}
+
+/* —— Semantic alert cards —— */
+.cn-alert {{
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    padding: var(--cn-space-md);
+    border-radius: var(--cn-radius-md);
+    font-size: var(--cn-size-sm);
+    line-height: 1.5;
+    margin: 0.5rem 0;
+    border: 1px solid transparent;
+}}
+
+.cn-alert-error {{
+    background: var(--cn-danger-bg);
+    color: var(--cn-danger-fg);
+    border-color: rgba(239, 68, 68, 0.35);
+}}
+
+.cn-alert-info {{
+    background: var(--cn-info-bg);
+    color: var(--cn-info-fg);
+    border-color: rgba(59, 130, 246, 0.3);
+}}
+
+.cn-alert-warning {{
+    background: var(--cn-warning-bg);
+    color: var(--cn-warning-fg);
+    border-color: rgba(245, 158, 11, 0.35);
+}}
+
+.cn-stat-grid {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--cn-space-sm);
+    margin: var(--cn-space-md) 0;
+}}
+
+.cn-empty-stat {{
+    text-align: center;
+    padding: var(--cn-space-md);
+    color: var(--cn-text-muted);
+    font-size: var(--cn-size-sm);
+}}
+
+.cn-empty-stat .icon {{
+    font-size: 1.5rem;
+    opacity: 0.45;
+    margin-bottom: 0.35rem;
+}}
+
+/* Code paths in prose */
+code, .stMarkdown code {{
+    font-family: var(--cn-font-mono) !important;
+    font-size: 0.85em !important;
+}}
 """
 
 

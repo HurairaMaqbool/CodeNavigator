@@ -35,11 +35,13 @@ from app.cache.tool_cache import ToolCache
 
 _TOOL_CACHE = ToolCache()
 
-# OBSERVE context budget (~4 chars/token heuristic for English code).
-_DEFAULT_CONTEXT_TOKEN_BUDGET = 4000
-_DECIDE_MODEL = None  # settings.LLM_MODEL
+# Exact-question replay cache — zero Groq on repeated identical questions (local testing).
+_EXACT_QUESTION_CACHE: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
+_EXACT_QUESTION_TTL_S = 300.0
+
+# OBSERVE context budget — capped via settings.CONTEXT_MAX_TOKENS.
+_DEFAULT_CONTEXT_TOKEN_BUDGET = 5000
 _FINALIZE_MAX_TOKENS = 700
-_GROQ_TIMEOUT_S = 25.0
 
 
 # ---------------------------------------------------------------------------
@@ -97,17 +99,24 @@ def context_manager_assemble(
     chunks: list[dict[str, Any]],
     graph_context: str,
     *,
-    max_tokens: int = _DEFAULT_CONTEXT_TOKEN_BUDGET,
+    max_tokens: int | None = None,
 ) -> str:
     """
     FORWARD STUB — Module #25 ``context_manager.assemble_context(chunks, graph, max_tokens)``.
 
     Trims merged chunk text to a token budget before DECIDE/FINALIZE Groq calls.
+    Chunks are sorted by rerank score (highest first) before truncation.
     """
-    budget_chars = max(500, max_tokens * 4)
+    token_budget = max_tokens or int(settings.CONTEXT_MAX_TOKENS)
+    budget_chars = max(500, token_budget * 4)
+    ranked = sorted(
+        chunks,
+        key=lambda h: float(h.get("score", 0.0)),
+        reverse=True,
+    )
     parts: list[str] = []
     used = 0
-    for hit in chunks:
+    for hit in ranked:
         text = hit.get("chunk") or ""
         if not text:
             continue
@@ -123,21 +132,37 @@ def context_manager_assemble(
         used += len(block)
     if graph_context:
         parts.append(f"### Graph context\n{graph_context[:2000]}")
-    return "\n\n".join(parts) if parts else "(no context retrieved)"
+    assembled = "\n\n".join(parts) if parts else "(no context retrieved)"
+    est_tokens = max(1, len(assembled) // 4)
+    logger.info(
+        "context_assembled",
+        chunk_count=len(ranked),
+        chunks_included=len(parts),
+        estimated_context_tokens=est_tokens,
+        token_budget=token_budget,
+    )
+    return assembled
 
 
 def confidence_verify(
     answer: str,
     sources: list[dict[str, Any]],
     *,
+    repo_id: str = "",
     best_retrieval_score: float,
     invalid_reference_ratio: float = 0.0,
 ) -> tuple[float, bool, str]:
     """
-    FORWARD STUB — Module #26 ``confidence.verify_answer(...)``.
+    Module #26 VERIFY — delegates to ``evaluate()`` when ``repo_id`` is set.
 
     Returns ``(confidence_score, gated, optional_disclaimer)``.
     """
+    if repo_id:
+        from app.agent.confidence import evaluate
+
+        out = evaluate(answer or "", repo_id)
+        return out["confidence_score"], out["gated"], ""
+
     from app.agent.confidence import compute_confidence_score
 
     score = compute_confidence_score(
@@ -146,10 +171,7 @@ def confidence_verify(
         min(len(sources), 3),
     )
     gated = score < settings.MIN_CONFIDENCE_SCORE
-    disclaimer = ""
-    if gated:
-        disclaimer = "\n\n_(This answer had lower confidence — please verify against the cited sources.)_"
-    return score, gated, disclaimer
+    return score, gated, ""
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +194,7 @@ class AgentContext:
     repo_id: str
     question: str
     session_id: str | None = None
+    job_id: str | None = None
     chat_history: list[dict[str, Any]] = field(default_factory=list)
     query_variants: list[str] = field(default_factory=list)
     need_structural: bool = False
@@ -180,6 +203,7 @@ class AgentContext:
     assembled_context: str = ""
     enough_evidence: bool = False
     answer: str = ""
+    structured_claims: list[dict[str, Any]] = field(default_factory=list)
     sources: list[dict[str, Any]] = field(default_factory=list)
     confidence_score: float = 0.0
     gated: bool = False
@@ -191,7 +215,10 @@ class AgentContext:
     state_trace: list[str] = field(default_factory=list)
     groq_failed: bool = False
     rate_limited: bool = False
+    retry_after_s: float | None = None
+    groq_calls: int = 0
     timed_out: bool = False
+    started_monotonic: float = 0.0
 
 
 _STATE_HANDLERS: dict[AgentState, Callable[[AgentContext], AgentState]] = {}
@@ -227,34 +254,146 @@ def _needs_structural_context(question: str) -> bool:
     return any(m in q for m in markers)
 
 
-def _groq_text(system: str, user: str, *, max_tokens: int = 256) -> str:
-    """Bounded Groq call with retry-once (matches query_expansion pattern)."""
+def _elapsed_s(ctx: AgentContext) -> float:
+    if ctx.started_monotonic <= 0:
+        return 0.0
+    return time.monotonic() - ctx.started_monotonic
+
+
+def _wall_clock_exceeded(ctx: AgentContext) -> bool:
+    limit = max(10, int(settings.AGENT_MAX_SECONDS))
+    return _elapsed_s(ctx) >= limit
+
+
+def _retrieval_strong_enough(ctx: AgentContext) -> bool:
+    return bool(ctx.chunks) and ctx.best_retrieval_score >= settings.RETRIEVAL_FAST_PATH_SCORE
+
+
+def _exact_question_cache_get(repo_id: str, question: str) -> dict[str, Any] | None:
+    key = (repo_id, question.strip().lower())
+    entry = _EXACT_QUESTION_CACHE.get(key)
+    if not entry:
+        return None
+    ts, payload = entry
+    if time.monotonic() - ts > _EXACT_QUESTION_TTL_S:
+        _EXACT_QUESTION_CACHE.pop(key, None)
+        return None
+    if payload.get("gated"):
+        return None
+    logger.info("exact_question_cache_hit", repo_id=repo_id)
+    return payload
+
+
+def _exact_question_cache_put(repo_id: str, question: str, response: dict[str, Any]) -> None:
+    if response.get("gated") or response.get("rate_limited"):
+        return
+    key = (repo_id, question.strip().lower())
+    _EXACT_QUESTION_CACHE[key] = (time.monotonic(), response)
+
+
+def _groq_text(
+    system: str,
+    user: str,
+    *,
+    max_tokens: int = 256,
+    purpose: str = "text",
+    model: str | None = None,
+    wall_clock_timeout_s: float | None = None,
+    ctx: AgentContext | None = None,
+) -> str:
+    """
+    Single controlled Groq text call with streaming.
+
+    Exactly one SDK attempt per invocation; at most one extra attempt on 429
+    with ``retry-after`` backoff — no stacked SDK/tenacity retries.
+    """
     llm = get_llm_client()
-    last_exc: Exception | None = None
+    if not hasattr(llm, "stream_text"):
+        res = llm.create(
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            max_tokens=max_tokens,
+        )
+        return "".join(
+            block.get("text", "")
+            for block in res.content
+            if block.get("type") == "text"
+        ).strip()
+
+    est_tokens = max(1, (len(system) + len(user)) // 4)
+    use_model = model or settings.LLM_MODEL
+    wall = wall_clock_timeout_s or float(settings.GROQ_FINALIZE_TIMEOUT_S)
+
     for attempt in range(2):
+        logger.info(
+            "loop_llm_call_start",
+            purpose=purpose,
+            attempt=attempt + 1,
+            model=use_model,
+            estimated_input_tokens=est_tokens,
+            max_tokens=max_tokens,
+            wall_clock_timeout_s=wall,
+        )
+        t0 = time.monotonic()
         try:
-            res = llm.create(
-                system=system,
-                messages=[{"role": "user", "content": user}],
+            out = llm.stream_text(
+                system,
+                user,
                 max_tokens=max_tokens,
+                model=use_model,
+                purpose=purpose,
+                wall_clock_timeout_s=wall,
+                ttft_timeout_s=float(settings.GROQ_TTFT_TIMEOUT_S),
             )
-            return "".join(
-                block.get("text", "")
-                for block in res.content
-                if block.get("type") == "text"
-            ).strip()
+            if isinstance(out, tuple) and len(out) == 2:
+                text, meta = out
+            else:
+                text = out if isinstance(out, str) else ""
+                meta = {"sdk_attempts": 1}
+            logger.info(
+                "loop_llm_call_complete",
+                purpose=purpose,
+                attempt=attempt + 1,
+                elapsed_s=round(time.monotonic() - t0, 3),
+                sdk_attempts=meta.get("sdk_attempts", 1),
+                estimated_input_tokens=est_tokens,
+                success=True,
+            )
+            if ctx is not None:
+                ctx.groq_calls += 1
+            return text
         except RateLimitError as exc:
-            last_exc = exc
+            elapsed = time.monotonic() - t0
+            import re as _re
+            m = _re.search(r"Retry after ([\d.]+)s", str(exc))
+            retry_s = float(m.group(1)) if m else None
+            if ctx is not None and retry_s is not None:
+                ctx.retry_after_s = retry_s
+            logger.warning(
+                "loop_llm_rate_limited",
+                purpose=purpose,
+                attempt=attempt + 1,
+                elapsed_s=round(elapsed, 3),
+                error=str(exc),
+            )
             if attempt == 0:
-                time.sleep(min(5.0, 12.0))
+                import re
+                m = re.search(r"Retry after ([\d.]+)s", str(exc))
+                delay = float(m.group(1)) if m else 5.0
+                time.sleep(min(delay, 30.0))
                 continue
             raise
         except ProviderError as exc:
-            last_exc = exc
-            if attempt == 0:
-                continue
+            logger.warning(
+                "loop_llm_provider_error",
+                purpose=purpose,
+                attempt=attempt + 1,
+                elapsed_s=round(time.monotonic() - t0, 3),
+                error=str(exc),
+            )
             raise
-    raise ProviderError(str(last_exc) if last_exc else "Groq call failed")
+
+    raise ProviderError("Groq call failed after bounded retries")
 
 
 def _hits_to_sources(chunks: list[dict[str, Any]], max_sources: int = 5) -> list[dict[str, Any]]:
@@ -291,6 +430,24 @@ def _hits_to_sources(chunks: list[dict[str, Any]], max_sources: int = 5) -> list
     return out
 
 
+def _chunks_to_repair_hits(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Flatten retrieval chunks into the shape expected by ``citation_repair``."""
+    hits: list[dict[str, Any]] = []
+    for chunk in chunks:
+        meta = chunk.get("chunk_metadata") or {}
+        path = meta.get("display_path") or meta.get("file_path") or ""
+        if not path:
+            continue
+        hits.append({
+            "file_path": path,
+            "function_name": meta.get("function_name") or "",
+            "start_line": meta.get("start_line"),
+            "end_line": meta.get("end_line"),
+            "chunk": chunk.get("chunk") or "",
+        })
+    return hits
+
+
 def _merge_search_results(batches: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
     seen: dict[tuple[str, int, int], dict[str, Any]] = {}
     for batch in batches:
@@ -310,7 +467,18 @@ def _merge_search_results(batches: list[list[dict[str, Any]]]) -> list[dict[str,
 
 @_register(AgentState.INTAKE)
 def _handle_intake(ctx: AgentContext) -> AgentState:
-  # Semantic cache first (zero Groq) — skip when multi-turn session history present.
+    # Exact replay cache (zero Groq) — before semantic cache embedding call.
+    if not ctx.chat_history:
+        exact = _exact_question_cache_get(ctx.repo_id, ctx.question)
+        if exact:
+            ctx.answer = exact["answer"]
+            ctx.sources = exact.get("sources", [])
+            ctx.confidence_score = float(exact.get("confidence_score", 0.0))
+            ctx.gated = bool(exact.get("gated", False))
+            ctx.cache_hit = True
+            return _transition(ctx, AgentState.RESPOND)
+
+    # Semantic cache (embedding lookup, no Groq on hit).
     if not ctx.chat_history:
         cached = semantic_cache_lookup(ctx.repo_id, ctx.question)
         if cached:
@@ -321,17 +489,16 @@ def _handle_intake(ctx: AgentContext) -> AgentState:
             ctx.cache_hit = True
             return _transition(ctx, AgentState.RESPOND)
 
-    meta = metadata_store.get(ctx.repo_id)
-    if meta is None or meta.sync_status != "synced":
-        status = meta.sync_status if meta else "unknown"
-        ctx.answer = (
-            f"This repository is still indexing (status: {status}). "
-            "Please wait for ingestion to complete, then try again."
-        )
+    from app.ingestion.repo_readiness import evaluate_chat_readiness
+
+    gate_id = ctx.job_id or ctx.repo_id
+    readiness = evaluate_chat_readiness(gate_id, asset_repo_id=ctx.repo_id)
+    if not readiness.ready:
+        ctx.answer = readiness.block_message
         ctx.sources = []
         ctx.confidence_score = 0.0
         ctx.gated = True
-        ctx.error = f"ingestion incomplete (status: {status})"
+        ctx.error = readiness.block_reason or "ingestion incomplete"
         return _transition(ctx, AgentState.RESPOND)
 
     ctx.max_iterations = ctx.max_iterations or settings.MAX_ITERATIONS
@@ -343,7 +510,12 @@ def _handle_plan(ctx: AgentContext) -> AgentState:
     from app.retrieval.query_expansion import expand_query
 
     if not ctx.query_variants:
-        ctx.query_variants = expand_query(ctx.question)[:3]
+        if settings.QUERY_EXPANSION_ENABLED:
+            variants = expand_query(ctx.question)
+        else:
+            variants = [ctx.question]
+        cap = max(1, int(settings.MAX_QUERY_VARIANTS))
+        ctx.query_variants = variants[:cap]
     if ctx.iteration == 0:
         ctx.need_structural = _needs_structural_context(ctx.question)
     return _transition(ctx, AgentState.ACT)
@@ -355,7 +527,8 @@ def _handle_act(ctx: AgentContext) -> AgentState:
     from app.retrieval.reranker import rerank
 
     batches: list[list[dict[str, Any]]] = []
-    for variant in ctx.query_variants:
+    variants = ctx.query_variants if ctx.iteration == 0 else ctx.query_variants[:1]
+    for variant in variants:
         try:
             batches.append(search(ctx.repo_id, variant, top_k=20))
         except Exception as exc:
@@ -409,7 +582,7 @@ def _handle_observe(ctx: AgentContext) -> AgentState:
     ctx.assembled_context = context_manager_assemble(
         ctx.chunks,
         ctx.graph_context,
-        max_tokens=_DEFAULT_CONTEXT_TOKEN_BUDGET,
+        max_tokens=int(settings.CONTEXT_MAX_TOKENS),
     )
     return _transition(ctx, AgentState.DECIDE)
 
@@ -423,6 +596,20 @@ def _handle_decide(ctx: AgentContext) -> AgentState:
     if not ctx.chunks and ctx.iteration >= ctx.max_iterations - 1:
         return _transition(ctx, AgentState.FINALIZE)
 
+    # Fast path: strong retrieval on a single-variant search — skip DECIDE LLM.
+    if (
+        ctx.iteration == 0
+        and len(ctx.query_variants) <= 1
+        and _retrieval_strong_enough(ctx)
+    ):
+        ctx.enough_evidence = True
+        return _transition(ctx, AgentState.FINALIZE)
+
+    if _wall_clock_exceeded(ctx):
+        ctx.timed_out = True
+        ctx.enough_evidence = bool(ctx.chunks)
+        return _transition(ctx, AgentState.FINALIZE)
+
     prompt = (
         "You are a strict evidence checker. Given the QUESTION and CONTEXT below, "
         "reply with exactly one word: YES if the context contains enough information "
@@ -434,20 +621,37 @@ def _handle_decide(ctx: AgentContext) -> AgentState:
             "Reply only YES or NO.",
             prompt,
             max_tokens=8,
+            purpose="decide",
+            model=settings.DECIDE_LLM_MODEL,
+            wall_clock_timeout_s=float(settings.GROQ_DECIDE_TIMEOUT_S),
+            ctx=ctx,
         ).upper()
         ctx.enough_evidence = verdict.startswith("Y")
     except RateLimitError:
         ctx.rate_limited = True
+        wait = int(ctx.retry_after_s or 30)
         ctx.answer = (
-            "The AI provider is temporarily rate-limited. "
-            "Please wait about 30 seconds and try again."
+            f"The AI provider is temporarily rate-limited. "
+            f"Please wait about {wait} seconds and try again."
         )
         ctx.gated = True
         return _transition(ctx, AgentState.RESPOND)
     except ProviderError as exc:
         if ctx.iteration == 0:
             ctx.groq_failed = True
-            ctx.answer = f"Unable to complete the request: {exc}"
+            err = str(exc)
+            if "rate limit" in err.lower():
+                ctx.answer = (
+                    "The AI provider rate-limited this request. "
+                    "Please wait a minute and try again."
+                )
+            elif "timed out" in err.lower() or "time-to-first-token" in err.lower():
+                ctx.answer = (
+                    "The AI provider was too slow to respond. "
+                    "Try a more specific question about a class, function, or file."
+                )
+            else:
+                ctx.answer = f"Unable to complete the request: {exc}"
             ctx.gated = True
             return _transition(ctx, AgentState.RESPOND)
         ctx.enough_evidence = True
@@ -464,64 +668,194 @@ def _handle_finalize(ctx: AgentContext) -> AgentState:
     if ctx.max_iterations > 0 and ctx.iteration + 1 >= ctx.max_iterations and not ctx.enough_evidence:
         ctx.gated = True
 
-    system = (
-        "You are a codebase onboarding assistant. Answer ONLY using the provided context. "
-        "Cite sources inline using backticks: `path/to/file.py:line` or `function_name()`. "
-        "If context is insufficient, say what is missing — do not invent file paths."
-    )
-    user = (
-        f"QUESTION:\n{ctx.question}\n\n"
-        f"CONTEXT:\n{ctx.assembled_context}\n\n"
-        "Provide a concise, well-structured answer with citations."
-    )
+    from app.agent.prompts.finalize_prompt import finalize_prompt, finalize_system_prompt
+
+    allowed_paths = sorted({
+        (c.get("chunk_metadata") or {}).get("display_path")
+        or (c.get("chunk_metadata") or {}).get("file_path")
+        for c in ctx.chunks
+    } - {None, ""})
+    assembled = ctx.assembled_context
+    if allowed_paths:
+        path_lines = "\n".join(f"- `{p}`" for p in allowed_paths[:25])
+        assembled = (
+            f"{assembled}\n\n"
+            "INDEXED FILES YOU MAY CITE (use exact paths with line numbers from context):\n"
+            f"{path_lines}"
+        )
+
+    system = finalize_system_prompt()
+    user = finalize_prompt({
+        "question": ctx.question,
+        "assembled_context": assembled,
+        "graph_context": ctx.graph_context,
+    })
     try:
-        ctx.answer = _groq_text(system, user, max_tokens=_FINALIZE_MAX_TOKENS)
+        raw = _groq_text(
+            system,
+            user,
+            max_tokens=_FINALIZE_MAX_TOKENS,
+            purpose="finalize",
+            model=settings.LLM_MODEL,
+            wall_clock_timeout_s=float(settings.GROQ_FINALIZE_TIMEOUT_S),
+            ctx=ctx,
+        )
     except RateLimitError:
         ctx.rate_limited = True
+        wait = int(ctx.retry_after_s or 30)
         ctx.answer = (
-            "The AI provider is temporarily rate-limited. "
-            "Please wait about 30 seconds and try again."
+            f"The AI provider is temporarily rate-limited. "
+            f"Please wait about {wait} seconds and try again."
         )
         ctx.gated = True
         return _transition(ctx, AgentState.RESPOND)
     except ProviderError as exc:
         ctx.groq_failed = True
-        ctx.answer = f"Unable to generate an answer: {exc}"
+        err = str(exc)
+        if "rate limit" in err.lower():
+            ctx.answer = (
+                "The AI provider rate-limited this request. "
+                "Please wait a minute and try again."
+            )
+        elif "timed out" in err.lower() or "time-to-first-token" in err.lower():
+            ctx.answer = (
+                "The AI provider was too slow to generate an answer. "
+                "Try a more specific question about a class, function, or file."
+            )
+        else:
+            ctx.answer = f"Unable to generate an answer: {exc}"
         ctx.gated = True
         return _transition(ctx, AgentState.RESPOND)
 
-    ctx.sources = _hits_to_sources(ctx.chunks)
+    from app.agent.grounding import claims_to_sources, parse_finalize_json, render_claims_markdown
+
+    claims = parse_finalize_json(raw)
+    if claims:
+        ctx.structured_claims = claims
+        ctx.answer = render_claims_markdown(claims)
+        ctx.sources = claims_to_sources(claims) or _hits_to_sources(ctx.chunks)
+    else:
+        logger.warning("finalize_json_empty_fallback_to_prose", repo_id=ctx.repo_id)
+        ctx.structured_claims = []
+        ctx.answer = raw
+        ctx.sources = _hits_to_sources(ctx.chunks)
+
     return _transition(ctx, AgentState.VERIFY)
 
 
 @_register(AgentState.VERIFY)
 def _handle_verify(ctx: AgentContext) -> AgentState:
-    score, gated, disclaimer = confidence_verify(
-        ctx.answer,
-        ctx.sources,
-        best_retrieval_score=ctx.best_retrieval_score,
+    from app.agent.citation_repair import repair_answer_citations
+    from app.agent.claim_verification import verify_claims_batch
+    from app.agent.confidence import (
+        GATED_FALLBACK_MESSAGE,
+        evaluate,
+        evaluate_structured_claims,
+        has_placeholder_citations,
+        validate_sources,
     )
-    ctx.confidence_score = score
-    ctx.gated = gated or ctx.gated
-    if disclaimer and ctx.gated:
-        ctx.answer = str(ctx.answer or "").rstrip() + str(disclaimer)
+    from app.agent.response_firewall import sanitize_user_answer
+
+    if ctx.structured_claims:
+        from app.agent.confidence import path_key
+
+        allowed_paths = {
+            path_key(str(
+                (c.get("chunk_metadata") or {}).get("display_path")
+                or (c.get("chunk_metadata") or {}).get("file_path")
+                or ""
+            ))
+            for c in ctx.chunks
+        } - {""}
+        verification = verify_claims_batch(
+            ctx.structured_claims,
+            ctx.repo_id,
+            retrieval_hits=ctx.chunks,
+            allowed_paths=allowed_paths,
+        )
+        result = evaluate_structured_claims(
+            ctx.structured_claims,
+            ctx.answer or "",
+            ctx.repo_id,
+            verification,
+        )
+        ctx.confidence_score = float(result["confidence_score"])
+        ctx.gated = bool(result["gated"]) or ctx.gated
+        if ctx.gated:
+            ctx.answer = result["answer"]
+            ctx.sources = []
+        else:
+            ctx.answer = sanitize_user_answer(result["answer"])
+            ctx.sources = validate_sources(ctx.sources, ctx.repo_id)
+        return _transition(ctx, AgentState.RESPOND)
+
+    repair_hits = _chunks_to_repair_hits(ctx.chunks)
+    repaired = repair_answer_citations(
+        ctx.answer or "",
+        repair_hits,
+        repo_id=ctx.repo_id,
+        question=ctx.question,
+    )
+    if has_placeholder_citations(ctx.answer or ""):
+        result = {
+            "answer": GATED_FALLBACK_MESSAGE,
+            "confidence_score": 0.0,
+            "gated": True,
+        }
+    elif not repaired.strip():
+        result = {
+            "answer": GATED_FALLBACK_MESSAGE,
+            "confidence_score": 0.0,
+            "gated": True,
+        }
+    else:
+        result = evaluate(repaired, ctx.repo_id)
+
+    # Source-backed fallback: retrieval was good but inline cites failed VERIFY.
+    if (
+        result.get("gated")
+        and not has_placeholder_citations(ctx.answer or "")
+        and not has_placeholder_citations(repaired)
+    ):
+        valid_sources = validate_sources(ctx.sources, ctx.repo_id)
+        clean = sanitize_user_answer(repaired)
+        if valid_sources and clean and len(clean) >= 40:
+            result = {
+                "answer": clean,
+                "confidence_score": max(
+                    float(result.get("confidence_score", 0.0)),
+                    float(settings.MIN_CONFIDENCE_SCORE),
+                ),
+                "gated": False,
+            }
+            ctx.sources = valid_sources
+
+    ctx.confidence_score = float(result["confidence_score"])
+    ctx.gated = bool(result["gated"]) or ctx.gated
+
+    if ctx.gated:
+        ctx.answer = result["answer"]
+        ctx.sources = []
+    else:
+        ctx.answer = result["answer"]
+        ctx.sources = validate_sources(ctx.sources, ctx.repo_id)
+
     return _transition(ctx, AgentState.RESPOND)
 
 
 @_register(AgentState.RESPOND)
 def _handle_respond(ctx: AgentContext) -> AgentState:
-    if not ctx.cache_hit and not ctx.groq_failed and not ctx.rate_limited:
-        semantic_cache_store(
-            ctx.repo_id,
-            ctx.question,
-            {
-                "answer": ctx.answer,
-                "sources": ctx.sources,
-                "confidence_score": ctx.confidence_score,
-                "gated": ctx.gated,
-            },
-        )
-    return _transition(ctx, AgentState.RESPOND)
+    if not ctx.cache_hit and not ctx.groq_failed and not ctx.rate_limited and not ctx.gated:
+        payload = {
+            "answer": ctx.answer,
+            "sources": ctx.sources,
+            "confidence_score": ctx.confidence_score,
+            "gated": ctx.gated,
+        }
+        semantic_cache_store(ctx.repo_id, ctx.question, payload)
+        if not ctx.chat_history:
+            _exact_question_cache_put(ctx.repo_id, ctx.question, payload)
+    return AgentState.RESPOND
 
 
 def run(
@@ -529,6 +863,7 @@ def run(
     question: str,
     session_id: str | None = None,
     *,
+    job_id: str | None = None,
     chat_history: list[dict[str, Any]] | None = None,
     max_iterations: int | None = None,
 ) -> dict[str, Any]:
@@ -540,16 +875,35 @@ def run(
     log = logger.bind(repo_id=repo_id, session_id=session_id or "")
     ctx = AgentContext(
         repo_id=repo_id,
+        job_id=job_id or repo_id,
         question=question,
         session_id=session_id,
         chat_history=list(chat_history or []),
         max_iterations=max_iterations or settings.MAX_ITERATIONS,
+        started_monotonic=time.monotonic(),
     )
 
     state = AgentState.INTAKE
     safety = 0
     while safety < 40:
         safety += 1
+        if _wall_clock_exceeded(ctx) and state not in (
+            AgentState.FINALIZE,
+            AgentState.VERIFY,
+            AgentState.RESPOND,
+        ):
+            ctx.timed_out = True
+            if ctx.chunks and state != AgentState.FINALIZE:
+                state = AgentState.FINALIZE
+                continue
+            if not ctx.answer:
+                ctx.answer = (
+                    "The request took too long to complete. "
+                    "Please try a more specific question about a class, function, or file."
+                )
+            ctx.gated = True
+            state = AgentState.RESPOND
+            continue
         if state == AgentState.RESPOND:
             _handle_respond(ctx)
             break
@@ -571,15 +925,18 @@ def run(
         result["cache_hit"] = True
     if ctx.rate_limited:
         result["rate_limited"] = True
+        if ctx.retry_after_s is not None:
+            result["retry_after_s"] = ctx.retry_after_s
     if ctx.timed_out:
         result["timed_out"] = True
+    result["groq_calls"] = ctx.groq_calls
     if ctx.error:
         result["error"] = ctx.error
     elif ctx.groq_failed:
         result["error"] = ctx.answer
     if ctx.state_trace:
         result["trace"] = [{"state": s} for s in ctx.state_trace]
-    log.info("agent_run_complete", gated=ctx.gated, cache_hit=ctx.cache_hit, states=ctx.state_trace)
+    log.info("agent_run_complete", gated=ctx.gated, cache_hit=ctx.cache_hit, groq_calls=ctx.groq_calls, states=ctx.state_trace)
     return result
 
 
