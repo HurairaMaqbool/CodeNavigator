@@ -246,6 +246,7 @@ def create_app(override_settings=None) -> FastAPI:
         pass  # Prometheus is optional
 
     # ── Rate limiter ─────────────────────────────────────────────────────────
+    limiter.enabled = (_cfg.ENVIRONMENT.lower() not in ("development", "testing"))
     _app.state.limiter = limiter
     _app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

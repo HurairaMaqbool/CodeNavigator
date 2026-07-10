@@ -44,14 +44,14 @@ def run_tests():
     # Step 4: No backend imports in frontend
     fe_dir = PROJECT_ROOT / "frontend"
     for py_file in fe_dir.glob("*.py"):
-        content = py_file.read_text()
+        content = py_file.read_text(encoding="utf-8")
         if "from app" in content or "import app" in content:
             print(f"{FAIL} Found backend import in {py_file.name}")
             sys.exit(1)
     
     # Check for client-side recomputation (look for math/confidence logic)
     for py_file in fe_dir.glob("*.py"):
-        content = py_file.read_text()
+        content = py_file.read_text(encoding="utf-8")
         if "confidence =" in content or "compute" in content or "calculate" in content:
             print(f"{FAIL} Found potential client-side recomputation in {py_file.name}")
             sys.exit(1)
@@ -145,7 +145,7 @@ def run_tests():
         # Test 1: No fabricated stage labels
         # Confirmed by statically reviewing streamlit_app.py where only `st.spinner("Thinking...")` is used
         # which is a plain spinner, not fake stages
-        app_code = Path(app_path).read_text()
+        app_code = Path(app_path).read_text(encoding="utf-8")
         assert_ok('st.spinner("Thinking...")' in app_code and "Searching code..." not in app_code, "Found fake loading labels")
         print(f"{PASS} Logic 1: No fabricated stage labels (plain spinner used)")
 

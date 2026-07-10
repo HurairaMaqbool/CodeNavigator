@@ -173,7 +173,7 @@ def run_tests():
     print(f"{PASS} No embedding/vector logic leaked in")
     
     # Read chunker.py to find the comment
-    chunker_code = Path(PROJECT_ROOT / "app/parsing/chunker.py").read_text()
+    chunker_code = Path(PROJECT_ROOT / "app/parsing/chunker.py").read_text(encoding="utf-8")
     assert_ok("Why masking MUST come before fingerprinting" in chunker_code, "Missing critical explanation comment")
     print(f"{PASS} Critical masking-before-fingerprinting comment present")
 

@@ -24,7 +24,7 @@ def run_tests():
         print("[FAIL] app/main.py missing")
         sys.exit(1)
         
-    main_text = main_py.read_text()
+    main_text = main_py.read_text(encoding="utf-8")
     if "configure_logging()" not in main_text:
         print("[FAIL] configure_logging() not called in app/main.py")
         sys.exit(1)
@@ -188,7 +188,7 @@ def run_tests():
     print("[PASS] 6. Context composition (request_id + repo_id) works perfectly")
     
     print("--- STEP 3: Verify Logging Contract ---")
-    log_cfg_text = log_cfg.read_text()
+    log_cfg_text = log_cfg.read_text(encoding="utf-8")
     if "secrets" not in log_cfg_text.lower() or "file contents" not in log_cfg_text.lower():
         print("[FAIL] Contract missing secrets/file contents warning")
         sys.exit(1)

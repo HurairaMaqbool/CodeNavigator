@@ -98,7 +98,7 @@ class TestModule15(unittest.TestCase):
     def test_zero_llm_calls_in_golden_set(self):
         """Step 5.3: Confirm zero LLM-as-judge calls inside test_golden_set.py."""
         golden_path = PROJECT_ROOT / "tests" / "test_golden_set.py"
-        content = golden_path.read_text()
+        content = golden_path.read_text(encoding="utf-8")
         self.assertNotIn("evaluate(", content, "Found LLM-as-judge call in golden set!")
         self.assertNotIn("ragas", content, "Found ragas import in golden set!")
 
@@ -129,7 +129,7 @@ class TestModule15(unittest.TestCase):
     def test_docker_compose_bm25_volume(self):
         """Step 6.2: missing-volume check."""
         docker_path = PROJECT_ROOT / "docker-compose.yml"
-        content = docker_path.read_text()
+        content = docker_path.read_text(encoding="utf-8")
         self.assertIn("bm25_data:/app/bm25_index", content, "BM25 persistence volume missing from docker-compose.yml!")
 
     def test_golden_set_gate_behavior(self):

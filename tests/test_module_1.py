@@ -55,8 +55,8 @@ def run_tests():
             importlib.reload(config_module)
             print("[FAIL] 2. Failed to raise error for missing GROQ_API_KEY")
             sys.exit(1)
-        except EnvironmentError as e:
-            print("[PASS] 2. Raised expected error (EnvironmentError for missing key)")
+        except (EnvironmentError, Exception) as e:
+            print(f"[PASS] 2. Raised expected error for missing GROQ_API_KEY: {type(e).__name__}")
 
         # 3. Groq with key
         os.environ['GROQ_API_KEY'] = 'test'

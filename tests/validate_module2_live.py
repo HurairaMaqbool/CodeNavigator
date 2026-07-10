@@ -75,13 +75,21 @@ def validate_against_running_server(log_file: Path) -> None:
     print()
     print("── Test 4-5: stdout log JSON validity & required fields ─────────")
     time.sleep(0.2)  # let the server flush stdout
-    lines = [l for l in log_file.read_text().splitlines() if l.strip().startswith("{")]
+    lines = [l for l in log_file.read_text(encoding="utf-8").splitlines() if l.strip().startswith("{")]
     assert lines, "No JSON log lines found in server stdout"
     for line in lines:
         obj = json.loads(line)  # raises if not valid JSON
+        # Skip startup and general system events that are not request logs
+        if obj.get("event") in (
+            "tracing_disabled", "model_warmup_started", "model_warmup_complete",
+            "stale_indexing_checkpoint_auto_repair", "embedding_model_warmed",
+            "loading_cross_encoder_model", "cross_encoder_model_loaded",
+            "reranker_model_warmed", "logging_configured", "sync_status_transition"
+        ):
+            continue
         assert "request_id" in obj, f"'request_id' missing from log line: {line}"
         assert "path" in obj, f"'path' missing from log line: {line}"
-    print(f"  [PASS] {len(lines)} JSON log lines found, all contain request_id + path")
+    print(f"  [PASS] {len(lines)} JSON log lines analyzed, request logs contain request_id + path")
 
     print()
     print("── Test 6: context-var composition (simulated Module 3 bind) ────")
@@ -94,8 +102,9 @@ def validate_against_running_server(log_file: Path) -> None:
     captured: list[str] = []
 
     class _Capture:
-        def msg(self, message): captured.append(message)
+        def msg(self, message, *args, **kwargs): captured.append(message)
         log = msg  # structlog calls .msg()
+        def __getattr__(self, name): return self.msg
 
     structlog.configure(logger_factory=lambda *a: _Capture())
 
@@ -134,7 +143,7 @@ def main() -> None:
             stdout=log_path.open("w"),
             stderr=subprocess.STDOUT,
         )
-        time.sleep(2)  # wait for startup
+        time.sleep(10)  # wait for startup (allow embedding model warmup)
         try:
             validate_against_running_server(log_path)
         finally:

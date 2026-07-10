@@ -512,7 +512,7 @@ def test_step4_handoff_contract_and_boundary():
 
     # Boundary check: dedup_by_file exists but should only be called in search_code (6b)
     # Flag this: it's in hybrid_search.py when it belongs to 6b
-    hybrid_search_code = (PROJECT_ROOT / "app/retrieval/hybrid_search.py").read_text()
+    hybrid_search_code = (PROJECT_ROOT / "app/retrieval/hybrid_search.py").read_text(encoding="utf-8")
     assert_ok("dedup_by_file" in hybrid_search_code, "dedup_by_file not found")
     assert_ok("search_code" in hybrid_search_code, "search_code not found")
     # Flag as boundary violation
@@ -528,7 +528,7 @@ def test_step5_static_checks():
     print("\n--- STEP 5: Static checks ---")
 
     # No cross-encoder in hybrid_search.py directly (it's imported in search_code only)
-    hybrid_search_code = (PROJECT_ROOT / "app/retrieval/hybrid_search.py").read_text()
+    hybrid_search_code = (PROJECT_ROOT / "app/retrieval/hybrid_search.py").read_text(encoding="utf-8")
     # cross_encoder import is inside search_code (the 6b assembly fn) not in hybrid fusion
     # Check it's not in the top-level imports
     top_imports_end = hybrid_search_code.find("def search_hybrid")

@@ -140,7 +140,7 @@ def test_status_cycle_field_from_detect_cycles(requests_fixture_paths):
     _, graph_path = requests_fixture_paths
     app.dependency_overrides[verify_api_key] = lambda: None
     client = TestClient(app)
-    payload = json.loads(graph_path.read_text())
+    payload = json.loads(graph_path.read_text(encoding="utf-8"))
     # Old graphs may lack the field; endpoint should compute it.
     payload["metadata"].pop("has_circular_dependencies", None)
     with patch("pathlib.Path.exists", return_value=True), patch(

@@ -795,6 +795,6 @@ def fallback_dummy_repo() -> Path:
         
     main_py = dummy_dir / "main.py"
     if not main_py.exists():
-        main_py.write_text("def hello():\n    print('Hello World')\n\nif __name__ == '__main__':\n    hello()", encoding="utf-8")
+        main_py.write_text("import sys\n\ndef hello():\n    sys.stdout.write('Hello World\\n')\n\nif __name__ == '__main__':\n    hello()", encoding="utf-8")
         
     return dummy_dir

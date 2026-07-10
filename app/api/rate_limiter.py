@@ -48,6 +48,8 @@ def check_rate_limit(endpoint: str):
             ...
     """
     async def dependency(ctx: ApiKeyContext = Depends(verify_api_key)) -> ApiKeyContext:
+        if settings.ENVIRONMENT.lower() in ("development", "testing"):
+            return ctx
         org_id = ctx.org_id
         now = time.time()
         window_seconds = 60

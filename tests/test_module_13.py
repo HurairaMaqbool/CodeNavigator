@@ -70,7 +70,7 @@ def run_tests():
     assert_ok(res2.status_code == 401, "Expected 401 on invalid signature")
 
     # 3. Constant-time comparison
-    code = Path("app/webhook/github_webhook.py").read_text()
+    code = Path("app/webhook/github_webhook.py").read_text(encoding="utf-8")
     has_compare = "hmac.compare_digest" in code
     has_bad_eq = "== signature_header" in code or "signature_header ==" in code
     print(f"{PASS if has_compare and not has_bad_eq else FAIL} Security 3: Constant-time comparison (hmac.compare_digest) used natively")

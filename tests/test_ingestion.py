@@ -472,7 +472,7 @@ class TestMetadataStore(unittest.TestCase):
 
             json_path = Path(td) / "repo42" / "metadata.json"
             self.assertTrue(json_path.exists(), "metadata.json must be on disk")
-            data = json.loads(json_path.read_text())
+            data = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertEqual(data["sync_status"], "pending")
             self.assertEqual(data["repo_url"], "https://github.com/x/y")
             self.assertEqual(data["ref"], "feature")
