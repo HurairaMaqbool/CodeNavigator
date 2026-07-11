@@ -57,4 +57,4 @@ curl -X POST -H "X-API-Key: $API_KEY" -H "Content-Type: application/json" \
 
 ## TLS
 
-Terminate HTTPS at nginx/Caddy/ALB; proxy to backend `:8000` and Streamlit `:8501`.
+Terminate HTTPS at nginx/Caddy/ALB; proxy to backend `:8000` and Next.js `:3000`.

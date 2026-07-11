@@ -13,7 +13,7 @@
 
 ![Python](https://img.shields.io/badge/Python%203.12-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=next.js&logoColor=white)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-VectorStore-6E57F7?style=flat-square)
 ![NetworkX](https://img.shields.io/badge/NetworkX-GraphEngine-orange?style=flat-square)
 ![LangChain](https://img.shields.io/badge/LangChain-Agentic-1C3C3C?style=flat-square)
@@ -96,7 +96,7 @@ This is not a chatbot wrapper around an LLM. It is a production-grade agentic pi
 | 🕸️ | **Call Graph Engine** | NetworkX graph of imports and function calls — traversed via BFS (3-hop limit) |
 | 🛡️ | **Hallucination Guard** | Citation validation gates any response with confidence < 4.0 / 10 |
 | ⚡ | **Semantic Cache** | 95% similarity threshold — identical questions skip the LLM entirely |
-| 📊 | **Mermaid Diagrams** | Auto-generates call-graph diagrams that render in the Streamlit UI |
+| 📊 | **Mermaid Diagrams** | Auto-generates call-graph diagrams in the Next.js UI |
 | 🔄 | **Webhook Auto-Sync** | HMAC-verified GitHub webhooks trigger re-ingestion on every push |
 | 🌐 | **REST API** | FastAPI backend with X-API-Key auth and sliding-window rate limiting |
 | 📓 | **Ragas Evaluation** | Automated faithfulness, relevancy, and recall scoring via golden set |
@@ -111,7 +111,7 @@ This is not a chatbot wrapper around an LLM. It is a production-grade agentic pi
 Developer / GitHub Webhook
          |
          v
- Streamlit App (frontend/)
+ Next.js App (frontend-next/)
          | HTTP REST
          v
  FastAPI Router (app/api/)
@@ -459,7 +459,7 @@ Compute deterministic confidence score (0–10)
 |-------|-----------|------|
 | **Runtime** | Python 3.12 | Core language |
 | **Backend** | FastAPI | REST API server, background tasks, auth |
-| **Frontend** | Streamlit | Developer-facing chat and diagram UI |
+| **Frontend** | Next.js 16 | Developer-facing chat and diagram UI |
 | **LLM** | Groq (LLaMA 3) | Agent reasoning and answer generation |
 | **Vector Store** | ChromaDB | Semantic embedding storage and search |
 | **Keyword Index** | BM25 (pure Python) | Exact variable/function name matching |
@@ -521,8 +521,8 @@ Compute deterministic confidence score (0–10)
 │   ├── ⚙️ config.py                   ← Pydantic BaseSettings (all env vars)
 │   └── 🚀 main.py                     ← FastAPI bootstrap
 │
-├── 📂 frontend/
-│   └── 🌐 streamlit_app.py            ← Chat UI + diagram rendering
+├── 📂 frontend-next/
+│   └── 🌐 app/workspace/            ← Next.js chat UI + diagram rendering
 │
 ├── 📂 eval/
 │   ├── 🧪 run_eval.py                 ← Ragas evaluation runner
@@ -594,10 +594,20 @@ WEBHOOK_SECRET="your_github_webhook_secret"
 run_local.bat
 ```
 
+Or manually:
+
+```bash
+# Terminal 1 — backend
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Terminal 2 — Next.js UI
+cd frontend-next && npm install && npm run dev
+```
+
 | Service | URL |
 |---------|-----|
 | FastAPI Backend | http://localhost:8000 |
-| Streamlit Frontend | http://localhost:8501 |
+| Next.js Frontend | http://localhost:3000 |
 | API Docs (Swagger) | http://localhost:8000/docs |
 
 ---

@@ -1,6 +1,6 @@
 # CodeNavigator — Next.js Frontend
 
-Professional UI replacing Streamlit. Calls the existing FastAPI backend only — no pipeline changes.
+Professional UI for CodeNavigator. Calls the existing FastAPI backend only — no pipeline changes.
 
 ## Run
 

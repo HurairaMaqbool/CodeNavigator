@@ -93,7 +93,8 @@ async function apiFetch<T>(
 }
 
 export async function checkHealth(): Promise<HealthResponse> {
-  return apiFetch(`${API_BASE_URL}/health`, { headers: headers() }, 5000);
+  // /health is public — no API key to avoid CORS preflight failures
+  return apiFetch(`${API_BASE_URL}/health`, { headers: {} }, 5000);
 }
 
 export async function ingest(

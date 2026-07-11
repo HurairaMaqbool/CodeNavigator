@@ -173,7 +173,7 @@ def _ingest_progress_counts(meta: Any, asset_repo_id: str) -> tuple[int, int]:
 
 
 def _api_status_for_sync(sync_status: str) -> str:
-    """Map metadata sync_status → API status field consumed by Streamlit polling."""
+    """Map metadata sync_status → API status field consumed by frontend polling."""
     if Stage.is_failed(sync_status):
         return Stage.FAILED.value
     if Stage.is_synced(sync_status):

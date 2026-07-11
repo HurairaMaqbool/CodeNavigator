@@ -17,7 +17,6 @@ if ".venv" not in sys.executable.replace("\\", "/") and venv_py.exists():
 mods = [
     "fastapi",
     "uvicorn",
-    "streamlit",
     "chromadb",
     "sentence_transformers",
     "pydantic_settings",

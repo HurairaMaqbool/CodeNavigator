@@ -233,7 +233,7 @@ def create_app(override_settings=None) -> FastAPI:
             logger.warning("sentry_init_failed", error=str(exc))
 
     try:
-        if not os.environ.get("PYTEST_RUNNING"):
+        if not os.environ.get("PYTEST_RUNNING") and _cfg.OTEL_ENDPOINT:
             from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
             FastAPIInstrumentor.instrument_app(_app)
     except Exception:

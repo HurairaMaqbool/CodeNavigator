@@ -22,7 +22,7 @@
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
-# API :8000 | Streamlit :8501 | Admin :3000
+# API :8000 | Next.js :3000 | Admin :3000
 ```
 
 ## Pilot onboarding (30 min)

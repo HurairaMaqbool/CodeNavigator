@@ -12,11 +12,11 @@ It provides:
 
 ## 1. High-Level Architecture
 
-The project follows a decoupled, client-server architecture with a Python/FastAPI backend and a Streamlit frontend. Below is the system interaction graph:
+The project follows a decoupled, client-server architecture with a Python/FastAPI backend and a Next.js frontend. Below is the system interaction graph:
 
 ```mermaid
 graph TD
-    User["Developer / Webhook"] -->|Ingest / Chat| Frontend["Streamlit App (frontend/)"]
+    User["Developer / Webhook"] -->|Ingest / Chat| Frontend["Next.js App (frontend-next/)"]
     Frontend -->|HTTP REST| API["FastAPI Router (app/api/)"]
     
     subgraph Ingestion Pipeline
@@ -172,9 +172,9 @@ Or start them manually in separate shells:
   ```bash
   python -m uvicorn app.main:app --port 8000 --reload
   ```
-- **Frontend (Streamlit)**:
+- **Frontend (Next.js)**:
   ```bash
-  python -m streamlit run frontend/streamlit_app.py
+  cd frontend-next && npm install && npm run dev
   ```
 
 ### Running Tests

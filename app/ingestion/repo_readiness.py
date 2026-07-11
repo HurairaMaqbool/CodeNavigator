@@ -394,7 +394,7 @@ def readiness_snapshot(
     store: Any | None = None,
 ) -> dict[str, Any]:
     """
-    Normalized readiness dict for /status, /eval/health, and Streamlit.
+    Normalized readiness dict for /status and /eval/health.
 
     Keeps ``ready``, counts, and sync_status aligned across all consumers.
     """

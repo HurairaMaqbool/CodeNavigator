@@ -3,7 +3,7 @@
 # - No gcc/g++ (all deps use manylinux wheels; saves ~400MB RAM during apt)
 # - Heavy pip wheels in separate layers (retry one layer on IncompleteRead)
 #
-# Build ONE image, reuse for backend/worker/frontend:
+# Build ONE image, reuse for backend/worker:
 #   docker compose build backend
 #   docker compose up
 
@@ -52,6 +52,6 @@ ENV HF_HOME=/app/data/huggingface
 RUN mkdir -p /app/data/huggingface && \
     python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
-EXPOSE 8000 8501
+EXPOSE 8000
 
 CMD ["gunicorn", "app.main:app", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120", "--graceful-timeout", "30"]

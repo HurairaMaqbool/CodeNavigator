@@ -26,8 +26,8 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 
 class CheckoutRequest(BaseModel):
     plan_id: str = Field(..., pattern="^(pro|team)$")
-    success_url: str = Field(default="http://localhost:8501")
-    cancel_url: str = Field(default="http://localhost:8501")
+    success_url: str = Field(default="http://localhost:3000")
+    cancel_url: str = Field(default="http://localhost:3000")
 
 
 @router.get("/plans")
@@ -71,7 +71,7 @@ def create_checkout(req: CheckoutRequest, auth: ApiKeyContext = Depends(verify_a
 
 @router.post("/portal")
 def customer_portal(
-    return_url: str = "http://localhost:8501",
+    return_url: str = "http://localhost:3000",
     auth: ApiKeyContext = Depends(verify_api_key),
 ) -> dict[str, str]:
     if not stripe_client.stripe_enabled():

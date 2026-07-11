@@ -73,18 +73,15 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: codenavigator:app
+    build:
+      context: ./frontend-next
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+        NEXT_PUBLIC_API_KEY: ${API_KEY:-dev-secret-key}
     container_name: agent_frontend
-    command: ["streamlit", "run", "frontend/streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
     ports:
-      - "8501:8501"
-    env_file:
-      - .env
-    environment:
-      - API_BASE_URL=http://backend:8000
-      - API_KEY=${API_KEY:-dev-secret-key}
-    volumes:
-      - ./frontend:/app/frontend
+      - "3000:3000"
     depends_on:
       backend:
         condition: service_healthy

@@ -3,7 +3,7 @@
 > **Product name:** CodeNavigator (branded in UI)  
 > **Repository folder:** `codebase-onboarding-agent`  
 > **Author:** Huraira Maqbool  
-> **Stack:** Python 3.12 · FastAPI · ChromaDB · BM25 · NetworkX · Groq/Ollama · Next.js 16 · Streamlit
+> **Stack:** Python 3.12 · FastAPI · ChromaDB · BM25 · NetworkX · Groq/Ollama · Next.js 16
 
 This document is the **single reference** for everything in the project: every major module, pipeline stage, API endpoint, frontend route, data store, configuration knob, and operational workflow. Read this file top-to-bottom to understand the full system without opening the codebase.
 
@@ -62,13 +62,12 @@ This document is the **single reference** for everything in the project: every m
 Developer / GitHub Webhook
         │
         ▼
-┌───────────────────┐     ┌───────────────────┐
-│  Next.js UI       │     │  Streamlit UI     │  (legacy, still present)
-│  localhost:3000   │     │  localhost:8501   │
-└─────────┬─────────┘     └─────────┬─────────┘
-          │  HTTP + X-API-Key       │
-          └───────────┬─────────────┘
-                      ▼
+┌───────────────────┐
+│  Next.js UI       │
+│  localhost:3000   │
+└─────────┬─────────┘
+          │  HTTP + X-API-Key
+          ▼
           ┌───────────────────────┐
           │  FastAPI Backend      │
           │  localhost:8000       │
@@ -94,7 +93,7 @@ Developer / GitHub Webhook
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| **Presentation** | `frontend-next/`, `frontend/`, `admin/` | User interfaces |
+| **Presentation** | `frontend-next/`, `admin/` | User interfaces |
 | **API gateway** | `app/api/`, `app/main.py` | REST, SSE, auth, rate limits |
 | **Agent** | `app/agent/` | RAG reasoning loop, tools, caching, gating |
 | **Retrieval** | `app/retrieval/` | Embeddings, Chroma, BM25, hybrid fusion, rerank |
@@ -138,8 +137,7 @@ codebase-onboarding-agent/
 ├── eval/                       # ★ RAGAS + golden-set evaluation CLI
 ├── tests/                      # Pytest suite (~70 modules, 550+ tests)
 │
-├── frontend-next/              # ★ Primary modern UI (Next.js 16)
-├── frontend/                   # Legacy Streamlit UI
+├── frontend-next/              # ★ Primary UI (Next.js 16)
 ├── admin/                      # Vite/React admin dashboard
 │
 ├── scripts/                    # Operational Python diagnostics
@@ -165,7 +163,7 @@ codebase-onboarding-agent/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── docker-compose.prod.yml
-├── run_local.bat               # Start backend + Streamlit
+├── run_local.bat               # Start backend + Next.js
 └── start.bat
 ```
 
@@ -372,7 +370,7 @@ Parallel to the `eval/` package — older dashboard harness:
 
 Ingestion starts via:
 
-- `POST /ingest` from UI (Next.js or Streamlit)
+- `POST /ingest` from UI (Next.js)
 - `POST /webhook/github` on push events
 - `POST /webhook/github-app` for GitHub App events
 
@@ -834,21 +832,7 @@ npm run build    # production build
 npm run lint     # ESLint
 ```
 
-### 14.2 Streamlit — legacy UI (`frontend/`)
-
-**URL:** http://localhost:8501  
-**Started by:** `run_local.bat` or `streamlit run frontend/streamlit_app.py`
-
-| File | Purpose |
-|------|---------|
-| `streamlit_app.py` | Main UI: ingest, status, chat, diagrams, eval, platform tabs |
-| `api_client.py` | HTTP wrapper to FastAPI |
-| `settings_bridge.py` | Reads `API_BASE_URL`, `API_KEY` from env |
-| `ui_theme.py` | CSS, stat cards, stepper, charts |
-| `theme.py` | Branding + dark/light toggle |
-| `voice_input.py` / `voice_output.py` | Optional voice I/O (not ported to Next.js) |
-
-### 14.3 Admin dashboard (`admin/`)
+### 14.2 Admin dashboard (`admin/`)
 
 Vite/React admin UI with its own `api.ts` and Dockerfile. Deployed separately via `k8s/admin-deployment.yaml`.
 
@@ -910,7 +894,7 @@ All settings are defined in `app/config.py` (Pydantic `BaseSettings`). Template:
 - Git
 - Optional: Redis (Celery), PostgreSQL (platform persistence)
 
-### Option A — Windows quick start (Streamlit)
+### Option A — Windows quick start
 
 ```bat
 run_local.bat
@@ -919,10 +903,10 @@ run_local.bat
 | Service | URL |
 |---------|-----|
 | FastAPI | http://localhost:8000 |
-| Streamlit | http://localhost:8501 |
+| Next.js | http://localhost:3000 |
 | API docs | http://localhost:8000/docs |
 
-### Option B — Full stack with Next.js (recommended)
+### Option B — Manual start
 
 **Terminal 1 — Backend:**
 
@@ -952,7 +936,7 @@ Open http://localhost:3000/workspace
 docker-compose up
 ```
 
-Services: chromadb, redis, backend, celery worker, streamlit.
+Services: chromadb, redis, backend, celery worker, Next.js frontend.
 
 ### Option D — Celery worker (async ingestion)
 
@@ -1026,8 +1010,7 @@ python eval/compare_runs.py
 ### Docker
 
 - `Dockerfile` — backend image
-- `frontend/Dockerfile` — Streamlit image
-- `frontend-next/` — build with `npm run build` + `npm start`
+- `frontend-next/Dockerfile` — Next.js image
 - `docker-compose.yml` — local full stack
 - `docker-compose.prod.yml` — production overrides
 
@@ -1056,7 +1039,7 @@ Manifests for: backend, celery worker, chromadb, redis, ingress, HPA, admin dash
 | **`repo_readiness.py` as single source** | Prevents `/status` and `/eval/health` disagreeing on readiness |
 | **Semantic cache commit-scoped** | Answers invalidated automatically when webhook re-ingests new commit |
 | **JSON metadata store vs shelve** | Human-readable, atomic writes, cross-platform |
-| **Next.js alongside Streamlit** | Modern UX without breaking existing Streamlit users |
+| **Next.js frontend** | Modern React UI with workspace, evaluation, and platform pages |
 | **Groq for LLM** | Fast inference; local embeddings/reranker avoid API cost on retrieval |
 
 ---
@@ -1083,7 +1066,6 @@ Manifests for: backend, celery worker, chromadb, redis, ingress, HPA, admin dash
 ┌─────────────────────────────────────────────────────────────┐
 │  START BACKEND:  uvicorn app.main:app --port 8000           │
 │  START NEXT UI:  cd frontend-next && npm run dev            │
-│  START STREAMLIT: streamlit run frontend/streamlit_app.py   │
 │  RUN TESTS:      pytest tests/                              │
 │  RUN EVAL:       python eval/run_eval.py                    │
 │  API KEY HEADER: X-API-Key: dev-secret-key                  │

@@ -108,7 +108,7 @@ class Settings(BaseSettings):
     # ── Security ─────────────────────────────────────────────────────────────
     API_KEY: str = Field(default="dev-secret-key", description="API Key for endpoints")
     ALLOWED_ORIGINS: list[str] = Field(
-        default=["http://localhost:8501", "http://localhost:3000"],
+        default=["http://localhost:3000"],
         description="Allowed CORS origins"
     )
 
@@ -260,7 +260,7 @@ class Settings(BaseSettings):
     # ── Frontend / scripts ───────────────────────────────────────────────────
     API_BASE_URL: str = Field(
         default="http://localhost:8000",
-        description="Backend base URL for Streamlit and diagnostic scripts",
+        description="Backend base URL for diagnostic scripts",
     )
 
     # ── Ingestion file filter ────────────────────────────────────────────────
@@ -302,7 +302,6 @@ class Settings(BaseSettings):
     QUOTA_EVAL_PER_MONTH: int = Field(default=0, description="Max eval runs per org per month")
     PROTECT_METRICS: bool = Field(default=True, description="Require API key for /metrics in production")
     DISABLE_OPENAPI_IN_PRODUCTION: bool = Field(default=True, description="Hide /docs in production")
-    STREAMLIT_UI_PASSWORD: Optional[str] = Field(default=None, description="Optional UI login password")
 
     # ── Stripe billing ────────────────────────────────────────────────────────
     STRIPE_SECRET_KEY: Optional[str] = Field(default=None, description="Stripe secret key")

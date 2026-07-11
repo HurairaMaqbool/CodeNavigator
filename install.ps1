@@ -7,7 +7,6 @@ $packages = @(
     "fastapi", "uvicorn", "structlog", "rank-bm25", "python-dotenv", "filelock", "httpx",
     "gitpython", "tree-sitter", "networkx",
     "langchain-groq", "langchain-huggingface",
-    "streamlit",
     "chromadb",
     "sentence-transformers"
 )
