@@ -117,6 +117,29 @@ class Stage(str, enum.Enum):
         """Return stages in pipeline order, excluding FAILED."""
         return [cls.PENDING, cls.CLONING, cls.FILTERING, cls.PARSING, cls.INDEXING, cls.SYNCED]
 
+    @classmethod
+    def in_progress_values(cls) -> frozenset[str]:
+        """Stages before SYNCED (excludes FAILED)."""
+        return frozenset(
+            s.value for s in cls.ordered() if s not in (cls.SYNCED, cls.FAILED)
+        )
+
+    @classmethod
+    def is_synced(cls, status: str) -> bool:
+        return status == cls.SYNCED.value
+
+    @classmethod
+    def is_failed(cls, status: str) -> bool:
+        return status == cls.FAILED.value
+
+    @classmethod
+    def is_pending(cls, status: str) -> bool:
+        return status == cls.PENDING.value
+
+    @classmethod
+    def is_in_progress(cls, status: str) -> bool:
+        return status in cls.in_progress_values()
+
 
 # ---------------------------------------------------------------------------
 # Data model

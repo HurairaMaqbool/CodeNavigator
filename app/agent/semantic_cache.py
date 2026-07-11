@@ -28,10 +28,7 @@ from app.config import settings
 from app.observability.logging_config import logger
 from app.retrieval.embeddings import embed
 
-# 0.95 = "confidently the same question" — high enough to avoid serving a related
-# but different question's answer; low enough to catch paraphrases. False-positive
-# cache hits are worse than misses (silent wrong answers vs. extra latency).
-CACHE_HIT_SIMILARITY_THRESHOLD: float = 0.95
+# Similarity threshold is settings.CACHE_SIMILARITY_THRESHOLD — see semantic_cache module.
 
 _STATS = {"hits": 0, "misses": 0, "expired": 0}
 
@@ -136,7 +133,7 @@ def check_cache(question: str, repo_id: str, commit_hash: str) -> dict[str, Any]
         return None
 
     similarity = _cosine_similarity_from_distance(distances[0][0])
-    if similarity < CACHE_HIT_SIMILARITY_THRESHOLD:
+    if similarity < settings.CACHE_SIMILARITY_THRESHOLD:
         _STATS["misses"] += 1
         return None
 
@@ -301,7 +298,7 @@ class SemanticCache:
         if not distances or not distances[0]:
             return None
         sim = _cosine_similarity_from_distance(distances[0][0])
-        thresh = threshold if threshold is not None else CACHE_HIT_SIMILARITY_THRESHOLD
+        thresh = threshold if threshold is not None else settings.CACHE_SIMILARITY_THRESHOLD
         if sim < thresh:
             return None
         meta = results["metadatas"][0][0]

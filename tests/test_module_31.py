@@ -5,22 +5,23 @@
 from __future__ import annotations
 
 import json
-import queue
-import threading
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from frontend.loading_experience import (
+    MICRO_COPY_ROTATE_S,
     STEP_ORDER,
-    STILL_WORKING_LABEL,
     STREAM_STALL_TIMEOUT_S,
     TOTAL_STEPS,
     STATE_ICONS,
+    _micro_copy_for,
     _parse_sse_data_line,
     _step_number,
+    _stepper_html,
     iter_sse_events,
+    render_progress_panel,
     render_skeleton,
     render_state,
     run_chat_with_loading,
@@ -46,38 +47,59 @@ def test_step_mapping_seven_states():
     assert _step_number("RESPOND") == 7
 
 
+def test_stepper_marks_active_and_done():
+    html = _stepper_html("ACT")
+    assert "le-seg active" in html
+    assert "le-seg done" in html
+    assert "Search" in html
+
+
 def test_render_state_uses_label_verbatim():
     ph = _Placeholder()
     label = "Searching the codebase…"
     render_state(ph, "ACT", label)
     assert label in ph.html[-1]
     assert "3/7" in ph.html[-1]
-    assert "le-step-badge" in ph.html[-1]
+    assert "le-stepper" in ph.html[-1]
     assert STATE_ICONS["ACT"] in ph.html[-1]
 
 
-def test_render_skeleton_only_placeholder_lines():
+def test_render_progress_shows_elapsed_timer():
+    ph = _Placeholder()
+    render_progress_panel(ph, "FINALIZE", "Writing the response…", elapsed_s=12.4, micro_copy="Almost there…")
+    assert "12s elapsed" in ph.html[-1]
+    assert "Almost there" in ph.html[-1]
+
+
+def test_micro_copy_rotates_every_five_seconds():
+    first = _micro_copy_for("FINALIZE", 0.0)
+    second = _micro_copy_for("FINALIZE", MICRO_COPY_ROTATE_S + 0.1)
+    assert first != second or len(_micro_copy_for("FINALIZE", 0)) == 1
+
+
+def test_render_skeleton_shimmer_lines():
     ph = _Placeholder()
     render_skeleton(ph)
     assert "le-skeleton" in ph.html[-1]
     assert "le-line" in ph.html[-1]
+    assert "le-shimmer" in ph.html[-1]
 
 
 def test_parse_sse_contract_shape():
-    raw = 'data: {"state":"PLAN","label":"Planning the best approach…","timestamp":"2026-07-10T00:00:00+00:00"}'
+    raw = 'data: {"state":"PLAN","label":"Understanding your question…","timestamp":"2026-07-10T00:00:00+00:00"}'
     evt = _parse_sse_data_line(raw)
     assert evt == {
         "state": "PLAN",
-        "label": "Planning the best approach…",
+        "label": "Understanding your question…",
         "timestamp": "2026-07-10T00:00:00+00:00",
     }
 
 
 def test_iter_sse_events_yields_until_respond():
     lines = [
-        'data: {"state":"INTAKE","label":"Understanding your question…","timestamp":"t1"}',
+        'data: {"state":"INTAKE","label":"Preparing your request…","timestamp":"t1"}',
         "",
-        'data: {"state":"RESPOND","label":"Delivering your answer…","timestamp":"t2"}',
+        'data: {"state":"RESPOND","label":"Finalizing…","timestamp":"t2"}',
         'data: {"state":"EXTRA","label":"ignored","timestamp":"t3"}',
     ]
 
@@ -108,9 +130,9 @@ def test_run_chat_shows_bootstrap_then_final_answer():
     progress = _Placeholder()
     skeleton = _Placeholder()
     events = [
-        {"state": "INTAKE", "label": "Understanding your question…", "timestamp": "t0"},
-        {"state": "FINALIZE", "label": "Drafting your answer…", "timestamp": "t1"},
-        {"state": "RESPOND", "label": "Delivering your answer…", "timestamp": "t2"},
+        {"state": "INTAKE", "label": "Preparing your request…", "timestamp": "t0"},
+        {"state": "FINALIZE", "label": "Writing the response…", "timestamp": "t1"},
+        {"state": "RESPOND", "label": "Finalizing…", "timestamp": "t2"},
     ]
 
     def _fake_iter(_sid):
@@ -131,18 +153,19 @@ def test_run_chat_shows_bootstrap_then_final_answer():
         )
 
     assert ans["answer"] == "done"
-    assert any("Understanding your question" in h for h in progress.html)
+    assert any("Preparing your request" in h for h in progress.html)
     assert any("le-skeleton" in h for h in skeleton.html)
-    assert any("Delivering your answer" in h for h in progress.html)
+    assert any("Finalizing" in h for h in progress.html)
+    assert any("s elapsed" in h for h in progress.html)
 
 
-def test_stall_fallback_still_working():
+def test_stall_shows_rotating_micro_copy():
     progress = _Placeholder()
     skeleton = _Placeholder()
 
     def _slow_sse(_sid):
         time.sleep(0.05)
-        yield {"state": "PLAN", "label": "Planning the best approach…", "timestamp": "t1"}
+        yield {"state": "PLAN", "label": "Understanding your question…", "timestamp": "t1"}
 
     def _slow_chat(repo_id, question, session_id=None):
         time.sleep(STREAM_STALL_TIMEOUT_S + 0.5)
@@ -161,4 +184,5 @@ def test_stall_fallback_still_working():
         )
 
     assert ans["answer"] == "late"
-    assert any(STILL_WORKING_LABEL in h for h in progress.html)
+    joined = " ".join(progress.html)
+    assert "Understanding your question" in joined or "Choosing the best search" in joined

@@ -19,7 +19,9 @@ from typing import Any
 
 from app.config import settings
 
-_KEYS_PATH = Path("data/api_keys.json")
+from app.paths import data_path
+
+_KEYS_PATH = data_path("api_keys.json")
 _WEAK_KEYS = frozenset({"", "dev-secret-key", "changeme", "test"})
 
 

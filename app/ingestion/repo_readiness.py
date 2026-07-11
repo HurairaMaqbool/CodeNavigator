@@ -17,7 +17,7 @@ from typing import Any
 from app.ingestion.metadata_store import RepoMetadata, Stage, metadata_store
 from app.observability.logging_config import logger
 
-_IN_PROGRESS = frozenset({"pending", "cloning", "filtering", "parsing", "indexing"})
+_IN_PROGRESS = Stage.in_progress_values()
 
 
 @dataclass(frozen=True)
@@ -68,9 +68,9 @@ def _pick_authoritative_meta(
     meta_job = ms.get(job_id)
     meta_asset = ms.get(asset_repo_id) if asset_repo_id != job_id else None
 
-    if meta_job and meta_job.sync_status == "synced":
+    if meta_job and Stage.is_synced(meta_job.sync_status):
         return meta_job
-    if meta_asset and meta_asset.sync_status == "synced":
+    if meta_asset and Stage.is_synced(meta_asset.sync_status):
         return meta_asset
     if meta_job:
         return meta_job
@@ -87,9 +87,9 @@ def repair_alias_pair_on_read(job_id: str, *, store: Any | None = None) -> None:
     asset_meta = ms.get(asset)
     if (
         job_meta
-        and job_meta.sync_status == "synced"
+        and Stage.is_synced(job_meta.sync_status)
         and asset_meta
-        and asset_meta.sync_status != "synced"
+        and not Stage.is_synced(asset_meta.sync_status)
     ):
         files, chunks = _index_counts(job_meta, asset, job_id=job_id)
         mirror_sync_to_alias_pair(
@@ -118,7 +118,7 @@ def verify_sync_consistency(
         return False, 0, 0
 
     files, chunks = _index_counts(meta, asset_repo_id, job_id=job_id)
-    claimed_synced = meta.sync_status == "synced"
+    claimed_synced = Stage.is_synced(meta.sync_status)
     err = getattr(meta, "error_reason", None)
     has_error = isinstance(err, str) and bool(err.strip())
 
@@ -161,13 +161,13 @@ def verify_sync_consistency(
         sibling_synced = False
         if job_id and job_id != meta.repo_id:
             sib = metadata_store.get(job_id)
-            sibling_synced = bool(sib and sib.sync_status == "synced")
+            sibling_synced = bool(sib and Stage.is_synced(sib.sync_status))
         else:
             for alias_target in (asset_repo_id, metadata_store.get_alias(meta.repo_id) or ""):
                 if not alias_target or alias_target == meta.repo_id:
                     continue
                 sib = metadata_store.get(alias_target)
-                if sib and sib.sync_status == "synced":
+                if sib and Stage.is_synced(sib.sync_status):
                     sibling_synced = True
                     break
 
@@ -250,9 +250,10 @@ def evaluate_chat_readiness(
             meta=None,
             block_message="Unknown repository — ingest a GitHub URL first.",
             block_reason="unknown",
+            sync_status="missing",
         )
 
-    if meta.sync_status == "failed":
+    if Stage.is_failed(meta.sync_status):
         reason = meta.error_reason or "unknown error"
         return RepoReadiness(
             ready=False,
@@ -269,7 +270,7 @@ def evaluate_chat_readiness(
     )
     meta = ms.get(meta.repo_id) or meta  # refresh after possible repair
 
-    if meta.sync_status == "synced" and consistent:
+    if Stage.is_synced(meta.sync_status) and consistent:
         return RepoReadiness(
             ready=True,
             job_id=job_id,
@@ -340,7 +341,7 @@ def audit_all_repos_consistency() -> list[dict[str, Any]]:
         consistent, files, chunks = verify_sync_consistency(
             meta, asset, job_id=rid, auto_repair=True,
         )
-        if meta.sync_status == "synced" and not consistent:
+        if Stage.is_synced(meta.sync_status) and not consistent:
             record = {
                 "repo_id": rid,
                 "asset_repo_id": asset,
@@ -363,3 +364,54 @@ def status_and_chat_agree(job_id: str, *, store: Any | None = None) -> bool:
     status_ready = readiness.ready
     chat_ready = readiness.ready
     return status_ready == chat_ready
+
+
+def is_repo_ready(
+    job_or_asset_id: str,
+    *,
+    asset_repo_id: str | None = None,
+    store: Any | None = None,
+) -> RepoReadiness:
+    """
+    SINGLE SOURCE OF TRUTH — is this repository ingested and safe to query?
+
+    Every module that gates on ingestion (Status panel, Eval, /chat INTAKE,
+    /diagram, RAGAS runner) MUST call this or ``evaluate_chat_readiness`` —
+    never call ``metadata_store.get()`` + a raw ``sync_status`` string compare alone.
+    That pattern drifts from alias repair and chunk-count consistency checks.
+    """
+    return evaluate_chat_readiness(
+        job_or_asset_id,
+        asset_repo_id=asset_repo_id,
+        store=store,
+    )
+
+
+def readiness_snapshot(
+    job_or_asset_id: str,
+    *,
+    asset_repo_id: str | None = None,
+    store: Any | None = None,
+) -> dict[str, Any]:
+    """
+    Normalized readiness dict for /status, /eval/health, and Streamlit.
+
+    Keeps ``ready``, counts, and sync_status aligned across all consumers.
+    """
+    r = is_repo_ready(job_or_asset_id, asset_repo_id=asset_repo_id, store=store)
+    status = r.sync_status
+    if not status or status == "unknown":
+        if r.meta is not None:
+            status = r.meta.sync_status
+        elif not (job_or_asset_id or "").strip():
+            status = "missing"
+    return {
+        "ready": r.ready,
+        "job_id": r.job_id,
+        "asset_repo_id": r.asset_repo_id,
+        "sync_status": status,
+        "files_parsed": r.files_parsed,
+        "chunks_created": r.chunks_created,
+        "block_message": r.block_message,
+        "block_reason": r.block_reason,
+    }

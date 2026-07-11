@@ -11,14 +11,18 @@ No business logic, just request/response typing and error handling.
 """
 from __future__ import annotations
 
-import os
 import urllib.parse
 from typing import Any
 
 import requests
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000").rstrip("/")
-API_KEY = os.environ.get("API_KEY", "dev-secret-key")
+try:
+    from settings_bridge import settings
+except ImportError:
+    from frontend.settings_bridge import settings
+
+API_BASE_URL = settings.API_BASE_URL.rstrip("/")
+API_KEY = settings.API_KEY
 
 def _get_headers() -> dict[str, str]:
     return {"X-API-Key": API_KEY} if API_KEY else {}

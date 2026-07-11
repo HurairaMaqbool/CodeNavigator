@@ -375,6 +375,68 @@ html, body, [class*="css"], .stApp {{
     padding-top: 1.5rem;
     padding-bottom: 3rem;
     max-width: var(--cn-max-width);
+    animation: cn-page-fade-in 0.28s ease-out both;
+}}
+
+@keyframes cn-page-fade-in {{
+  from {{ opacity: 0; }}
+  to {{ opacity: 1; }}
+}}
+
+.cn-page-content {{
+    animation: cn-page-fade-in 0.28s ease-out both;
+}}
+
+/* Sidebar nav — stable during content fade */
+section[data-testid="stSidebar"] div[role="radiogroup"] label {{
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, padding 0.15s ease;
+    border-radius: var(--cn-radius-sm);
+    border-left: 3px solid transparent;
+    padding-left: 0.5rem !important;
+}}
+
+section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {{
+    background: rgba(99, 102, 241, 0.18) !important;
+    border-left-color: var(--cn-blue-500) !important;
+    font-weight: 600;
+}}
+
+/* Screen skeleton (Evaluation / Platform layout shape) */
+.cn-page-skeleton {{
+    margin-bottom: var(--cn-space-lg);
+}}
+.cn-page-skeleton .cn-sk-title {{
+    height: 18px;
+    width: 42%;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(90deg, var(--cn-skeleton-a) 0px, var(--cn-skeleton-b) 40px, var(--cn-skeleton-a) 80px);
+    background-size: 200px 100%;
+    animation: cn-shimmer 1.6s ease-in-out infinite;
+}}
+.cn-page-skeleton .cn-sk-row {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}}
+.cn-page-skeleton .cn-sk-card {{
+    height: 72px;
+    border-radius: var(--cn-radius-md);
+    background: linear-gradient(90deg, var(--cn-skeleton-a) 0px, var(--cn-skeleton-b) 40px, var(--cn-skeleton-a) 80px);
+    background-size: 200px 100%;
+    animation: cn-shimmer 1.6s ease-in-out infinite;
+}}
+.cn-page-skeleton .cn-sk-block {{
+    height: 120px;
+    border-radius: var(--cn-radius-md);
+    background: linear-gradient(90deg, var(--cn-skeleton-a) 0px, var(--cn-skeleton-b) 40px, var(--cn-skeleton-a) 80px);
+    background-size: 200px 100%;
+    animation: cn-shimmer 1.6s ease-in-out infinite;
+}}
+@keyframes cn-shimmer {{
+  0% {{ background-position: -200px 0; }}
+  100% {{ background-position: calc(200px + 100%) 0; }}
 }}
 
 /* —— Hero (brand-first, full-bleed atmosphere) —— */
@@ -1080,6 +1142,8 @@ def widget_style_tokens() -> dict[str, str]:
         "accent_strong": c.accent_strong,
         "text": c.text,
         "text_muted": c.text_muted,
+        "text_inverse": c.text_inverse,
+        "success_fg": c.success_fg,
         "border": c.border,
         "surface": c.surface,
         "danger": c.danger_fg,

@@ -13,15 +13,15 @@ pre-release runs — not every commit — to conserve Groq free-tier quota.
 """
 from __future__ import annotations
 
-import os
-
-os.environ["GIT_PYTHON_REFRESH"] = "quiet"
-
 import json
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
+
+from app.config import settings
+from app.ingestion.repo_readiness import is_repo_ready
 
 from eval.context_builder import build_ragas_contexts
 from eval.eval_store import append_run, load_runs, update_last_run
@@ -48,14 +48,48 @@ class RegressionError(Exception):
         self.diagnostics = diagnostics or {}
 
 
-def _resolve_golden_path(golden_path: str | Path | None = None) -> Path:
-    path = Path(golden_path) if golden_path else DEFAULT_GOLDEN_SET_PATH
-    if not path.exists() and path == DEFAULT_GOLDEN_SET_PATH and FALLBACK_GOLDEN_SET_PATH.exists():
+def _resolve_golden_path(
+    golden_path: str | Path | None = None,
+    *,
+    target_repo_id: str | None = None,
+) -> Path:
+    if golden_path:
+        return Path(golden_path)
+    # Repo-scoped RAGAS must use per-repo questions (tests/eval_set.json has repo_id).
+    if target_repo_id and FALLBACK_GOLDEN_SET_PATH.exists():
+        return FALLBACK_GOLDEN_SET_PATH
+    path = DEFAULT_GOLDEN_SET_PATH
+    if not path.exists() and FALLBACK_GOLDEN_SET_PATH.exists():
         return FALLBACK_GOLDEN_SET_PATH
     return path
 
 
-def load_golden_set(golden_path: str | Path | None = None) -> list[dict[str, Any]]:
+def _repo_id_aliases(job_or_asset_id: str) -> set[str]:
+    """job_id + asset clone id for golden-set entry filtering."""
+    _, asset = resolve_asset_repo_id(job_or_asset_id)
+    ids = {job_or_asset_id}
+    if asset:
+        ids.add(asset)
+    return ids
+
+
+def _filter_golden_for_repo(
+    entries: list[dict[str, Any]],
+    target_repo_id: str,
+) -> list[dict[str, Any]]:
+    aliases = _repo_id_aliases(target_repo_id)
+    with_repo = [e for e in entries if e.get("repo_id")]
+    if not with_repo:
+        return entries
+    matched = [e for e in with_repo if e.get("repo_id") in aliases]
+    return matched if matched else with_repo
+
+
+def load_golden_set(
+    golden_path: str | Path | None = None,
+    *,
+    target_repo_id: str | None = None,
+) -> list[dict[str, Any]]:
     """
     Load Golden Set JSON — list of entries::
 
@@ -67,16 +101,21 @@ def load_golden_set(golden_path: str | Path | None = None) -> list[dict[str, Any
           "expected_gated": false                      # optional
         }
     """
-    path = _resolve_golden_path(golden_path)
+    path = _resolve_golden_path(golden_path, target_repo_id=target_repo_id)
     if not path.exists():
         raise FileNotFoundError(f"Golden set not found at {path}")
 
     raw = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(raw, dict) and "entries" in raw:
-        return list(raw["entries"])
-    if isinstance(raw, list):
-        return raw
-    raise ValueError(f"Invalid golden set format in {path}")
+        entries = list(raw["entries"])
+    elif isinstance(raw, list):
+        entries = raw
+    else:
+        raise ValueError(f"Invalid golden set format in {path}")
+
+    if target_repo_id:
+        entries = _filter_golden_for_repo(entries, target_repo_id)
+    return entries
 
 
 def _extract_state_path(chat_response: dict[str, Any]) -> list[str]:
@@ -99,29 +138,22 @@ def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
     from app.api.auth import verify_api_key
     from app.main import app
 
-    tenant = MagicMock(org_id="eval")
+    tenant = MagicMock(org_id="default")
     overrides = dict(app.dependency_overrides)
     app.dependency_overrides[verify_api_key] = lambda: None
     try:
         with (
-            patch("app.api.router.check_quota", return_value=True),
-            patch("app.api.router.increment"),
-            patch("app.api.router.record_event"),
+            patch("app.platform.usage_meter.check_quota", return_value=True),
+            patch("app.platform.usage_meter.increment"),
+            patch("app.platform.audit_log.record_event"),
             patch("app.platform.tenant_context.get_tenant", return_value=tenant),
         ):
             client = TestClient(app)
-            prev_cache = os.environ.get("SEMANTIC_CACHE_ENABLED")
-            os.environ["SEMANTIC_CACHE_ENABLED"] = "false"
-            try:
+            with patch.object(settings, "SEMANTIC_CACHE_ENABLED", False):
                 resp = client.post(
                     "/chat",
                     json={"repo_id": repo_id, "question": question},
                 )
-            finally:
-                if prev_cache is None:
-                    os.environ.pop("SEMANTIC_CACHE_ENABLED", None)
-                else:
-                    os.environ["SEMANTIC_CACHE_ENABLED"] = prev_cache
 
         if resp.status_code != 200:
             raise EvalPipelineError(
@@ -232,7 +264,11 @@ def _flag_gated_regressions(
     return flags
 
 
-def run_golden_set(golden_path: str | Path | None = None) -> dict[str, Any]:
+def run_golden_set(
+    golden_path: str | Path | None = None,
+    *,
+    target_repo_id: str | None = None,
+) -> dict[str, Any]:
     """
     Module #28 entry point — score Golden Set via live /chat + RAGAS + state-path checks.
 
@@ -252,30 +288,39 @@ def run_golden_set(golden_path: str | Path | None = None) -> dict[str, Any]:
         RunConfig = None
     from eval.ragas_providers import get_judge_llm, get_judge_embeddings
 
-    path = _resolve_golden_path(golden_path)
-    eval_data = load_golden_set(path)
+    path = _resolve_golden_path(golden_path, target_repo_id=target_repo_id)
+    eval_data = load_golden_set(path, target_repo_id=target_repo_id)
 
-    try:
-        max_q = int(os.environ.get("EVAL_MAX_QUESTIONS", "0"))
-    except ValueError:
-        max_q = 0
+    max_q = int(settings.EVAL_MAX_QUESTIONS)
     if max_q > 0:
         eval_data = eval_data[:max_q]
 
     if not eval_data:
-        raise ValueError("Golden set is empty")
+        raise ValueError("Golden set is empty (no questions for this repository)")
 
-    job_id = eval_data[0].get("repo_id", "")
-    meta, asset_repo_id = resolve_asset_repo_id(job_id)
-    if not meta or meta.sync_status != "synced":
+    job_id = (target_repo_id or "").strip()
+    if not job_id:
+        raise ValueError(
+            "Precondition failed: target_repo_id is required — pass the active session "
+            "repo_id from the UI (same value /status and /eval/health use)."
+        )
+
+    readiness = is_repo_ready(job_id)
+    if not readiness.ready:
+        from app.ingestion.repo_readiness import readiness_snapshot
+
+        snap = readiness_snapshot(job_id)
+        status = snap["sync_status"] or "missing"
         raise ValueError(
             f"Precondition failed: Repo {job_id} is not fully ingested "
-            f"(status: {getattr(meta, 'sync_status', 'missing')})"
+            f"(status: {status})"
         )
+
+    asset_repo_id = readiness.asset_repo_id
 
     health = check_index_health(asset_repo_id)
     health.raise_if_failed()
-    if os.environ.get("EVAL_SKIP_AGENT_PROBE", "1").strip().lower() in ("0", "false", "no"):
+    if not settings.EVAL_SKIP_AGENT_PROBE:
         check_agent_probe(asset_repo_id).raise_if_failed()
 
     require_groq_quota()
@@ -506,15 +551,22 @@ def _git_version() -> tuple[str, str]:
             ["git", "rev-parse", "--short", "HEAD"], cwd=root, stderr=subprocess.DEVNULL
         ).decode().strip()
     except Exception:
-        return os.environ.get("EVAL_VERSION", "unknown"), "unknown"
-    version = os.environ.get("EVAL_VERSION", git_short if git_short != "unknown" else f"eval_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}")
+        return settings.EVAL_VERSION or "unknown", "unknown"
+    version = settings.EVAL_VERSION or (
+        git_short if git_short != "unknown"
+        else f"eval_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    )
     return version, git_sha
 
 
-def run_eval(dataset_path: str | None = None) -> dict[str, Any]:
+def run_eval(
+    dataset_path: str | None = None,
+    *,
+    target_repo_id: str | None = None,
+) -> dict[str, Any]:
     """Backward-compatible alias — delegates to ``run_golden_set()``."""
-    path = dataset_path or str(_resolve_golden_path(None))
-    return run_golden_set(path)
+    path = Path(dataset_path) if dataset_path else None
+    return run_golden_set(path, target_repo_id=target_repo_id)
 
 
 if __name__ == "__main__":

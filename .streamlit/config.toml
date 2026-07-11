@@ -1,9 +1,10 @@
 [theme]
-# Native Streamlit chrome — detailed tokens in frontend/theme.py CSS
+# Native Streamlit chrome — detailed tokens in frontend/theme.py CSS.
+# Dark-first defaults prevent white flash during reruns before custom CSS loads.
 primaryColor = "#6366F1"
-backgroundColor = "#F8FAFC"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#0F172A"
+backgroundColor = "#0F172A"
+secondaryBackgroundColor = "#1E293B"
+textColor = "#F1F5F9"
 font = "sans serif"
 
 [server]

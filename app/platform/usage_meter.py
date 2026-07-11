@@ -19,7 +19,9 @@ from app.config import settings
 from app.platform.billing.plans import quota_for_plan
 from app.platform.billing.subscriptions import get_subscription
 
-_METER_PATH = Path("data/usage_meter.json")
+from app.paths import data_path
+
+_METER_PATH = data_path("usage_meter.json")
 
 
 def _use_pg() -> bool:

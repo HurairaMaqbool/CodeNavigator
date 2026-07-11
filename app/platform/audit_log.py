@@ -15,7 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_AUDIT_PATH = Path("data/audit_log.jsonl")
+from app.paths import data_path
+
+_AUDIT_PATH = data_path("audit_log.jsonl")
 
 
 def _use_pg() -> bool:

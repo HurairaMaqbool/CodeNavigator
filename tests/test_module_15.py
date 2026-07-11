@@ -71,8 +71,8 @@ class TestModule15(unittest.TestCase):
             else:
                 sys.modules.pop(k, None)
 
-    @patch.dict(os.environ, {"LLM_PROVIDER": "groq", "GROQ_API_KEY": ""})
     @patch.object(settings, "LLM_PROVIDER", "groq")
+    @patch.object(settings, "GROQ_API_KEY", "")
     def test_fail_loudly_unconfigured_groq(self):
         """Step 2.2: The fail loudly if unconfigured test."""
         with self.assertRaisesRegex(ValueError, "GROQ_API_KEY is not set"):

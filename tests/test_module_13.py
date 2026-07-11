@@ -178,7 +178,12 @@ def run_tests():
         mock_merm.return_value = {}
         diagram = client.get("/diagram/r?function_name=a").status_code == 200
 
-    eval_run = client.get("/eval/run", headers={"X-API-Key": settings.API_KEY}).status_code == 200
+    with patch("eval.health_check.run_full_eval_precheck", return_value=MagicMock(ok=True, errors=[], details={})):
+        eval_run = client.post(
+            "/eval/run",
+            params={"repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d"},
+            headers={"X-API-Key": settings.API_KEY},
+        ).status_code == 200
     webhook = client.post("/webhook/github", data=b"", headers={"X-Hub-Signature-256": ""}).status_code == 401
 
     all_routes = health and ingest and chat and diagram and eval_run and webhook

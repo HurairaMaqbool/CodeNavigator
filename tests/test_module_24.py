@@ -10,11 +10,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.agent.semantic_cache import (
-    CACHE_HIT_SIMILARITY_THRESHOLD,
-    check_cache,
-    store,
-)
+from app.config import settings
+from app.agent.semantic_cache import check_cache, store
+
+
+def test_threshold_from_settings():
+    assert settings.CACHE_SIMILARITY_THRESHOLD == 0.95
 
 
 @pytest.fixture
@@ -103,7 +104,3 @@ def test_store_writes_verified_answer(mock_chroma_col):
     assert meta["repo_commit_hash"] == "abc123"
     payload = json.loads(meta["answer_json"])
     assert payload["gated"] is False
-
-
-def test_threshold_is_named_constant():
-    assert CACHE_HIT_SIMILARITY_THRESHOLD == 0.95

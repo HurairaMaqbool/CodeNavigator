@@ -68,6 +68,7 @@ except ImportError:
     _FILELOCK_AVAILABLE = False
 
 from app.config import settings
+from app.ingestion.metadata_store import Stage
 from app.observability.logging_config import logger
 
 if TYPE_CHECKING:
@@ -189,7 +190,7 @@ class RepoLockManager:
         meta = metadata_store.get(repo_id)
         if (
             meta is not None
-            and meta.sync_status == "pending"
+            and Stage.is_pending(meta.sync_status)
             and meta.sync_started_at is not None
         ):
             try:

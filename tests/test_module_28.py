@@ -99,7 +99,15 @@ def test_run_golden_set_report_shape(tmp_path):
     mock_ragas_result = MagicMock()
     mock_ragas_result.to_pandas.return_value = ragas_df
 
-    with patch("eval.run_eval.resolve_asset_repo_id", return_value=(MagicMock(sync_status="synced"), "asset1")), patch(
+    ready = MagicMock(
+        ready=True,
+        asset_repo_id="asset1",
+        sync_status="synced",
+        files_parsed=10,
+        chunks_created=100,
+        meta=MagicMock(sync_status="synced"),
+    )
+    with patch("eval.run_eval.is_repo_ready", return_value=ready), patch(
         "eval.run_eval.check_index_health", return_value=mock_health
     ), patch("eval.run_eval.require_groq_quota"), patch(
         "eval.run_eval._invoke_chat_endpoint", return_value=chat_resp
@@ -114,7 +122,7 @@ def test_run_golden_set_report_shape(tmp_path):
     ), patch("eval.ragas_providers.get_judge_embeddings", return_value=MagicMock()):
         from eval.run_eval import run_golden_set
 
-        report = run_golden_set(path)
+        report = run_golden_set(path, target_repo_id="job1")
 
     assert "per_question" in report
     assert "aggregate" in report

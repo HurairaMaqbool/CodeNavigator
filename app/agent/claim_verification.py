@@ -60,6 +60,7 @@ def _retrieval_text_for_citation(
     best_overlap = 0
     best_text = ""
     path_fallback = ""
+    best_score = -1.0
     for hit in retrieval_hits or []:
         hp = _hit_path(hit)
         if hp != norm_path:
@@ -67,9 +68,11 @@ def _retrieval_text_for_citation(
         text = _hit_text(hit).strip()
         if not text:
             continue
-        if not path_fallback:
-            path_fallback = text
         if path_only:
+            hit_score = float(hit.get("score") or 0.0)
+            if hit_score > best_score:
+                best_score = hit_score
+                path_fallback = text
             continue
         meta = hit.get("chunk_metadata") or hit
         cs = int(meta.get("start_line") or 0)
@@ -81,7 +84,7 @@ def _retrieval_text_for_citation(
             best_overlap = overlap
             best_text = text
     chosen = best_text or path_fallback
-    return chosen[:4000] if chosen else ""
+    return chosen[: settings.CITED_TEXT_MAX_CHARS] if chosen else ""
 
 
 def fetch_cited_text(
@@ -98,6 +101,16 @@ def fetch_cited_text(
     norm = path_key(file_path)
     s = max(1, int(start_line))
     e = max(s, int(end_line))
+
+    # Ground claims against retrieval hits first — LLM line numbers are often approximate.
+    if retrieval_hits:
+        from_hits = _retrieval_text_for_citation(norm, s, e, retrieval_hits)
+        if from_hits:
+            return from_hits
+        path_only = _retrieval_text_for_citation(norm, s, e, retrieval_hits, path_only=True)
+        if path_only:
+            return path_only
+
     abs_path = _clone_file_path(repo_id, _normalize_repo_path(file_path))
     if abs_path is not None and abs_path.is_file():
         try:
@@ -105,8 +118,13 @@ def fetch_cited_text(
             e = min(len(lines), e)
             if s <= e:
                 return "\n".join(lines[s - 1 : e])
-        except OSError:
-            pass
+        except OSError as exc:
+            logger.debug(
+                "claim_verify_clone_read_failed",
+                repo_id=repo_id,
+                file_path=file_path,
+                error=str(exc),
+            )
 
     best_overlap = 0
     best_text = ""
@@ -124,12 +142,9 @@ def fetch_cited_text(
             best_text = str(meta.get("chunk") or meta.get("snippet") or "")
 
     if best_text:
-        return best_text[:4000]
+        return best_text[: settings.CITED_TEXT_MAX_CHARS]
 
-    from_hits = _retrieval_text_for_citation(norm, s, e, retrieval_hits)
-    if from_hits:
-        return from_hits
-    return _retrieval_text_for_citation(norm, s, e, retrieval_hits, path_only=True)
+    return ""
 
 
 def _lexical_overlap_score(claim: str, cited_text: str) -> float:
@@ -150,6 +165,7 @@ def _line_range_ok(
     repo_id: str,
     *,
     allowed_paths: set[str] | None = None,
+    retrieval_hits: list[dict[str, Any]] | None = None,
 ) -> bool:
     """True when cited lines overlap an indexed chunk or pass strict bounds."""
     from app.agent.confidence import (
@@ -178,6 +194,19 @@ def _line_range_ok(
         if start <= ce and end >= cs:
             return True
 
+    for hit in retrieval_hits or []:
+        hp = _hit_path(hit)
+        if hp != path:
+            continue
+        meta = hit.get("chunk_metadata") or hit
+        cs = int(meta.get("start_line") or 0)
+        ce = int(meta.get("end_line") or cs)
+        if cs >= 1 and start <= ce and end >= cs:
+            return True
+
+    if allowed_paths and path in allowed_paths:
+        return True
+
     return False
 
 
@@ -186,6 +215,7 @@ def _structural_ok(
     repo_id: str,
     *,
     allowed_paths: set[str] | None = None,
+    retrieval_hits: list[dict[str, Any]] | None = None,
 ) -> bool:
     from app.agent.confidence import check_file_existence, path_key
 
@@ -202,7 +232,12 @@ def _structural_ok(
         check_file_existence(cite)
         or (allowed_paths is not None and pk in allowed_paths)
     )
-    lines_ok = _line_range_ok(citation, repo_id, allowed_paths=allowed_paths)
+    lines_ok = _line_range_ok(
+        citation,
+        repo_id,
+        allowed_paths=allowed_paths,
+        retrieval_hits=retrieval_hits,
+    )
     return path_ok and lines_ok
 
 
@@ -246,10 +281,10 @@ def _normalize_repo_path(path: str) -> str:
 
 def _verify_embedding_batch(
     pairs: list[tuple[str, str]],
-) -> list[float]:
+) -> tuple[list[float], str | None]:
     """Return cosine similarity for each (claim, cited_text) pair."""
     if not pairs:
-        return []
+        return [], None
     try:
         from app.retrieval.embeddings import embed_batch
 
@@ -259,10 +294,10 @@ def _verify_embedding_batch(
         scores: list[float] = []
         for i in range(n):
             scores.append(_cosine_similarity(vectors[i], vectors[n + i]))
-        return scores
+        return scores, None
     except Exception as exc:
-        logger.warning("claim_embed_verify_failed", error=str(exc))
-        return [0.0] * len(pairs)
+        logger.error("claim_embed_verify_failed", error=str(exc))
+        return [0.0] * len(pairs), str(exc)
 
 
 def _verify_llm_batch(
@@ -327,8 +362,44 @@ def verify_claims_batch(
         }
     """
     t0 = time.perf_counter()
+    try:
+        return _verify_claims_batch_inner(
+            claims,
+            repo_id,
+            retrieval_hits=retrieval_hits,
+            allowed_paths=allowed_paths,
+            t0=t0,
+        )
+    except Exception as exc:
+        import traceback
+
+        logger.error(
+            "verify_system_error",
+            repo_id=repo_id,
+            phase="claim_batch_exception",
+            error=str(exc),
+            traceback=traceback.format_exc(),
+        )
+        return {
+            "results": [],
+            "verified_count": 0,
+            "factual_count": 0,
+            "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+            "verification_error": True,
+            "error": str(exc),
+        }
+
+
+def _verify_claims_batch_inner(
+    claims: list[dict[str, Any]],
+    repo_id: str,
+    *,
+    retrieval_hits: list[dict[str, Any]] | None = None,
+    allowed_paths: set[str] | None = None,
+    t0: float,
+) -> dict[str, Any]:
     threshold = float(getattr(settings, "CLAIM_EMBED_THRESHOLD", 0.40))
-    borderline_low = threshold - 0.08
+    borderline_low = threshold - settings.CLAIM_EMBED_BORDERLINE_MARGIN
     lexical_threshold = float(getattr(settings, "CLAIM_LEXICAL_THRESHOLD", 0.18))
     use_llm = bool(getattr(settings, "CLAIM_VERIFY_LLM_BATCH", False))
 
@@ -361,7 +432,12 @@ def verify_claims_batch(
             })
             continue
 
-        structural = _structural_ok(citation, repo_id, allowed_paths=allowed_paths)
+        structural = _structural_ok(
+            citation,
+            repo_id,
+            allowed_paths=allowed_paths,
+            retrieval_hits=retrieval_hits,
+        )
         if not structural:
             results.append({
                 "index": i,
@@ -412,7 +488,22 @@ def verify_claims_batch(
         })
 
     # Embedding batch
-    scores = _verify_embedding_batch(embed_pairs)
+    scores, embed_error = _verify_embedding_batch(embed_pairs)
+    if embed_error is not None and embed_pairs:
+        logger.error(
+            "verify_system_error",
+            repo_id=repo_id,
+            phase="claim_embed_batch",
+            error=embed_error,
+        )
+        return {
+            "results": results,
+            "verified_count": 0,
+            "factual_count": sum(1 for c in claims if is_factual_claim(c)),
+            "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+            "verification_error": True,
+            "error": embed_error,
+        }
     for claim_idx, sim in zip(embed_indices, scores):
         row = next(r for r in results if r["index"] == claim_idx)
         row["similarity"] = round(sim, 4)
@@ -428,10 +519,36 @@ def verify_claims_batch(
             llm_indices.append(claim_idx)
         else:
             cited_text = row.pop("_cited_text", "")
-            lex = _lexical_overlap_score(str(claims[claim_idx].get("claim") or ""), cited_text)
+            claim_text = str(claims[claim_idx].get("claim") or "")
+            lex = _lexical_overlap_score(claim_text, cited_text)
             if lex >= lexical_threshold:
                 row["supported"] = True
                 row["method"] = "lexical"
+            elif retrieval_hits:
+                # Best-effort: try other retrieval chunks on the same path.
+                pk = path_key(str(claims[claim_idx].get("citation", {}).get("file_path", "")))
+                best_sim = float(sim)
+                best_text = cited_text
+                for hit in retrieval_hits:
+                    if _hit_path(hit) != pk:
+                        continue
+                    alt = _hit_text(hit).strip()
+                    if not alt or alt == cited_text:
+                        continue
+                    alt_scores, _ = _verify_embedding_batch([(claim_text, alt)])
+                    if alt_scores and alt_scores[0] > best_sim:
+                        best_sim = alt_scores[0]
+                        best_text = alt
+                row["similarity"] = round(best_sim, 4)
+                if best_sim >= threshold:
+                    row["supported"] = True
+                    row["method"] = "embedding_reroute"
+                elif _lexical_overlap_score(claim_text, best_text) >= lexical_threshold:
+                    row["supported"] = True
+                    row["method"] = "lexical_reroute"
+                else:
+                    row["supported"] = False
+                    row["method"] = "embedding"
             else:
                 row["supported"] = False
                 row["method"] = "embedding"

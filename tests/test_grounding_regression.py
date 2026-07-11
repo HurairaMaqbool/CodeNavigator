@@ -145,7 +145,7 @@ def test_verify_claims_batch_mocked_embedding(eval_cases: list[dict]):
         "app.agent.claim_verification._structural_ok", return_value=True,
     ), patch(
         "app.agent.claim_verification._verify_embedding_batch",
-        return_value=[0.85] * len(claims),
+        return_value=([0.85] * len(claims), None),
     ):
         result = verify_claims_batch(claims, "eval-repo")
 

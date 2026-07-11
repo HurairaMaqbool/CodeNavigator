@@ -146,14 +146,10 @@ def readiness():
 # Ingestion Orchestration
 # ---------------------------------------------------------------------------
 
-# Intermediate pipeline stages (metadata_store.update sets sync_status to these).
-_INGEST_IN_PROGRESS_STATUSES = frozenset({
-    "pending",
-    "cloning",
-    "filtering",
-    "parsing",
-    "indexing",
-})
+from app.ingestion.metadata_store import Stage
+
+# Intermediate pipeline stages — single source: Stage.in_progress_values()
+_INGEST_IN_PROGRESS_STATUSES = Stage.in_progress_values()
 
 
 def _celery_workers_available() -> bool:
@@ -178,11 +174,11 @@ def _ingest_progress_counts(meta: Any, asset_repo_id: str) -> tuple[int, int]:
 
 def _api_status_for_sync(sync_status: str) -> str:
     """Map metadata sync_status → API status field consumed by Streamlit polling."""
-    if sync_status == "failed":
-        return "failed"
-    if sync_status == "synced":
+    if Stage.is_failed(sync_status):
+        return Stage.FAILED.value
+    if Stage.is_synced(sync_status):
         return "ready"
-    if sync_status in _INGEST_IN_PROGRESS_STATUSES:
+    if Stage.is_in_progress(sync_status):
         return "processing"
     logger.warning("unknown_sync_status_treated_as_processing", sync_status=sync_status)
     return "processing"
@@ -373,6 +369,16 @@ def _resolve_repo_meta(job_id: str) -> tuple[Any, str]:
     return resolve_asset_repo_id(job_id, store=metadata_store)
 
 
+def _require_repo_ready(job_id: str, asset_repo_id: str | None = None) -> None:
+    """Raise HTTP 409 when ingestion is incomplete — same gate as /status and Eval."""
+    from app.ingestion.repo_readiness import is_repo_ready
+
+    readiness = is_repo_ready(job_id, asset_repo_id=asset_repo_id)
+    if not readiness.ready:
+        detail = readiness.block_message or f"ingestion incomplete (status: {readiness.sync_status or 'missing'})"
+        raise HTTPException(status_code=409, detail=detail)
+
+
 def _enforce_repo_org(meta: Any) -> None:
     try:
         from app.platform.tenant_context import require_org_access
@@ -403,11 +409,12 @@ def get_ingest_status(job_id: str):
 
     _enforce_repo_org(meta)
 
-    from app.ingestion.repo_readiness import evaluate_chat_readiness
+    from app.ingestion.repo_readiness import evaluate_chat_readiness, readiness_snapshot
 
     readiness = evaluate_chat_readiness(
         job_id, asset_repo_id=asset_repo_id, store=metadata_store,
     )
+    snap = readiness_snapshot(job_id, asset_repo_id=asset_repo_id, store=metadata_store)
     meta = readiness.meta or meta
     files_parsed = readiness.files_parsed
     chunks_created = readiness.chunks_created
@@ -419,18 +426,20 @@ def get_ingest_status(job_id: str):
         "ref": meta.ref,
         "commit_hash": meta.commit_hash,
         "sync_status": meta.sync_status,
+        "ready": snap["ready"],
         "error": getattr(meta, "error_reason", None),
         "files_parsed": files_parsed,
         "chunks_created": chunks_created,
+        "asset_repo_id": snap["asset_repo_id"],
         "graph_truncated": False,
         "has_circular_dependencies": False,
         "status": "ready" if readiness.ready else _api_status_for_sync(meta.sync_status),
     }
     
-    if meta.sync_status == "failed":
+    if Stage.is_failed(meta.sync_status):
         resp["error_reason"] = meta.error_reason
         resp["error"] = meta.error_reason
-    elif meta.sync_status == "synced":
+    elif Stage.is_synced(meta.sync_status):
         # Extract graph info
         try:
             import json
@@ -522,7 +531,9 @@ def chat(request: Request, req: ChatRequest):
         # If the loop handled a rate-limit gracefully it returns a dict with
         # rate_limited=True instead of raising an exception.  Surface that as
         # a proper 429 so the frontend can show a specific, actionable message.
-        if result.get("timed_out"):
+        if result.get("timed_out") or (
+            result.get("groq_failed") and "too slow" in str(result.get("answer", "")).lower()
+        ):
             raise HTTPException(
                 status_code=504,
                 detail=(
@@ -583,9 +594,7 @@ def generate_diagram_endpoint(request: Request, req: DiagramRequest):
     if not meta:
         raise HTTPException(status_code=404, detail="Unknown repo_id")
     _enforce_repo_org(meta)
-    
-    if meta.sync_status != "synced" and not meta.commit_hash:
-        raise HTTPException(status_code=409, detail=f"ingestion incomplete (status: {meta.sync_status}), re-run /ingest")
+    _require_repo_ready(req.repo_id, asset_repo_id)
         
     try:
         depth = 2
@@ -608,9 +617,7 @@ def generate_onboarding_path(request: Request, req: OnboardingPathRequest):
     if not meta:
         raise HTTPException(status_code=404, detail="Unknown repo_id")
     _enforce_repo_org(meta)
-    
-    if meta.sync_status != "synced" and not meta.commit_hash:
-        raise HTTPException(status_code=409, detail=f"ingestion incomplete (status: {meta.sync_status}), re-run /ingest")
+    _require_repo_ready(req.repo_id, asset_repo_id)
 
     try:
         from app.agent.onboarding_path import build_path
@@ -647,8 +654,7 @@ def get_function_diagram(repo_id: str, function_name: str, depth: int = 2):
     if not meta:
         raise HTTPException(status_code=404, detail="Unknown repo_id")
     _enforce_repo_org(meta)
-    if meta.sync_status != "synced" and not meta.commit_hash:
-        raise HTTPException(status_code=409, detail=f"ingestion incomplete (status: {meta.sync_status}), re-run /ingest")
+    _require_repo_ready(repo_id, asset_repo_id)
         
     try:
         sub = get_subgraph(asset_repo_id, function_name, direction="both", max_depth=depth)
@@ -688,28 +694,31 @@ def _set_eval_job(job_id: str, **updates: Any) -> None:
     set_eval_job(job_id, **updates)
 
 
-def _run_eval_background(job_id: str) -> None:
+def _run_eval_background(eval_job_id: str) -> None:
     """Execute the RAGAS eval suite in a background thread."""
     from app.debug_trace import debug_log
 
-    _set_eval_job(job_id, status="running")
+    job = get_eval_job(eval_job_id) or {}
+    target_repo = job.get("target_repo_id")
+
+    _set_eval_job(eval_job_id, status="running")
 
     try:
         debug_log(
             "router.py:_run_eval_background",
             "eval_import_start",
-            {},
+            {"target_repo_id": target_repo},
             hypothesis_id="A",
         )
         from eval.run_eval import run_eval as execute_eval
-        res = execute_eval()
+        res = execute_eval(target_repo_id=target_repo)
         res["supplementary"] = {
             "mean_confidence_score": res["mean_confidence_score"],
             "average_iterations": res["average_iterations"],
             "invalid_reference_rate": res["invalid_reference_rate"],
             "retrieval_precision_at_3": res["retrieval_precision_at_3"],
         }
-        _set_eval_job(job_id, status="done", result=res)
+        _set_eval_job(eval_job_id, status="done", result=res)
     except Exception as exc:
         from app.debug_trace import debug_log
         debug_log(
@@ -718,7 +727,7 @@ def _run_eval_background(job_id: str) -> None:
             {"error": str(exc), "error_type": type(exc).__name__},
             hypothesis_id="A",
         )
-        _set_eval_job(job_id, status="error", error=str(exc))
+        _set_eval_job(eval_job_id, status="error", error=str(exc))
 
 
 @router.post("/eval/run", dependencies=[Depends(verify_api_key)])
@@ -737,29 +746,26 @@ def run_eval_endpoint(repo_id: str | None = None):
     if not check_quota(tenant.org_id, "eval"):
         raise HTTPException(status_code=429, detail="Monthly eval quota exceeded")
 
-    target_repo = repo_id
+    target_repo = (repo_id or "").strip()
     if not target_repo:
-        eval_path = Path("tests/eval_set.json")
-        if eval_path.exists():
-            try:
-                raw = json.loads(eval_path.read_text(encoding="utf-8"))
-                entries = raw.get("entries", raw) if isinstance(raw, dict) else raw
-                if entries:
-                    target_repo = entries[0].get("repo_id")
-            except Exception:
-                target_repo = None
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "repo_id is required — pass the active ingested repository from the UI "
+                "(session job_id). Eval cannot run without a target repo."
+            ),
+        )
 
-    if target_repo:
-        precheck = run_full_eval_precheck(target_repo, include_agent_probe=False)
-        if not precheck.ok:
-            raise HTTPException(
-                status_code=412,
-                detail={
-                    "message": "Evaluation pre-check failed. Fix index/ingest before running eval.",
-                    "errors": precheck.errors,
-                    "details": precheck.details,
-                },
-            )
+    precheck = run_full_eval_precheck(target_repo, include_agent_probe=False)
+    if not precheck.ok:
+        raise HTTPException(
+            status_code=412,
+            detail={
+                "message": "Evaluation pre-check failed. Fix index/ingest before running eval.",
+                "errors": precheck.errors,
+                "details": precheck.details,
+            },
+        )
 
     eval_job_id = uuid.uuid4().hex
     increment(tenant.org_id, "eval")
@@ -767,6 +773,7 @@ def run_eval_endpoint(repo_id: str | None = None):
         eval_job_id,
         status="queued",
         started_at=datetime.now(timezone.utc).isoformat(),
+        target_repo_id=target_repo,
         result=None,
         error=None,
     )

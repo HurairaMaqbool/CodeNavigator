@@ -64,16 +64,22 @@ class Settings(BaseSettings):
         description="Per-request HTTP timeout for Groq SDK (with max_retries=0)",
     )
     GROQ_TTFT_TIMEOUT_S: float = Field(
-        default=12.0,
+        default=15.0,
         description="Streaming time-to-first-token ceiling",
     )
     GROQ_DECIDE_TIMEOUT_S: float = Field(
-        default=12.0,
+        default=15.0,
         description="Wall-clock ceiling for DECIDE streaming calls",
     )
     GROQ_FINALIZE_TIMEOUT_S: float = Field(
-        default=35.0,
+        default=45.0,
         description="Wall-clock ceiling for FINALIZE streaming calls",
+    )
+    GROQ_LLM_RATE_LIMIT_ATTEMPTS: int = Field(
+        default=3,
+        ge=1,
+        le=5,
+        description="Max Groq attempts per loop call when rate-limited (with backoff)",
     )
     CLAIM_EMBED_THRESHOLD: float = Field(
         default=0.40,
@@ -185,9 +191,9 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("MAX_ITERATIONS", "MAX_AGENT_ITERATIONS"),
         description="Hard cap on agent loop iterations (used by loop.py)",
     )
-    AGENT_MAX_SECONDS: int = Field(default=60)
+    AGENT_MAX_SECONDS: int = Field(default=90)
     RETRIEVAL_FAST_PATH_SCORE: float = Field(
-        default=0.35,
+        default=0.25,
         description="Skip DECIDE LLM when best rerank score exceeds this",
     )
     MAX_QUERY_VARIANTS: int = Field(
@@ -196,6 +202,83 @@ class Settings(BaseSettings):
     )
     MAX_TOOL_CALLS: int = Field(default=3)
     MAX_TOTAL_TOKENS: int = Field(default=6000)
+    EXACT_QUESTION_CACHE_TTL_S: float = Field(
+        default=300.0,
+        description="TTL for in-process exact-question replay cache (seconds)",
+    )
+    FINALIZE_MAX_TOKENS: int = Field(
+        default=700,
+        description="Max output tokens for FINALIZE Groq call",
+    )
+    DECIDE_MAX_TOKENS: int = Field(
+        default=8,
+        description="Max output tokens for DECIDE yes/no call",
+    )
+    HYBRID_SEARCH_TOP_K: int = Field(
+        default=20,
+        ge=1,
+        le=200,
+        description="top_k passed to hybrid search per query variant",
+    )
+    RERANK_TOP_N: int = Field(
+        default=8,
+        ge=1,
+        le=50,
+        description="top_n chunks kept after cross-encoder rerank",
+    )
+    LLM_RATE_LIMIT_MAX_BACKOFF_S: float = Field(
+        default=60.0,
+        description="Ceiling for Groq 429 retry-after sleep in agent loop",
+    )
+    GRAPH_CONTEXT_MAX_CHARS: int = Field(
+        default=2000,
+        description="Max chars of graph context injected into assembled context",
+    )
+    CONTEXT_BUDGET_MIN_CHARS: int = Field(default=500)
+    CONTEXT_TRUNCATE_REMAINING_CHARS: int = Field(default=80)
+
+    # ── Claim verification ───────────────────────────────────────────────────
+    CLAIM_EMBED_BORDERLINE_MARGIN: float = Field(
+        default=0.08,
+        description="Embedding score band below threshold that triggers LLM verify",
+    )
+    CITED_TEXT_MAX_CHARS: int = Field(
+        default=4000,
+        description="Max chars of cited source text for claim verification",
+    )
+
+    # ── Rate limits ──────────────────────────────────────────────────────────
+    RATE_LIMIT_WINDOW_S: int = Field(
+        default=60,
+        ge=1,
+        description="Sliding window for per-org API rate limits (seconds)",
+    )
+    RATE_LIMIT_CHAT_PER_MINUTE: int = Field(default=10, ge=1)
+    RATE_LIMIT_INGEST_PER_MINUTE: int = Field(default=3, ge=1)
+    RATE_LIMIT_DEFAULT_PER_MINUTE: int = Field(default=60, ge=1)
+
+    # ── Frontend / scripts ───────────────────────────────────────────────────
+    API_BASE_URL: str = Field(
+        default="http://localhost:8000",
+        description="Backend base URL for Streamlit and diagnostic scripts",
+    )
+
+    # ── Ingestion file filter ────────────────────────────────────────────────
+    MAX_FILE_SIZE_BYTES: int = Field(default=1_048_576, description="1 MB per-file ingest cap")
+    BINARY_SNIFF_BYTES: int = Field(default=8192)
+    MAX_MEAN_LINE_LENGTH: int = Field(default=300)
+    MAX_REPLACEMENT_CHAR_RATIO: float = Field(default=0.05, ge=0.0, le=1.0)
+
+    # ── SSE streaming ────────────────────────────────────────────────────────
+    SSE_QUEUE_MAXSIZE: int = Field(default=64, ge=1)
+    SSE_QUEUE_GET_TIMEOUT_S: float = Field(default=1.0, ge=0.1)
+    SSE_STREAM_IDLE_TIMEOUT_S: float = Field(default=300.0, ge=10.0)
+
+    # ── Eval / regression ──────────────────────────────────────────────────
+    EVAL_MAX_QUESTIONS: int = Field(default=0, description="0 = run all golden questions")
+    EVAL_SKIP_AGENT_PROBE: bool = Field(default=True)
+    EVAL_VERSION: Optional[str] = Field(default=None)
+    EVAL_QUESTION_DELAY_S: float = Field(default=4.0, ge=0.0)
 
     # ── Graph ────────────────────────────────────────────────────────────────
     MAX_GRAPH_NODES: int = Field(default=10_000)

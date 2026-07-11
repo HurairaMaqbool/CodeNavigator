@@ -59,6 +59,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.ingestion.language_registry import language_for_path
 from app.observability.logging_config import logger
 
 # ---------------------------------------------------------------------------
@@ -707,19 +708,9 @@ def parse_file(
             return None
 
     if language is None:
-        suffix = Path(file_path).suffix.lower()
-        ext_map = {
-            ".py": "python",
-            ".js": "javascript",
-            ".jsx": "javascript",
-            ".ts": "typescript",
-            ".tsx": "tsx",
-            ".go": "go",
-            ".java": "java",
-            ".rs": "rust",
-        }
-        language = ext_map.get(suffix)
+        language = language_for_path(file_path)
         if not language:
+            suffix = Path(file_path).suffix.lower()
             # Treat as filter-layer bug and fail loudly in tests
             raise ValueError(f"Unsupported language extension: {suffix}")
 

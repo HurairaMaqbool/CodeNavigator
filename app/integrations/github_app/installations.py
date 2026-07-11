@@ -15,7 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_INSTALL_PATH = Path("data/github_installations.json")
+from app.paths import data_path
+
+_INSTALL_PATH = data_path("github_installations.json")
 
 
 def _load() -> dict[str, Any]:

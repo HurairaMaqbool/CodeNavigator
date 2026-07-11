@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.ingestion.metadata_store import metadata_store as _default_store
+from app.ingestion.metadata_store import Stage, metadata_store as _default_store
 
 
 def resolve_asset_repo_id(
@@ -38,9 +38,9 @@ def resolve_asset_repo_id(
     meta_asset = ms.get(asset_repo_id) if asset_repo_id != job_id else None
 
     # Prefer synced metadata across alias pair (job_id vs asset clone id).
-    if meta_job and meta_job.sync_status == "synced":
+    if meta_job and Stage.is_synced(meta_job.sync_status):
         meta = meta_job
-    elif meta_asset and meta_asset.sync_status == "synced":
+    elif meta_asset and Stage.is_synced(meta_asset.sync_status):
         meta = meta_asset
     elif meta_job:
         meta = meta_job
@@ -56,12 +56,15 @@ def require_synced_repo(
     *,
     store: Any | None = None,
 ) -> tuple[Any, str]:
-    """Like resolve_asset_repo_id but raises if repo is missing or not synced."""
-    meta, asset_repo_id = resolve_asset_repo_id(job_or_asset_id, store=store)
-    if not meta or meta.sync_status != "synced":
-        status = getattr(meta, "sync_status", "missing")
+    """Like resolve_asset_repo_id but raises if repo is missing or not ready."""
+    from app.ingestion.repo_readiness import is_repo_ready
+
+    readiness = is_repo_ready(job_or_asset_id, store=store)
+    if not readiness.ready:
+        status = readiness.sync_status or getattr(readiness.meta, "sync_status", "missing")
         raise ValueError(
             f"Repository {job_or_asset_id[:16]}... is not ready (status={status}). "
             "Complete ingestion before chat, eval, or golden CI."
         )
-    return meta, asset_repo_id
+    meta = readiness.meta
+    return meta, readiness.asset_repo_id

@@ -29,8 +29,8 @@ from pathlib import Path
 from typing import Any
 
 from app.agent.loop import answer_question
+from app.ingestion.repo_readiness import is_repo_ready
 from app.observability.logging_config import logger
-from app.repo_resolver import resolve_asset_repo_id
 from eval.retrieval_metrics import collect_cited_files, paths_match as _paths_match
 
 GOLDEN_SET_PATH = Path("tests/eval_set.json")
@@ -72,12 +72,19 @@ def run_golden_set(golden_path: str | Path = GOLDEN_SET_PATH) -> dict[str, Any]:
         if not job_id:
             continue
 
-        meta, asset_repo_id = resolve_asset_repo_id(job_id)
-        if not meta or meta.sync_status != "synced":
-            logger.warning("golden_skip_unsynced", repo_id=job_id, question=question)
+        readiness = is_repo_ready(job_id)
+        if not readiness.ready:
+            logger.warning(
+                "golden_skip_unsynced",
+                repo_id=job_id,
+                question=question,
+                status=readiness.sync_status,
+            )
             if fixture not in skipped_fixtures:
                 skipped_fixtures.append(fixture)
             continue
+
+        asset_repo_id = readiness.asset_repo_id
 
         repo_stats = per_repo.setdefault(
             fixture,

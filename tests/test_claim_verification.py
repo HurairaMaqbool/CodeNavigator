@@ -100,7 +100,7 @@ def test_verify_logs_nonzero_cited_text_len():
     with patch("app.agent.claim_verification._structural_ok", return_value=True), patch(
         "app.agent.claim_verification.fetch_cited_text", return_value=cited
     ), patch(
-        "app.agent.claim_verification._verify_embedding_batch", return_value=[0.85]
+        "app.agent.claim_verification._verify_embedding_batch", return_value=([0.85], None)
     ), patch(
         "app.agent.claim_verification._log_verify_check",
         side_effect=lambda **kw: logged.append(kw),

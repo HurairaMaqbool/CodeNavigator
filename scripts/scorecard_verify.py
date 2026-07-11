@@ -16,14 +16,14 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+from scripts._bootstrap import ROOT, settings
+
 os.environ.setdefault("GIT_PYTHON_REFRESH", "quiet")
 
 JOB_ID = "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d"
 CLONE_ID = "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee"
-API = "http://127.0.0.1:8000"
-API_KEY = os.getenv("API_KEY", "dev-secret-key")
+API = settings.API_BASE_URL.rstrip("/")
+API_KEY = settings.API_KEY
 
 QUESTIONS = [
     {

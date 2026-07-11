@@ -8,9 +8,13 @@ frontend/loading_experience.py
 ------------------------------
 Module #31 — State-aware progress UI for live agent transitions (Streamlit).
 
-Subscribes to GET /chat/stream/{session_id} (Module #30) while POST /chat runs.
-Uses Streamlit ``st.empty()`` placeholders for incremental rerenders — the only
-UI framework in ``frontend/`` is Streamlit (``streamlit_app.py``).
+Implementation choice: **(a) st.empty() + SSE polling loop** (not a custom JS iframe).
+
+Why: The app already uses Streamlit placeholders + ``GET /chat/stream/{session_id}``
+(Module #30). Polling SSE from a background thread and updating ``st.empty()``
+every ~250ms reuses existing auth headers, avoids iframe height clipping, and
+keeps the loading UI in the same design-token CSS as Module #34 — with zero added
+backend latency (purely perceptual).
 """
 from __future__ import annotations
 
@@ -40,7 +44,17 @@ STEP_ORDER: tuple[str, ...] = (
     "VERIFY",
 )
 
-# Icons per state (labels come verbatim from SSE — mirrored here only for step-1 bootstrap).
+# Short labels on the horizontal stepper segments.
+STEP_SHORT_LABELS: dict[str, str] = {
+    "INTAKE": "Receive",
+    "PLAN": "Understand",
+    "ACT": "Search",
+    "OBSERVE": "Read",
+    "DECIDE": "Reason",
+    "FINALIZE": "Write",
+    "VERIFY": "Verify",
+}
+
 STATE_ICONS: dict[str, str] = {
     "INTAKE": "💬",
     "PLAN": "🧭",
@@ -52,13 +66,42 @@ STATE_ICONS: dict[str, str] = {
     "RESPOND": "✅",
 }
 
-# Bootstrap label — must match Module #30 STATE_LABELS["INTAKE"] (no backend import).
 _BOOTSTRAP_STATE = "INTAKE"
-_BOOTSTRAP_LABEL = "Understanding your question…"
+_BOOTSTRAP_LABEL = "Preparing your request…"
 
-# Stream-drop / stall fallback before RESPOND.
 STREAM_STALL_TIMEOUT_S = 15.0
+MICRO_COPY_ROTATE_S = 5.0
 STILL_WORKING_LABEL = "Still working…"
+
+STATE_MICRO_COPY: dict[str, list[str]] = {
+    "INTAKE": ["Understanding what you need…", "Getting context ready…"],
+    "PLAN": ["Understanding your question…", "Choosing the best search strategy…"],
+    "ACT": ["Searching the codebase…", "Scanning indexed files…"],
+    "OBSERVE": ["Reading relevant code…", "Gathering the strongest evidence…"],
+    "DECIDE": [
+        "Reasoning about the answer…",
+        "Checking if we have enough context…",
+        "Weighing retrieved evidence…",
+    ],
+    "FINALIZE": [
+        "Writing the response…",
+        "Still generating a grounded answer…",
+        "Almost there…",
+    ],
+    "VERIFY": [
+        "Double-checking citations…",
+        "Verifying claims against source code…",
+        "Ensuring every citation is grounded…",
+    ],
+    "RESPOND": ["Finalizing…", "Delivering your answer…"],
+}
+
+_DEFAULT_MICRO_COPY = [
+    STILL_WORKING_LABEL,
+    "Hang tight — the agent is still working…",
+    "Almost there…",
+]
+
 
 def _skeleton_css() -> str:
     """Loading UI styles from Module #34 theme tokens (no hardcoded palette)."""
@@ -74,35 +117,115 @@ def _skeleton_css() -> str:
   0% {{ background-position: -200px 0; }}
   100% {{ background-position: calc(200px + 100%) 0; }}
 }}
-.le-progress {{
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: {t["text"]};
-  margin-bottom: 0.35rem;
+@keyframes le-pulse-glow {{
+  0%, 100% {{
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.45);
+  }}
+  50% {{
+    opacity: 0.92;
+    box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.12);
+  }}
+}}
+.le-wrap {{
   font-family: {t["font_family"]};
+  color: {t["text"]};
+  margin-bottom: 0.5rem;
+}}
+.le-header {{
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
   flex-wrap: wrap;
 }}
-.le-step-badge {{
-  display: inline-flex;
-  align-items: center;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
+.le-elapsed {{
   font-size: 0.72rem;
+  font-weight: 600;
+  color: {t["text_muted"]};
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}}
+.le-stepper {{
+  display: flex;
+  gap: 0.2rem;
+  margin-bottom: 0.55rem;
+}}
+.le-seg {{
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  background: {t["accent_strong"]};
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: {t["text_muted"]};
+  opacity: 0.55;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}}
+.le-seg-bar {{
+  height: 4px;
+  border-radius: 999px;
+  background: {t["skeleton_a"]};
+  margin: 0.28rem 0 0.22rem;
+  position: relative;
+  overflow: hidden;
+}}
+.le-seg.done {{
+  opacity: 1;
+  color: {t["success_fg"]};
+}}
+.le-seg.done .le-seg-bar {{
+  background: {t["success_fg"]};
+}}
+.le-seg.done .le-seg-bar::after {{
+  content: "✓";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
   color: {t["text_inverse"]};
+  line-height: 1;
 }}
-.le-progress .le-icon {{
-  display: inline-block;
-  animation: le-pulse 1.4s ease-in-out infinite;
+.le-seg.active {{
+  opacity: 1;
+  color: {t["accent_strong"]};
 }}
-@keyframes le-pulse {{
+.le-seg.active .le-seg-bar {{
+  background: {t["accent_strong"]};
+  animation: le-pulse-glow 1.5s ease-in-out infinite;
+}}
+.le-seg.future .le-seg-bar {{
+  background: {t["skeleton_a"]};
+}}
+.le-current {{
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: {t["text"]};
+  line-height: 1.35;
+  margin-bottom: 0.2rem;
+}}
+.le-current .le-icon {{
+  flex-shrink: 0;
+  animation: le-icon-pulse 1.4s ease-in-out infinite;
+}}
+@keyframes le-icon-pulse {{
   0%, 100% {{ opacity: 1; transform: scale(1); }}
-  50% {{ opacity: 0.65; transform: scale(0.96); }}
+  50% {{ opacity: 0.7; transform: scale(0.96); }}
+}}
+.le-micro {{
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: {t["text_muted"]};
+  margin-top: 0.1rem;
+  min-height: 1.2em;
 }}
 .le-skeleton .le-line {{
   height: 12px;
@@ -110,7 +233,7 @@ def _skeleton_css() -> str:
   margin: 10px 0;
   background: linear-gradient(90deg, {t["skeleton_a"]} 0px, {t["skeleton_b"]} 40px, {t["skeleton_a"]} 80px);
   background-size: 200px 100%;
-  animation: le-shimmer 1.3s ease-in-out infinite;
+  animation: le-shimmer 1.6s ease-in-out infinite;
 }}
 </style>
 """
@@ -124,22 +247,74 @@ def _step_number(state: str) -> int | None:
     return None
 
 
-def render_state(placeholder: Any, state: str, label: str) -> None:
-    """Map backend ``{state, label}`` to a step line + icon in the Streamlit placeholder."""
+def _stepper_html(current_state: str) -> str:
+    """Horizontal 7-segment stepper — done ✓, active pulse, future muted."""
+    active_idx = STEP_ORDER.index(current_state) if current_state in STEP_ORDER else 0
+    if current_state == "RESPOND":
+        active_idx = len(STEP_ORDER)
+
+    parts = ['<div class="le-stepper">']
+    for i, state in enumerate(STEP_ORDER):
+        if i < active_idx or current_state == "RESPOND":
+            cls = "le-seg done"
+        elif i == active_idx:
+            cls = "le-seg active"
+        else:
+            cls = "le-seg future"
+        short = STEP_SHORT_LABELS.get(state, state[:4])
+        parts.append(
+            f'<div class="{cls}"><div class="le-seg-bar"></div>{short}</div>'
+        )
+    parts.append("</div>")
+    return "".join(parts)
+
+
+def _micro_copy_for(state: str, elapsed_in_state_s: float) -> str:
+    pool = STATE_MICRO_COPY.get(state) or _DEFAULT_MICRO_COPY
+    if elapsed_in_state_s < MICRO_COPY_ROTATE_S:
+        return pool[0]
+    idx = int(elapsed_in_state_s // MICRO_COPY_ROTATE_S) % len(pool)
+    return pool[idx]
+
+
+def render_progress_panel(
+    placeholder: Any,
+    state: str,
+    label: str,
+    *,
+    elapsed_s: float = 0.0,
+    micro_copy: str = "",
+) -> None:
+    """Live stepper + current label + optional micro-copy + elapsed timer."""
     icon = STATE_ICONS.get(state, "⏳")
     step = _step_number(state)
+    badge = ""
     if step is not None and state != "RESPOND":
-        badge = f"<span class='le-step-badge'>{step}/{TOTAL_STEPS}</span>"
-        line = f"{badge}<span class='le-icon'>{icon}</span> {label}"
-    elif state == "RESPOND":
-        line = f"<span class='le-icon'>{icon}</span> {label}"
-    else:
-        line = f"<span class='le-icon'>{icon}</span> {label}"
-    placeholder.markdown(f"{_skeleton_css()}<div class='le-progress'>{line}</div>", unsafe_allow_html=True)
+        badge = f"<span style='font-size:0.7rem;opacity:0.75;margin-right:0.25rem'>{step}/{TOTAL_STEPS}</span>"
+
+    micro_line = f'<div class="le-micro">{micro_copy}</div>' if micro_copy else ""
+    elapsed_label = f"{max(0, int(elapsed_s))}s elapsed"
+
+    html = f"""{_skeleton_css()}
+<div class="le-wrap">
+  <div class="le-header">
+    <span style="font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;opacity:0.7">Agent progress</span>
+    <span class="le-elapsed">{elapsed_label}</span>
+  </div>
+  {_stepper_html(state)}
+  <div class="le-current">{badge}<span class="le-icon">{icon}</span><span>{label}</span></div>
+  {micro_line}
+</div>"""
+    placeholder.markdown(html, unsafe_allow_html=True)
+
+
+def render_state(placeholder: Any, state: str, label: str) -> None:
+    """Backward-compatible wrapper — renders full progress panel."""
+    render_progress_panel(placeholder, state, label)
 
 
 def render_skeleton(placeholder: Any) -> None:
-    """Grey animated placeholder lines — active only during FINALIZE."""
+    """Shimmer skeleton lines for the incoming answer body."""
     placeholder.markdown(
         f"""{_skeleton_css()}
 <div class="le-skeleton">
@@ -198,9 +373,8 @@ def run_chat_with_loading(
     """
     Open SSE, show step 1 immediately, poll events while POST /chat runs.
 
-    Final answer is detected when ``chat_callable`` returns (POST /chat resolved).
-    The skeleton shown during FINALIZE is cleared by the caller before rendering
-    the real answer + citations — no double-render.
+    Updates the progress placeholder on each SSE frame and every poll tick
+    (elapsed timer + micro-copy rotation) — no extra backend calls.
     """
     event_q: queue.Queue[tuple[str, Any]] = queue.Queue()
     result_box: dict[str, Any] = {}
@@ -225,60 +399,79 @@ def run_chat_with_loading(
         finally:
             event_q.put(("chat_done", None))
 
-    render_state(progress_placeholder, _BOOTSTRAP_STATE, _BOOTSTRAP_LABEL)
+    started_at = time.monotonic()
+    state_entered_at = started_at
+    current_state = _BOOTSTRAP_STATE
+    current_label = _BOOTSTRAP_LABEL
+
+    render_progress_panel(
+        progress_placeholder,
+        current_state,
+        current_label,
+        elapsed_s=0.0,
+        micro_copy=_micro_copy_for(current_state, 0.0),
+    )
     skeleton_placeholder.empty()
 
     threading.Thread(target=_sse_worker, name=f"sse-{session_id[:8]}", daemon=True).start()
     threading.Thread(target=_chat_worker, name=f"chat-{session_id[:8]}", daemon=True).start()
 
-    current_state = _BOOTSTRAP_STATE
     showing_skeleton = False
     respond_seen = False
     chat_done = False
-    last_progress_at = time.monotonic()
-    stall_shown = False
+    last_progress_at = started_at
 
     while not chat_done:
+        now = time.monotonic()
+        elapsed_total = now - started_at
+        elapsed_in_state = now - state_entered_at
+
+        micro = _micro_copy_for(current_state, elapsed_in_state)
+        if (
+            not respond_seen
+            and (now - last_progress_at) >= STREAM_STALL_TIMEOUT_S
+        ):
+            micro = _micro_copy_for(current_state, elapsed_in_state + MICRO_COPY_ROTATE_S)
+
+        render_progress_panel(
+            progress_placeholder,
+            current_state,
+            current_label,
+            elapsed_s=elapsed_total,
+            micro_copy=micro,
+        )
+
         try:
             kind, payload = event_q.get(timeout=0.25)
         except queue.Empty:
-            if (
-                not respond_seen
-                and not chat_done
-                and not stall_shown
-                and (time.monotonic() - last_progress_at) >= STREAM_STALL_TIMEOUT_S
-            ):
-                render_state(progress_placeholder, current_state, STILL_WORKING_LABEL)
-                stall_shown = True
             continue
 
         if kind == "event":
             evt = payload
             state = evt["state"]
             label = evt["label"]
-            current_state = state
+            if state != current_state:
+                current_state = state
+                current_label = label
+                state_entered_at = time.monotonic()
+            else:
+                current_label = label
             last_progress_at = time.monotonic()
-            stall_shown = False
 
             if state == "FINALIZE":
-                render_state(progress_placeholder, state, label)
                 render_skeleton(skeleton_placeholder)
                 showing_skeleton = True
             elif state == "RESPOND":
                 respond_seen = True
-                render_state(progress_placeholder, state, label)
             else:
                 if showing_skeleton:
                     skeleton_placeholder.empty()
                     showing_skeleton = False
-                render_state(progress_placeholder, state, label)
 
         elif kind == "chat_done":
             chat_done = True
-        elif kind == "sse_closed" and not respond_seen and not stall_shown:
-            if (time.monotonic() - last_progress_at) >= STREAM_STALL_TIMEOUT_S:
-                render_state(progress_placeholder, current_state, STILL_WORKING_LABEL)
-                stall_shown = True
+        elif kind == "sse_closed" and not respond_seen:
+            pass
 
     if "error" in error_box:
         progress_placeholder.empty()

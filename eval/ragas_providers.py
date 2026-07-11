@@ -25,11 +25,7 @@ def get_judge_llm() -> LangchainLLMWrapper:
     provider = settings.LLM_PROVIDER
     
     if provider == "groq":
-        import os
-        api_key = os.environ.get("GROQ_API_KEY")
-        if api_key is None:
-            api_key = settings.GROQ_API_KEY
-            
+        api_key = (settings.GROQ_API_KEY or "").strip()
         if not api_key:
             raise ValueError(
                 "GROQ_API_KEY is not set in configuration. "

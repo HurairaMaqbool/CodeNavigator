@@ -73,6 +73,13 @@ def test_act_chains_search_then_rerank():
 
 
 def test_max_iterations_forces_finalize_gated():
+    evaluate_out = {
+        "confidence_score": 2.0,
+        "gated": True,
+        "sources": [],
+        "citations": [],
+        "answer": "Could not verify answer.",
+    }
     with patch("app.agent.loop.semantic_cache_lookup", return_value=None), patch(
         "app.agent.loop.metadata_store.get"
     ) as mock_meta, patch(
@@ -81,7 +88,7 @@ def test_max_iterations_forces_finalize_gated():
         "app.retrieval.reranker.rerank", return_value=[]
     ), patch("app.agent.loop._groq_text", return_value="NO") as mock_groq, patch(
         "app.agent.loop.context_manager_assemble", return_value="ctx"
-    ):
+    ), patch("app.agent.confidence.evaluate", return_value=evaluate_out):
         mock_meta.return_value = MagicMock(sync_status="synced")
         out = run("repo", "Explain the whole system architecture please", None, max_iterations=1)
 

@@ -20,7 +20,9 @@ from typing import Any
 from app.config import settings
 from app.redis_client import get_redis
 
-_EVAL_JOBS_DIR = Path("data/eval_jobs")
+from app.paths import data_path
+
+_EVAL_JOBS_DIR = data_path("eval_jobs")
 _REDIS_PREFIX = "eval:job:"
 _MEMORY: dict[str, dict[str, Any]] = {}
 _LOCK = threading.Lock()

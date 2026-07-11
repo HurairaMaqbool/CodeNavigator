@@ -52,15 +52,14 @@ def check_rate_limit(endpoint: str):
             return ctx
         org_id = ctx.org_id
         now = time.time()
-        window_seconds = 60
+        window_seconds = settings.RATE_LIMIT_WINDOW_S
 
-        # Read limit from settings or fallback to defaults
         if endpoint == "chat":
-            limit = getattr(settings, "RATE_LIMIT_CHAT_PER_MINUTE", 10)
+            limit = settings.RATE_LIMIT_CHAT_PER_MINUTE
         elif endpoint == "ingest":
-            limit = getattr(settings, "RATE_LIMIT_INGEST_PER_MINUTE", 3)
+            limit = settings.RATE_LIMIT_INGEST_PER_MINUTE
         else:
-            limit = getattr(settings, "RATE_LIMIT_DEFAULT_PER_MINUTE", 60)
+            limit = settings.RATE_LIMIT_DEFAULT_PER_MINUTE
 
         store_key = (org_id, endpoint)
         if store_key not in _rate_limit_store:

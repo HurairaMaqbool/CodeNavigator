@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import settings
-from app.ingestion.metadata_store import metadata_store
+from app.ingestion.metadata_store import Stage, metadata_store
 from app.observability.logging_config import logger
 from app.agent.response_firewall import sanitize_user_answer, has_forbidden_leak
 from app.agent.citation_repair import repair_answer_citations
@@ -38,6 +38,11 @@ PENALTY_GRAPH_CONSISTENCY: float = 3.0
 GATED_FALLBACK_MESSAGE: str = (
     "I could not verify the cited references in the indexed codebase. "
     "Please try again with a more specific class, function, or file path."
+)
+
+VERIFY_SYSTEM_ERROR_MESSAGE: str = (
+    "Citation verification encountered an internal error. "
+    "Please retry; if this persists, check server logs for verify_system_error."
 )
 
 # finalize_prompt.py format: `file_path:start_line-end_line` (e.g. `src/auth/login.py:42-58`)
@@ -222,8 +227,13 @@ def check_file_existence(citation: dict[str, Any]) -> bool:
     if not path or _is_placeholder_path(path):
         return False
 
-    meta = metadata_store.get(repo_id)
-    if meta is None or meta.sync_status != "synced":
+    synced = False
+    for rid in _bm25_lookup_ids(repo_id):
+        meta = metadata_store.get(rid)
+        if meta is not None and Stage.is_synced(meta.sync_status):
+            synced = True
+            break
+    if not synced:
         return False
 
     known = _indexed_paths_for_repo(repo_id)
@@ -231,8 +241,13 @@ def check_file_existence(citation: dict[str, Any]) -> bool:
         return True
 
     # Physical clone check as secondary confirmation for indexed repos.
-    clone_path = _clone_file_path(repo_id, _normalize_repo_path(str(citation.get("file_path", ""))))
-    return clone_path is not None and clone_path.is_file()
+    for rid in _bm25_lookup_ids(repo_id):
+        clone_path = _clone_file_path(
+            rid, _normalize_repo_path(str(citation.get("file_path", "")))
+        )
+        if clone_path is not None and clone_path.is_file():
+            return True
+    return False
 
 
 def check_line_bounds(citation: dict[str, Any]) -> bool:
@@ -382,6 +397,19 @@ def evaluate_structured_claims(
                 "gated": False,
             }
 
+        if not factual and claims:
+            logger.warning(
+                "verify_no_factual_claims",
+                repo_id=repo_id,
+                claim_count=len(claims),
+            )
+            return {
+                "answer": GATED_FALLBACK_MESSAGE,
+                "confidence_score": 0.0,
+                "gated": True,
+                "rejection_reason": "missing_citations",
+            }
+
         verified_claims: list[dict[str, Any]] = []
         unsupported = 0
         for i, claim in enumerate(claims):
@@ -403,8 +431,7 @@ def evaluate_structured_claims(
         answer = render_claims_markdown(verified_claims) if verified_claims else ""
         fail_ratio = unsupported / factual_count if factual_count else 1.0
         gated = (
-            score < settings.MIN_CONFIDENCE_SCORE
-            or (verified_factual == 0 and factual_count > 0)
+            (verified_factual == 0 and factual_count > 0)
             or not answer.strip()
         )
 
@@ -429,6 +456,7 @@ def evaluate_structured_claims(
                 "answer": GATED_FALLBACK_MESSAGE,
                 "confidence_score": score,
                 "gated": True,
+                "rejection_reason": "claims_unsupported",
             }
 
         return {
@@ -437,11 +465,19 @@ def evaluate_structured_claims(
             "gated": False,
         }
     except Exception as exc:
-        logger.warning("verify_structured_failed", repo_id=repo_id, error=str(exc))
+        import traceback
+
+        logger.error(
+            "verify_structured_failed",
+            repo_id=repo_id,
+            error=str(exc),
+            traceback=traceback.format_exc(),
+        )
         return {
-            "answer": GATED_FALLBACK_MESSAGE,
+            "answer": VERIFY_SYSTEM_ERROR_MESSAGE,
             "confidence_score": 0.0,
             "gated": True,
+            "verification_error": True,
         }
 
 
@@ -614,33 +650,61 @@ def extract_function_name_mentions(text: str) -> list[str]:
 # Repo Metadata Loading
 # ---------------------------------------------------------------------------
 
+def _bm25_lookup_ids(repo_id: str) -> list[str]:
+    """
+    Candidate repo ids for BM25/metadata lookups.
+
+    Prefer the asset clone id (alias) when present — job_id may retain a stale
+    partial index from an earlier ingest while the full index lives under alias.
+    """
+    ordered: list[str] = []
+    try:
+        alias = metadata_store.get_alias(repo_id)
+        if alias:
+            ordered.append(alias)
+    except Exception:
+        pass
+    if repo_id not in ordered:
+        ordered.append(repo_id)
+    return ordered
+
+
+def _read_bm25_records(repo_id: str) -> list[dict[str, Any]]:
+    """Load chunk metadata list from one BM25 pickle, or [] if missing."""
+    from app.retrieval.bm25_store import _index_path_for
+
+    pkl_path = _index_path_for(repo_id)
+    if not pkl_path.exists():
+        return []
+    try:
+        with pkl_path.open("rb") as f:
+            _bm25, records = pickle.load(f)
+        out: list[dict[str, Any]] = []
+        for r in records:
+            meta = dict(r.get("metadata") or {})
+            doc = str(r.get("document") or "")
+            if doc and not meta.get("chunk"):
+                meta["chunk"] = doc
+            out.append(meta)
+        return out
+    except Exception as e:
+        logger.error("failed_to_load_bm25_metadata", repo_id=repo_id, error=str(e))
+        return []
+
+
 def _load_repo_metadata(repo_id: str) -> list[dict[str, Any]]:
     """
     Load chunk metadata from the BM25 index (Module 6a).
 
-    Tries ``repo_id`` then metadata alias when the pickle lives under a sibling id.
+    When both job_id and asset alias indexes exist, use whichever has more
+    records — partial job indexes must not shadow the full asset index.
     """
-    from app.retrieval.bm25_store import _index_path_for
-
-    candidates = [repo_id]
-    try:
-        alias = metadata_store.get_alias(repo_id)
-        if alias and alias not in candidates:
-            candidates.append(alias)
-    except Exception:
-        pass
-
-    for rid in candidates:
-        pkl_path = _index_path_for(rid)
-        if not pkl_path.exists():
-            continue
-        try:
-            with pkl_path.open("rb") as f:
-                _bm25, records = pickle.load(f)
-            return [r["metadata"] for r in records]
-        except Exception as e:
-            logger.error("failed_to_load_bm25_metadata", repo_id=rid, error=str(e))
-    return []
+    best: list[dict[str, Any]] = []
+    for rid in _bm25_lookup_ids(repo_id):
+        records = _read_bm25_records(rid)
+        if len(records) > len(best):
+            best = records
+    return best
 
 
 # ---------------------------------------------------------------------------

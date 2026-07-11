@@ -109,16 +109,16 @@ async def github_webhook(
     commit_hash = payload.get("after")
     if commit_hash:
         from app.ingestion.clone import repo_id_for
-        from app.ingestion.metadata_store import metadata_store
+        from app.ingestion.metadata_store import Stage, metadata_store
         
         provisional_id = repo_id_for(repo_url, branch)
         meta = metadata_store.get(provisional_id)
-        if not meta or meta.sync_status == "pending":
+        if not meta or Stage.is_pending(meta.sync_status):
             alias_id = metadata_store.get_alias(provisional_id)
             if alias_id:
                 meta = metadata_store.get(alias_id)
                 
-        if meta and meta.commit_hash == commit_hash and meta.sync_status == "synced":
+        if meta and meta.commit_hash == commit_hash and Stage.is_synced(meta.sync_status):
             log.info("webhook_ignored", reason="commit already ingested", commit=commit_hash)
             return {"status": "ignored", "reason": f"Commit {commit_hash} is already fully ingested"}
 

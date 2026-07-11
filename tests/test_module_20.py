@@ -98,8 +98,8 @@ def test_post_diagram_endpoint_returns_mermaid(mock_api_key):
     }
 
     with patch("app.api.router._resolve_repo_meta", return_value=(meta, "asset-id")), patch(
-        "app.api.router.get_subgraph", return_value=subgraph
-    ), patch(
+        "app.api.router._require_repo_ready", return_value=None
+    ), patch("app.api.router.get_subgraph", return_value=subgraph), patch(
         "app.api.router.generate_mermaid",
         return_value='graph TD\n    main["main: no connections found"]',
     ) as mock_gen:

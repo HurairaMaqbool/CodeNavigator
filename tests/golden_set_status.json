@@ -1,14 +1,11 @@
 {
   "status": "fail",
-  "timestamp": "2026-07-10T21:21:46.149642+00:00",
-  "score": 0.4,
+  "timestamp": "2026-07-11T10:24:03.617021+00:00",
+  "score": 0.6,
   "total": 15,
-  "passed": 6,
+  "passed": 9,
   "pass_threshold": 0.8,
   "failed_questions": [
-    "Where are requests exceptions like ConnectionError and Timeout defined?",
-    "How does the HTTPAdapter send a prepared request?",
-    "How are cookies stored and managed across requests?",
     "What status code helper structures does requests provide?",
     "Where is the Flask application class defined?",
     "How does Flask manage application and request context?",
@@ -21,8 +18,8 @@
       "fixture": "requests",
       "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
       "total": 10,
-      "passed": 6,
-      "score": 0.6
+      "passed": 9,
+      "score": 0.9
     },
     {
       "fixture": "flask",

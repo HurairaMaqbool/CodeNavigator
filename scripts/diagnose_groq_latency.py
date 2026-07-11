@@ -2,15 +2,10 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 import time
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
-
-from dotenv import dotenv_values
+from scripts._bootstrap import settings
 
 QUESTIONS = [
     "The role of urllib3.PoolManager",
@@ -24,8 +19,8 @@ QUESTIONS = [
 def main() -> None:
     from urllib import request
 
-    cfg = dotenv_values(ROOT / ".env")
-    api_key = cfg.get("API_KEY") or os.environ.get("API_KEY", "dev-secret-key")
+    api_key = settings.API_KEY
+    base_url = settings.API_BASE_URL.rstrip("/")
     repo = "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d"
 
     print("=== Groq latency regression ===\n")
@@ -33,7 +28,7 @@ def main() -> None:
     for q in QUESTIONS:
         body = json.dumps({"repo_id": repo, "question": q}).encode()
         req = request.Request(
-            "http://localhost:8000/chat",
+            f"{base_url}/chat",
             data=body,
             method="POST",
             headers={"X-API-Key": api_key, "Content-Type": "application/json"},

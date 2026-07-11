@@ -228,7 +228,8 @@ def test_ec6_tool_call_budget():
     ), patch(
         "app.agent.loop.context_manager_assemble", return_value="ctx"
     ), patch(
-        "app.agent.loop.confidence_verify", return_value=(2.0, True, "")
+        "app.agent.confidence.evaluate",
+        return_value={"confidence_score": 2.0, "gated": True, "sources": [], "citations": [], "answer": "gated"},
     ), patch("app.agent.loop.semantic_cache_store"):
         res = answer_question("impact analysis", "repo", max_iterations=1)
 
@@ -274,7 +275,8 @@ def test_ec8_iteration_limit():
     ), patch(
         "app.agent.loop.context_manager_assemble", return_value="ctx"
     ), patch(
-        "app.agent.loop.confidence_verify", return_value=(2.0, True, "")
+        "app.agent.confidence.evaluate",
+        return_value={"confidence_score": 2.0, "gated": True, "sources": [], "citations": [], "answer": "gated"},
     ), patch("app.agent.loop.semantic_cache_store"):
         res = answer_question("never ending", "repo", max_iterations=1)
 
@@ -422,7 +424,7 @@ def test_static_and_handoff():
     # Step 6: No confidence/hallucination scoring logic inlined in loop.py
     assert_ok("calculate_confidence" not in loop_code, "Confidence scoring leaked into loop.py")
     assert_ok("hallucination" not in loop_code.lower(), "Hallucination guard leaked into loop.py")
-    assert_ok("confidence_verify" in loop_code, "VERIFY must delegate to confidence_verify")
+    assert_ok("evaluate" in loop_code, "VERIFY must delegate to confidence.evaluate")
     print(f"{PASS} Zero confidence/hallucination scoring logic inlined in loop.py")
 
 
@@ -496,7 +498,8 @@ def test_ec13_wall_clock_timeout():
     ), patch(
         "app.agent.loop.context_manager_assemble", return_value="ctx"
     ), patch(
-        "app.agent.loop.confidence_verify", return_value=(5.0, False, "")
+        "app.agent.confidence.evaluate",
+        return_value={"confidence_score": 5.0, "gated": True, "sources": [], "citations": []},
     ), patch("app.agent.loop.semantic_cache_store"):
         # Simulate a timed-out context via a patched FINALIZE that marks timeout.
         original_finalize = None

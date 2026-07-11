@@ -11,7 +11,6 @@ message instead of storing meaningless all-zero RAGAS scores.
 """
 from __future__ import annotations
 
-import os
 import time
 from typing import Any
 
@@ -32,11 +31,11 @@ def probe_groq_available() -> tuple[bool, str]:
     if settings.LLM_PROVIDER != "groq":
         return True, "non-groq provider"
 
-    api_key = (settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY") or "").strip()
+    api_key = (settings.GROQ_API_KEY or "").strip()
     if not api_key:
         return False, "GROQ_API_KEY is not set"
 
-    model = os.environ.get("EVAL_JUDGE_MODEL") or settings.LLM_MODEL
+    model = settings.EVAL_JUDGE_MODEL or settings.LLM_MODEL
     try:
         from langchain_groq import ChatGroq
 
@@ -62,9 +61,6 @@ def require_groq_quota() -> None:
 
 def eval_question_delay() -> None:
     """Pause between agent calls to avoid TPM bursts on free tier."""
-    try:
-        delay = float(os.environ.get("EVAL_QUESTION_DELAY_S", "4"))
-    except ValueError:
-        delay = 4.0
+    delay = float(settings.EVAL_QUESTION_DELAY_S)
     if delay > 0:
         time.sleep(delay)

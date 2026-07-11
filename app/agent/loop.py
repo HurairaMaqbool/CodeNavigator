@@ -37,11 +37,6 @@ _TOOL_CACHE = ToolCache()
 
 # Exact-question replay cache — zero Groq on repeated identical questions (local testing).
 _EXACT_QUESTION_CACHE: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
-_EXACT_QUESTION_TTL_S = 300.0
-
-# OBSERVE context budget — capped via settings.CONTEXT_MAX_TOKENS.
-_DEFAULT_CONTEXT_TOKEN_BUDGET = 5000
-_FINALIZE_MAX_TOKENS = 700
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +103,7 @@ def context_manager_assemble(
     Chunks are sorted by rerank score (highest first) before truncation.
     """
     token_budget = max_tokens or int(settings.CONTEXT_MAX_TOKENS)
-    budget_chars = max(500, token_budget * 4)
+    budget_chars = max(settings.CONTEXT_BUDGET_MIN_CHARS, token_budget * 4)
     ranked = sorted(
         chunks,
         key=lambda h: float(h.get("score", 0.0)),
@@ -125,13 +120,13 @@ def context_manager_assemble(
         block = f"### {header}\n{text}"
         if used + len(block) > budget_chars:
             remaining = budget_chars - used
-            if remaining > 80:
+            if remaining > settings.CONTEXT_TRUNCATE_REMAINING_CHARS:
                 parts.append(block[:remaining] + "\n...[truncated]")
             break
         parts.append(block)
         used += len(block)
     if graph_context:
-        parts.append(f"### Graph context\n{graph_context[:2000]}")
+        parts.append(f"### Graph context\n{graph_context[:settings.GRAPH_CONTEXT_MAX_CHARS]}")
     assembled = "\n\n".join(parts) if parts else "(no context retrieved)"
     est_tokens = max(1, len(assembled) // 4)
     logger.info(
@@ -266,7 +261,41 @@ def _wall_clock_exceeded(ctx: AgentContext) -> bool:
 
 
 def _retrieval_strong_enough(ctx: AgentContext) -> bool:
-    return bool(ctx.chunks) and ctx.best_retrieval_score >= settings.RETRIEVAL_FAST_PATH_SCORE
+    if not ctx.chunks:
+        return False
+    if ctx.best_retrieval_score >= settings.RETRIEVAL_FAST_PATH_SCORE:
+        return True
+    # Multiple solid hits — skip DECIDE to save a Groq call (TPM budget).
+    return len(ctx.chunks) >= 4 and ctx.best_retrieval_score >= 0.18
+
+
+def _parse_retry_after_s(exc: Exception) -> float | None:
+    m = re.search(r"Retry after ([\d.]+)s", str(exc))
+    return float(m.group(1)) if m else None
+
+
+def _apply_provider_failure(ctx: AgentContext, exc: Exception, *, phase: str) -> str:
+    """Classify provider errors so router can return 429/504 instead of gated 200."""
+    ctx.groq_failed = True
+    err = str(exc).lower()
+    if isinstance(exc, RateLimitError) or "rate limit" in err:
+        ctx.rate_limited = True
+        if ctx.retry_after_s is None:
+            parsed = _parse_retry_after_s(exc)
+            if parsed is not None:
+                ctx.retry_after_s = parsed
+        wait = int(ctx.retry_after_s or 30)
+        return (
+            f"The AI provider is temporarily rate-limited. "
+            f"Please wait about {wait} seconds and try again."
+        )
+    if "timed out" in err or "time-to-first-token" in err:
+        ctx.timed_out = True
+        return (
+            "The AI provider was too slow to generate an answer. "
+            "Try a more specific question about a class, function, or file."
+        )
+    return f"Unable to complete the {phase} step: {exc}"
 
 
 def _exact_question_cache_get(repo_id: str, question: str) -> dict[str, Any] | None:
@@ -275,7 +304,7 @@ def _exact_question_cache_get(repo_id: str, question: str) -> dict[str, Any] | N
     if not entry:
         return None
     ts, payload = entry
-    if time.monotonic() - ts > _EXACT_QUESTION_TTL_S:
+    if time.monotonic() - ts > settings.EXACT_QUESTION_CACHE_TTL_S:
         _EXACT_QUESTION_CACHE.pop(key, None)
         return None
     if payload.get("gated"):
@@ -324,7 +353,7 @@ def _groq_text(
     use_model = model or settings.LLM_MODEL
     wall = wall_clock_timeout_s or float(settings.GROQ_FINALIZE_TIMEOUT_S)
 
-    for attempt in range(2):
+    for attempt in range(max(1, int(settings.GROQ_LLM_RATE_LIMIT_ATTEMPTS))):
         logger.info(
             "loop_llm_call_start",
             purpose=purpose,
@@ -364,9 +393,7 @@ def _groq_text(
             return text
         except RateLimitError as exc:
             elapsed = time.monotonic() - t0
-            import re as _re
-            m = _re.search(r"Retry after ([\d.]+)s", str(exc))
-            retry_s = float(m.group(1)) if m else None
+            retry_s = _parse_retry_after_s(exc)
             if ctx is not None and retry_s is not None:
                 ctx.retry_after_s = retry_s
             logger.warning(
@@ -376,11 +403,10 @@ def _groq_text(
                 elapsed_s=round(elapsed, 3),
                 error=str(exc),
             )
-            if attempt == 0:
-                import re
-                m = re.search(r"Retry after ([\d.]+)s", str(exc))
-                delay = float(m.group(1)) if m else 5.0
-                time.sleep(min(delay, 30.0))
+            max_attempts = max(1, int(settings.GROQ_LLM_RATE_LIMIT_ATTEMPTS))
+            if attempt + 1 < max_attempts:
+                delay = retry_s if retry_s is not None else 5.0
+                time.sleep(min(delay, settings.LLM_RATE_LIMIT_MAX_BACKOFF_S))
                 continue
             raise
         except ProviderError as exc:
@@ -481,7 +507,7 @@ def _handle_intake(ctx: AgentContext) -> AgentState:
     # Semantic cache (embedding lookup, no Groq on hit).
     if not ctx.chat_history:
         cached = semantic_cache_lookup(ctx.repo_id, ctx.question)
-        if cached:
+        if cached and not cached.get("gated"):
             ctx.answer = cached["answer"]
             ctx.sources = cached.get("sources", [])
             ctx.confidence_score = float(cached.get("confidence_score", 0.0))
@@ -530,16 +556,16 @@ def _handle_act(ctx: AgentContext) -> AgentState:
     variants = ctx.query_variants if ctx.iteration == 0 else ctx.query_variants[:1]
     for variant in variants:
         try:
-            batches.append(search(ctx.repo_id, variant, top_k=20))
+            batches.append(search(ctx.repo_id, variant, top_k=settings.HYBRID_SEARCH_TOP_K))
         except Exception as exc:
             logger.warning("act_search_failed", variant=variant, error=str(exc))
 
     merged = _merge_search_results(batches)
     try:
-        ctx.chunks = rerank(ctx.question, merged, top_n=8)
+        ctx.chunks = rerank(ctx.question, merged, top_n=settings.RERANK_TOP_N)
     except Exception as exc:
         logger.warning("act_rerank_failed", error=str(exc))
-        ctx.chunks = merged[:8]
+        ctx.chunks = merged[: settings.RERANK_TOP_N]
 
     for hit in ctx.chunks:
         score = float(hit.get("score", 0.0))
@@ -620,38 +646,20 @@ def _handle_decide(ctx: AgentContext) -> AgentState:
         verdict = _groq_text(
             "Reply only YES or NO.",
             prompt,
-            max_tokens=8,
+            max_tokens=settings.DECIDE_MAX_TOKENS,
             purpose="decide",
             model=settings.DECIDE_LLM_MODEL,
             wall_clock_timeout_s=float(settings.GROQ_DECIDE_TIMEOUT_S),
             ctx=ctx,
         ).upper()
         ctx.enough_evidence = verdict.startswith("Y")
-    except RateLimitError:
-        ctx.rate_limited = True
-        wait = int(ctx.retry_after_s or 30)
-        ctx.answer = (
-            f"The AI provider is temporarily rate-limited. "
-            f"Please wait about {wait} seconds and try again."
-        )
+    except RateLimitError as exc:
+        ctx.answer = _apply_provider_failure(ctx, exc, phase="decide")
         ctx.gated = True
         return _transition(ctx, AgentState.RESPOND)
     except ProviderError as exc:
         if ctx.iteration == 0:
-            ctx.groq_failed = True
-            err = str(exc)
-            if "rate limit" in err.lower():
-                ctx.answer = (
-                    "The AI provider rate-limited this request. "
-                    "Please wait a minute and try again."
-                )
-            elif "timed out" in err.lower() or "time-to-first-token" in err.lower():
-                ctx.answer = (
-                    "The AI provider was too slow to respond. "
-                    "Try a more specific question about a class, function, or file."
-                )
-            else:
-                ctx.answer = f"Unable to complete the request: {exc}"
+            ctx.answer = _apply_provider_failure(ctx, exc, phase="decide")
             ctx.gated = True
             return _transition(ctx, AgentState.RESPOND)
         ctx.enough_evidence = True
@@ -665,9 +673,6 @@ def _handle_decide(ctx: AgentContext) -> AgentState:
 
 @_register(AgentState.FINALIZE)
 def _handle_finalize(ctx: AgentContext) -> AgentState:
-    if ctx.max_iterations > 0 and ctx.iteration + 1 >= ctx.max_iterations and not ctx.enough_evidence:
-        ctx.gated = True
-
     from app.agent.prompts.finalize_prompt import finalize_prompt, finalize_system_prompt
 
     allowed_paths = sorted({
@@ -694,36 +699,18 @@ def _handle_finalize(ctx: AgentContext) -> AgentState:
         raw = _groq_text(
             system,
             user,
-            max_tokens=_FINALIZE_MAX_TOKENS,
+            max_tokens=settings.FINALIZE_MAX_TOKENS,
             purpose="finalize",
             model=settings.LLM_MODEL,
             wall_clock_timeout_s=float(settings.GROQ_FINALIZE_TIMEOUT_S),
             ctx=ctx,
         )
-    except RateLimitError:
-        ctx.rate_limited = True
-        wait = int(ctx.retry_after_s or 30)
-        ctx.answer = (
-            f"The AI provider is temporarily rate-limited. "
-            f"Please wait about {wait} seconds and try again."
-        )
+    except RateLimitError as exc:
+        ctx.answer = _apply_provider_failure(ctx, exc, phase="finalize")
         ctx.gated = True
         return _transition(ctx, AgentState.RESPOND)
     except ProviderError as exc:
-        ctx.groq_failed = True
-        err = str(exc)
-        if "rate limit" in err.lower():
-            ctx.answer = (
-                "The AI provider rate-limited this request. "
-                "Please wait a minute and try again."
-            )
-        elif "timed out" in err.lower() or "time-to-first-token" in err.lower():
-            ctx.answer = (
-                "The AI provider was too slow to generate an answer. "
-                "Try a more specific question about a class, function, or file."
-            )
-        else:
-            ctx.answer = f"Unable to generate an answer: {exc}"
+        ctx.answer = _apply_provider_failure(ctx, exc, phase="finalize")
         ctx.gated = True
         return _transition(ctx, AgentState.RESPOND)
 
@@ -758,6 +745,7 @@ def _handle_verify(ctx: AgentContext) -> AgentState:
 
     if ctx.structured_claims:
         from app.agent.confidence import path_key
+        import traceback
 
         allowed_paths = {
             path_key(str(
@@ -767,21 +755,74 @@ def _handle_verify(ctx: AgentContext) -> AgentState:
             ))
             for c in ctx.chunks
         } - {""}
-        verification = verify_claims_batch(
-            ctx.structured_claims,
-            ctx.repo_id,
-            retrieval_hits=ctx.chunks,
-            allowed_paths=allowed_paths,
-        )
-        result = evaluate_structured_claims(
-            ctx.structured_claims,
-            ctx.answer or "",
-            ctx.repo_id,
-            verification,
-        )
+        try:
+            verification = verify_claims_batch(
+                ctx.structured_claims,
+                ctx.repo_id,
+                retrieval_hits=ctx.chunks,
+                allowed_paths=allowed_paths,
+            )
+            if verification.get("verification_error"):
+                logger.error(
+                    "verify_system_error",
+                    repo_id=ctx.repo_id,
+                    phase="claim_batch",
+                    error=verification.get("error"),
+                )
+                from app.agent.confidence import VERIFY_SYSTEM_ERROR_MESSAGE
+
+                ctx.confidence_score = 0.0
+                ctx.gated = True
+                ctx.answer = VERIFY_SYSTEM_ERROR_MESSAGE
+                ctx.sources = []
+                return _transition(ctx, AgentState.RESPOND)
+
+            result = evaluate_structured_claims(
+                ctx.structured_claims,
+                ctx.answer or "",
+                ctx.repo_id,
+                verification,
+            )
+        except Exception as exc:
+            logger.error(
+                "verify_system_error",
+                repo_id=ctx.repo_id,
+                phase="structured_verify",
+                error=str(exc),
+                traceback=traceback.format_exc(),
+            )
+            from app.agent.confidence import VERIFY_SYSTEM_ERROR_MESSAGE
+
+            ctx.confidence_score = 0.0
+            ctx.gated = True
+            ctx.answer = VERIFY_SYSTEM_ERROR_MESSAGE
+            ctx.sources = []
+            return _transition(ctx, AgentState.RESPOND)
+
+        if result.get("verification_error"):
+            logger.error(
+                "verify_system_error",
+                repo_id=ctx.repo_id,
+                phase="evaluate_structured",
+            )
+            ctx.confidence_score = 0.0
+            ctx.gated = True
+            ctx.answer = result["answer"]
+            ctx.sources = []
+            return _transition(ctx, AgentState.RESPOND)
+
         ctx.confidence_score = float(result["confidence_score"])
-        ctx.gated = bool(result["gated"]) or ctx.gated
+        ctx.gated = bool(result["gated"])
         if ctx.gated:
+            logger.warning(
+                "verify_gated_structured",
+                repo_id=ctx.repo_id,
+                score=ctx.confidence_score,
+                claim_count=len(ctx.structured_claims),
+                verified_count=verification.get("verified_count"),
+                methods=[r.get("method") for r in verification.get("results") or []],
+                rejection_reason=result.get("rejection_reason", "claims_unsupported"),
+            )
             ctx.answer = result["answer"]
             ctx.sources = []
         else:
@@ -831,7 +872,7 @@ def _handle_verify(ctx: AgentContext) -> AgentState:
             ctx.sources = valid_sources
 
     ctx.confidence_score = float(result["confidence_score"])
-    ctx.gated = bool(result["gated"]) or ctx.gated
+    ctx.gated = bool(result["gated"])
 
     if ctx.gated:
         ctx.answer = result["answer"]

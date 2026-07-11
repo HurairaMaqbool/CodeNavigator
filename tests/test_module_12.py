@@ -63,6 +63,7 @@ def test_step1_deliverables():
 # ---------------------------------------------------------------------------
 # STEP 2: E2E Lifecycle
 # ---------------------------------------------------------------------------
+@patch("app.api.router._require_repo_ready")
 @patch("app.tasks.ingestion_task.run_ingestion.delay")
 @patch("app.api.router.lock_manager.try_acquire")
 @patch("app.api.router.metadata_store")
@@ -70,11 +71,12 @@ def test_step1_deliverables():
 @patch("app.api.router.get_subgraph")
 @patch("app.api.router.graph_to_mermaid")
 @patch("app.retrieval.vector_store.get_collection")
-def test_step2_e2e(mock_col, mock_mermaid, mock_subgraph, mock_ans, mock_meta, mock_lock, mock_delay, tmp_db, tmp_repos):
+def test_step2_e2e(mock_col, mock_mermaid, mock_subgraph, mock_ans, mock_meta, mock_lock, mock_delay, mock_ready, tmp_db, tmp_repos):
     print("\n--- STEP 2: Full Lifecycle E2E Test ---")
     from app.ingestion.clone import repo_id_for
 
     mock_col.return_value = None
+    mock_ready.return_value = None
     job_id = repo_id_for("https://github.com/a/b", "HEAD")
     # 1. POST /ingest
     mock_lock.return_value = MagicMock(acquired=True)

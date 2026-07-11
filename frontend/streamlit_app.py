@@ -10,7 +10,6 @@ Professional Streamlit UI for the CodeNavigator.
 """
 from __future__ import annotations
 
-import os
 import time
 import uuid
 from typing import Any
@@ -19,10 +18,17 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+try:
+    from settings_bridge import settings
+except ImportError:
+    from frontend.settings_bridge import settings
+
 import api_client
 from ui_theme import (
     APP_VERSION,
+    close_page_content,
     inject_styles,
+    open_page_content,
     render_alert,
     render_backend_status,
     render_citation_chips,
@@ -33,6 +39,7 @@ from ui_theme import (
     render_hero,
     render_ingest_stepper,
     render_ragas_chart,
+    render_screen_skeleton,
     render_sidebar_nav,
     render_stat_card,
     render_top_header,
@@ -55,7 +62,7 @@ st.set_page_config(
 inject_styles()  # Module #34 boot_theme() — dark default, CSS variables once
 
 # Optional UI password gate (set STREAMLIT_UI_PASSWORD in env)
-_ui_password = os.environ.get("STREAMLIT_UI_PASSWORD", "").strip()
+_ui_password = (settings.STREAMLIT_UI_PASSWORD or "").strip()
 if _ui_password and not st.session_state.get("ui_authenticated"):
     st.markdown("### Sign in")
     entered = st.text_input("Password", type="password", key="ui_password_input")
@@ -82,10 +89,99 @@ if "last_diagram_symbol" not in st.session_state:
     st.session_state.last_diagram_symbol = None
 if "voice_output_enabled" not in st.session_state:
     st.session_state.voice_output_enabled = False
+if "_prev_page" not in st.session_state:
+    st.session_state._prev_page = st.session_state.active_page
+if "repo_meta_cache" not in st.session_state:
+    st.session_state.repo_meta_cache = {}
+if "eval_health_cache" not in st.session_state:
+    st.session_state.eval_health_cache = {}
+if "eval_history_cache" not in st.session_state:
+    st.session_state.eval_history_cache = {"ts": 0.0, "data": []}
+if "backend_ok_cache" not in st.session_state:
+    st.session_state.backend_ok_cache = {"ts": 0.0, "ok": False}
 
 
 # ---------------------------------------------------------------------------
 # Helpers
+# ---------------------------------------------------------------------------
+
+_META_CACHE_TTL_S = 45.0
+_EVAL_HEALTH_TTL_S = 60.0
+_EVAL_HISTORY_TTL_S = 120.0
+_BACKEND_CHECK_TTL_S = 30.0
+
+
+def _cached_backend_ok() -> bool:
+    entry = st.session_state.backend_ok_cache
+    if time.time() - entry["ts"] < _BACKEND_CHECK_TTL_S:
+        return bool(entry["ok"])
+    ok = render_backend_status()
+    st.session_state.backend_ok_cache = {"ts": time.time(), "ok": ok}
+    return ok
+
+
+def _cached_repo_meta(repo_id: str) -> dict[str, Any]:
+    cache: dict[str, Any] = st.session_state.repo_meta_cache
+    entry = cache.get(repo_id)
+    now = time.time()
+    if entry and (now - entry["ts"]) < _META_CACHE_TTL_S:
+        return entry["data"]
+    try:
+        data = api_client.get_status(repo_id)
+    except api_client.APIError:
+        data = {}
+    cache[repo_id] = {"ts": now, "data": data}
+    # Status and Eval must agree — drop stale negative eval cache when /status says ready.
+    if data.get("ready") or data.get("status") == "ready":
+        st.session_state.eval_health_cache.pop(repo_id, None)
+    return data
+
+
+def _repo_is_ready(meta: dict[str, Any]) -> bool:
+    """Same rule as /status + is_repo_ready — never raw sync_status alone."""
+    if meta.get("ready") is True:
+        return True
+    return meta.get("status") == "ready"
+
+
+def _cached_eval_health(repo_id: str) -> dict[str, Any]:
+    cache: dict[str, Any] = st.session_state.eval_health_cache
+    meta = _cached_repo_meta(repo_id)
+    # If status says ready but cached eval says not, force a fresh probe once.
+    if (_repo_is_ready(meta) and cache.get(repo_id) and not cache[repo_id]["data"].get("ok")):
+        cache.pop(repo_id, None)
+    entry = cache.get(repo_id)
+    now = time.time()
+    if entry and (now - entry["ts"]) < _EVAL_HEALTH_TTL_S:
+        return entry["data"]
+    try:
+        data = api_client.get_eval_health(repo_id, probe_agent=False)
+    except Exception as exc:
+        data = {"ok": False, "errors": [str(exc)]}
+    cache[repo_id] = {"ts": now, "data": data}
+    return data
+
+
+def _cached_eval_history() -> list[dict[str, Any]]:
+    entry = st.session_state.eval_history_cache
+    now = time.time()
+    if now - entry["ts"] < _EVAL_HISTORY_TTL_S:
+        return entry["data"]
+    try:
+        data = api_client.get_eval_history()
+    except Exception:
+        data = []
+    st.session_state.eval_history_cache = {"ts": now, "data": data}
+    return data
+
+
+def _invalidate_repo_cache(repo_id: str | None) -> None:
+    if repo_id and repo_id in st.session_state.repo_meta_cache:
+        del st.session_state.repo_meta_cache[repo_id]
+
+
+# ---------------------------------------------------------------------------
+# Helpers (chat / UI)
 # ---------------------------------------------------------------------------
 
 def _format_api_error(e: api_client.APIError) -> tuple[str, str]:
@@ -313,7 +409,7 @@ def _poll_ingestion(job_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
-backend_ok = render_backend_status()
+backend_ok = _cached_backend_ok()
 
 st.sidebar.divider()
 render_theme_mode_toggle()
@@ -321,6 +417,8 @@ render_voice_output_toggle()
 
 st.sidebar.divider()
 page = render_sidebar_nav(st.session_state.get("active_page", "Workspace"))
+if page != st.session_state.get("_prev_page"):
+    st.session_state._prev_page = page
 st.session_state.active_page = page
 
 if st.session_state.repo_id:
@@ -329,6 +427,7 @@ if st.session_state.repo_id:
     short = st.session_state.repo_id
     st.sidebar.code((short[:22] + "…") if len(short) > 22 else short, language=None)
     if st.sidebar.button("Clear session", use_container_width=True, type="secondary"):
+        _invalidate_repo_cache(st.session_state.repo_id)
         st.session_state.repo_id = None
         st.session_state.chat_history = []
         st.session_state.session_id = str(uuid.uuid4())
@@ -345,6 +444,7 @@ for label, url in [
             try:
                 res = api_client.ingest(url)
                 st.session_state.repo_id = res["job_id"]
+                _invalidate_repo_cache(res["job_id"])
                 _poll_ingestion(res["job_id"])
                 st.rerun()
             except api_client.APIError as e:
@@ -363,6 +463,7 @@ for label, url in [
 # ---------------------------------------------------------------------------
 render_top_header(backend_ok)
 render_hero()
+open_page_content()
 
 if page == "Workspace":
     # --- Ingest ---
@@ -390,6 +491,7 @@ if page == "Workspace":
             try:
                 res = api_client.ingest(url_clean, ref or None)
                 st.session_state.repo_id = res["job_id"]
+                _invalidate_repo_cache(res["job_id"])
                 _poll_ingestion(res["job_id"])
                 st.rerun()
             except api_client.APIError as e:
@@ -411,16 +513,15 @@ if page == "Workspace":
 
     if not st.session_state.repo_id:
         render_empty_workspace()
+        close_page_content()
         render_footer()
         st.stop()
 
-    try:
-        meta = api_client.get_status(st.session_state.repo_id)
-    except api_client.APIError:
+    meta = _cached_repo_meta(st.session_state.repo_id)
+    if not meta:
         st.error("Could not load repository status.")
-        meta = {}
 
-    is_ready = meta.get("sync_status") == "synced"
+    is_ready = _repo_is_ready(meta)
 
     col_main, col_side = st.columns([2.2, 1])
     with col_side:
@@ -510,27 +611,29 @@ elif page == "Evaluation & QA":
     # --- Evaluation & QA ---
     section_header("Evaluation & quality assurance", "RAGAS metrics, version compare, golden-set CI")
 
+    eval_slot = st.empty()
+    eval_slot.markdown(render_screen_skeleton("evaluation"), unsafe_allow_html=True)
+
     eval_ready = False
     eval_health: dict = {}
     if st.session_state.repo_id:
-        try:
-            eval_health = api_client.get_eval_health(st.session_state.repo_id, probe_agent=False)
-            eval_ready = bool(eval_health.get("ok"))
-            details = eval_health.get("details") or {}
-            c1, c2, c3 = st.columns(3)
-            render_stat_card(
-                "Index",
-                "Ready" if eval_ready else "Not ready",
-                c1,
-            )
-            render_stat_card("Chunks", str(details.get("chroma_chunk_count", "—")), c2)
-            render_stat_card("Probe hits", str(details.get("probe_hit_count", "—")), c3)
-            if not eval_ready:
-                for err in eval_health.get("errors") or []:
-                    render_alert("error", str(err))
-        except Exception as err:
-            render_alert("error", f"Health check: {err}")
+        eval_health = _cached_eval_health(st.session_state.repo_id)
+        eval_ready = bool(eval_health.get("ok"))
+        details = eval_health.get("details") or {}
+        eval_slot.empty()
+        c1, c2, c3 = st.columns(3)
+        render_stat_card(
+            "Index",
+            "Ready" if eval_ready else "Not ready",
+            c1,
+        )
+        render_stat_card("Chunks", str(details.get("chroma_chunk_count", "—")), c2)
+        render_stat_card("Probe hits", str(details.get("probe_hit_count", "—")), c3)
+        if not eval_ready:
+            for err in eval_health.get("errors") or []:
+                render_alert("error", str(err))
     else:
+        eval_slot.empty()
         st.info("Ingest a repo on the Workspace tab first.")
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -552,6 +655,8 @@ elif page == "Evaluation & QA":
 
     if run_eval_clicked:
         try:
+            st.session_state.eval_health_cache.pop(st.session_state.repo_id, None)
+            st.session_state.eval_history_cache = {"ts": 0.0, "data": []}
             job_info = api_client.start_eval(st.session_state.repo_id)
             job_id = job_info.get("job_id")
             if not job_id:
@@ -621,17 +726,21 @@ elif page == "Evaluation & QA":
             st.error(e.message)
 
     section_header("Compare versions")
-    history = api_client.get_eval_history() if backend_ok else []
+    history = _cached_eval_history() if backend_ok else []
     if not history:
         st.info("No eval history yet — run RAGAS eval first.")
     else:
         options = {r.get("version", r.get("timestamp", "?")): r for r in history}
+        keys = list(options.keys())
         c1, c2 = st.columns(2)
         with c1:
-            baseline = st.selectbox("Baseline", list(options.keys()))
+            baseline = st.selectbox("Baseline", keys, index=0)
         with c2:
-            candidate = st.selectbox("Candidate", list(options.keys()))
-        if st.button("Compare runs", type="primary"):
+            cand_default = 1 if len(keys) > 1 else 0
+            candidate = st.selectbox("Candidate", keys, index=cand_default)
+        if baseline == candidate and len(keys) > 1:
+            st.warning("Pick two different runs to compare — baseline and candidate are the same.")
+        if st.button("Compare runs", type="primary", disabled=(baseline == candidate and len(keys) > 1)):
             try:
                 diff = api_client.compare_eval_runs(baseline, candidate)
                 if diff.get("regressions_found"):
@@ -676,9 +785,12 @@ elif page == "Platform":
     if not backend_ok:
         render_alert("info", "Start the backend to view platform data.")
     else:
+        plat_slot = st.empty()
+        plat_slot.markdown(render_screen_skeleton("platform"), unsafe_allow_html=True)
         try:
             usage = api_client.get_platform_usage()
             sub = api_client.get_billing_subscription()
+            plat_slot.empty()
             c1, c2, c3, c4 = st.columns(4)
             render_stat_card("Org", usage.get("org_id", "—"), c1)
             render_stat_card("Plan", sub.get("plan_name", "Free"), c2)
@@ -694,6 +806,8 @@ elif page == "Platform":
             if audit:
                 st.dataframe(pd.DataFrame(audit), use_container_width=True, hide_index=True)
         except api_client.APIError as e:
+            plat_slot.empty()
             st.error(e.message)
 
+close_page_content()
 render_footer()

@@ -75,6 +75,28 @@ def render_top_header(online: bool) -> None:
         st.caption(api_client.API_BASE_URL)
 
 
+def render_screen_skeleton(kind: str) -> str:
+    """Layout-shaped shimmer skeleton HTML for heavy pages (Evaluation / Platform)."""
+    cards = 4 if kind == "platform" else 3
+    card_html = "".join('<div class="cn-sk-card"></div>' for _ in range(cards))
+    return f"""
+<div class="cn-page-skeleton" aria-hidden="true">
+  <div class="cn-sk-title"></div>
+  <div class="cn-sk-row">{card_html}</div>
+  <div class="cn-sk-block"></div>
+</div>
+"""
+
+
+def open_page_content() -> None:
+    """Fade-wrapped main content shell — pair with close_page_content()."""
+    st.markdown('<div class="cn-page-content">', unsafe_allow_html=True)
+
+
+def close_page_content() -> None:
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def render_sidebar_nav(current: str) -> str:
     """Vertical nav with icon + label; returns selected page id."""
     labels = {

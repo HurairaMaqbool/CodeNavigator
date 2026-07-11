@@ -15,7 +15,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_SUBS_PATH = Path("data/subscriptions.json")
+from app.paths import data_path
+
+_SUBS_PATH = data_path("subscriptions.json")
 
 
 def _use_pg() -> bool:

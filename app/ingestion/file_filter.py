@@ -42,10 +42,10 @@ from app.observability.logging_config import logger
 # Tunable constants
 # ---------------------------------------------------------------------------
 
-MAX_FILE_SIZE_BYTES: int = 1 * 1024 * 1024       # 1 MB
-BINARY_SNIFF_BYTES: int = 8_192                  # 8 KB
-MAX_MEAN_LINE_LENGTH: int = 300                  # chars/line minification threshold
-MAX_REPLACEMENT_CHAR_RATIO: float = 0.05         # 5% corruption threshold
+MAX_FILE_SIZE_BYTES: int = settings.MAX_FILE_SIZE_BYTES
+BINARY_SNIFF_BYTES: int = settings.BINARY_SNIFF_BYTES
+MAX_MEAN_LINE_LENGTH: int = settings.MAX_MEAN_LINE_LENGTH
+MAX_REPLACEMENT_CHAR_RATIO: float = settings.MAX_REPLACEMENT_CHAR_RATIO
 
 # ---------------------------------------------------------------------------
 # Exclusion rules -- directories (applied DURING walk, not after)
@@ -64,20 +64,8 @@ EXCLUDED_DIRS: frozenset[str] = frozenset({
 _D_TS_SUFFIX = ".d.ts"
 EXCLUDED_LOCK_SUFFIX: str = ".lock"
 
-# ---------------------------------------------------------------------------
-# Supported languages
-# ---------------------------------------------------------------------------
-
-EXTENSION_TO_LANGUAGE: dict[str, str] = {
-    ".py":   "python",
-    ".js":   "javascript",
-    ".jsx":  "javascript",
-    ".ts":   "typescript",
-    ".tsx":  "tsx",
-    ".go":   "go",
-    ".java": "java",
-    ".rs":   "rust",
-}
+from app.ingestion.language_registry import EXTENSION_TO_LANGUAGE
+from app.ingestion.path_normalize import assert_normalized_path
 
 # ---------------------------------------------------------------------------
 # Generated-code path patterns
@@ -249,8 +237,8 @@ def filter_repo_files(
             n_generated += 1
             continue
 
-        display_path = rel_posix
-        normalized_path = rel_posix.lower()
+        display_path = assert_normalized_path(rel_posix, context="file_filter")
+        normalized_path = display_path.lower()
 
         results.append(FileRecord(
             path=str(abs_path),

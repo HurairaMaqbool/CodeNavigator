@@ -29,6 +29,7 @@ from collections.abc import AsyncIterator, Iterator
 from datetime import datetime, timezone
 from typing import Any
 
+from app.config import settings
 from app.observability.logging_config import logger
 
 # Stream termination sentinel (internal — never sent as a user-visible label).
@@ -36,14 +37,14 @@ STREAM_DONE_SENTINEL = "[DONE]"
 
 # Pre-approved human labels — never expose raw enum names to the frontend.
 STATE_LABELS: dict[str, str] = {
-    "INTAKE": "Understanding your question…",
-    "PLAN": "Planning the best approach…",
+    "INTAKE": "Preparing your request…",
+    "PLAN": "Understanding your question…",
     "ACT": "Searching the codebase…",
-    "OBSERVE": "Reviewing what we found…",
-    "DECIDE": "Checking if we have enough context…",
-    "FINALIZE": "Drafting your answer…",
-    "VERIFY": "Verifying citations…",
-    "RESPOND": "Delivering your answer…",
+    "OBSERVE": "Reading relevant code…",
+    "DECIDE": "Reasoning about the answer…",
+    "FINALIZE": "Writing the response…",
+    "VERIFY": "Double-checking citations…",
+    "RESPOND": "Finalizing…",
 }
 
 REDIS_CHANNEL_PREFIX = "cn:sse:"
@@ -52,9 +53,11 @@ _PROCESS_ORIGIN = uuid.uuid4().hex
 _SESSION_QUEUES: dict[str, queue.Queue[dict[str, Any]]] = {}
 _SESSION_BRIDGES: dict[str, threading.Thread] = {}
 _SESSION_LOCK = threading.Lock()
-_QUEUE_MAXSIZE = 64
-_QUEUE_GET_TIMEOUT_S = 1.0
-_STREAM_IDLE_TIMEOUT_S = 300.0
+
+# Tunables from settings — not hardcoded module constants.
+_QUEUE_MAXSIZE = settings.SSE_QUEUE_MAXSIZE
+_QUEUE_GET_TIMEOUT_S = settings.SSE_QUEUE_GET_TIMEOUT_S
+_STREAM_IDLE_TIMEOUT_S = settings.SSE_STREAM_IDLE_TIMEOUT_S
 
 
 def _utc_now_iso() -> str:

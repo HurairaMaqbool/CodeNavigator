@@ -1,20 +1,13 @@
 # Copyright (c) 2026 Huraira Maqbool
 # All Rights Reserved
-# Unauthorized copying, modification, distribution, reverse engineering,
-# or commercial use of this file is strictly prohibited.
 
-"""
-eval/health_check.py
---------------------
-Pre-evaluation health checks. Abort before RAGAS if the index or retrieval
-pipeline is not ready — never store 0.000 scores from a broken pipeline.
-"""
+"""eval/health_check.py — pre-evaluation gates (delegates readiness to repo_readiness)."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
 
-from app.ingestion.metadata_store import metadata_store
+from app.ingestion.repo_readiness import is_repo_ready, readiness_snapshot
 from app.retrieval.bm25_store import _index_path_for
 from app.retrieval.vector_store import get_collection
 
@@ -102,15 +95,6 @@ def check_agent_probe(
     *,
     probe_question: str = "What is the PreparedRequest class in requests?",
 ) -> HealthCheckResult:
-    """
-    Verify the agent pipeline produces grounded context.
-
-    Design note: a low *confidence* on a single probe is NOT a hard failure —
-    confidence depends on the specific question and citation validation, and a
-    strict gate here caused false "Eval blocked" errors. We only HARD-FAIL on
-    genuine pipeline breakage (rate limit, retrieval returned nothing, or the
-    agent crashed). Low confidence with real retrieval is surfaced as a warning.
-    """
     errors: list[str] = []
     warnings: list[str] = []
     details: dict[str, Any] = {"asset_repo_id": asset_repo_id}
@@ -153,20 +137,38 @@ def run_full_eval_precheck(
     *,
     include_agent_probe: bool = True,
 ) -> HealthCheckResult:
-    """Combined pre-evaluation gate: sync status, index health, optional agent probe."""
-    meta, asset_repo_id = resolve_asset_repo_id(job_id)
-    if not meta or meta.sync_status != "synced":
+    """Combined pre-evaluation gate — uses is_repo_ready (same path as /status)."""
+    snap = readiness_snapshot(job_id)
+    readiness = is_repo_ready(job_id)
+    if not readiness.ready:
+        status = snap["sync_status"] or "missing"
         return HealthCheckResult(
             ok=False,
-            errors=[f"Repo {job_id[:12]}... not synced (status={getattr(meta, 'sync_status', 'missing')})"],
-            details={"job_id": job_id, "asset_repo_id": asset_repo_id},
+            errors=[
+                readiness.block_message
+                or f"Repo not fully ingested (status: {status})"
+            ],
+            details={
+                "job_id": job_id,
+                "asset_repo_id": snap["asset_repo_id"],
+                "sync_status": status,
+                "files_parsed": snap["files_parsed"],
+                "chunks_created": snap["chunks_created"],
+                "block_reason": snap["block_reason"],
+                "ready": False,
+            },
         )
 
+    asset_repo_id = snap["asset_repo_id"]
     index_health = check_index_health(asset_repo_id)
     if not index_health.ok:
         return index_health
 
-    details = {**index_health.details, "job_id": job_id}
+    details = {
+        **index_health.details,
+        **snap,
+        "ready": True,
+    }
     if asset_repo_id != job_id:
         details["alias_resolved"] = True
 
@@ -189,10 +191,6 @@ def diagnose_pipeline_failure(
     retrieval_precision_at_3: float,
     mean_confidence: float,
 ) -> tuple[bool, str]:
-    """
-    Distinguish 'bad answers' (low but non-zero RAGAS) from 'pipeline failure'
-    (all metrics exactly 0.000 due to empty context, gating, or judge failure).
-    """
     faithfulness = ragas_scores.get("faithfulness", 0.0)
     metrics = [ragas_scores.get(k, 0.0) for k in ("answer_relevancy", "context_precision", "context_recall")]
     all_three_zero = all(v == 0.0 for v in metrics)
