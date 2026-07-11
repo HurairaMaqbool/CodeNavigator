@@ -114,7 +114,6 @@ def test_celery_skipped_when_redis_up_but_no_workers(monkeypatch):
     bg_tasks.add_task.assert_called_once()
 
 
-@pytest.mark.skip(reason="Optional live check — run manually when backend + index are local")
 def test_live_repo_status_reports_counts_when_index_exists(client):
     """End-to-end: known requests repo_id should report non-zero chunks when synced."""
     resp = client.get(f"/status/{JOB_ID}")
