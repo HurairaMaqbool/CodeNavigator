@@ -165,7 +165,8 @@ def main() -> int:
     eval_score = 0.0
     ragas_score = 0.0
     if groq_ok:
-        env = {**os.environ, "EVAL_MAX_QUESTIONS": "3", "EVAL_SKIP_AGENT_PROBE": "1"}
+        env = {**os.environ, "EVAL_MAX_QUESTIONS": "3", "EVAL_SKIP_AGENT_PROBE": "1",
+               "EVAL_TARGET_REPO_ID": JOB_ID}
         er = subprocess.run(
             [sys.executable, "-m", "eval.run_eval"],
             cwd=ROOT, capture_output=True, text=True, env=env, timeout=600,

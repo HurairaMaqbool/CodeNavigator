@@ -744,6 +744,25 @@ def _handle_verify(ctx: AgentContext) -> AgentState:
     from app.agent.response_firewall import sanitize_user_answer
 
     if ctx.structured_claims:
+        # Repair structured claims citations first using symbol resolution
+        try:
+            from app.agent.citation_repair import _resolve_citation_lines, _hits_by_path
+            by_path = _hits_by_path(_chunks_to_repair_hits(ctx.chunks))
+            for claim in ctx.structured_claims:
+                cit = claim.get("citation")
+                if cit and cit.get("file_path"):
+                    sent = claim.get("claim") or ""
+                    correct = _resolve_citation_lines(ctx.repo_id, cit["file_path"], sent, by_path)
+                    if correct:
+                        if "-" in correct:
+                            a, b = correct.split("-", 1)
+                            cit["start_line"] = int(a)
+                            cit["end_line"] = int(b)
+                        else:
+                            cit["start_line"] = cit["end_line"] = int(correct)
+        except Exception as exc:
+            logger.warning("structured_claims_repair_failed", error=str(exc))
+
         from app.agent.confidence import path_key
         import traceback
 

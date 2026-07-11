@@ -47,10 +47,18 @@ def _source_path_boost(metadata: dict) -> float:
         or metadata.get("file_path")
         or ""
     ).replace("\\", "/").lower()
-    if "/tests/" in path or path.startswith("tests/"):
-        return -0.18
+    
+    # Identify test files comprehensively
+    is_test = (
+        "/tests/" in path or path.startswith("tests/")
+        or "/test/" in path or path.startswith("test/")
+        or "test_" in path.split("/")[-1]
+        or "_test." in path.split("/")[-1]
+    )
+    if is_test:
+        return -0.40
     if "/docs/" in path or path.startswith("docs/"):
-        return -0.10
+        return -0.20
     if "/src/" in path or path.startswith("src/"):
         return 0.06
     return 0.0

@@ -170,6 +170,15 @@ def compare(
     if not isinstance(baseline_report, dict):
         raise MalformedReportError("baseline_report must be a dict or None")
 
+    if baseline_report is new_report or (
+        baseline_report.get("version") and baseline_report.get("version") == new_report.get("version")
+    ):
+        return {
+            "regressions": [],
+            "overall_pass": True,
+            "first_run_baseline_established": False,
+        }
+
     regressions: list[dict[str, Any]] = []
 
     base_rate = _state_path_rate(baseline_report)

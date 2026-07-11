@@ -14,6 +14,7 @@ pre-release runs — not every commit — to conserve Groq free-tier quota.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -137,6 +138,8 @@ def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
 
     from app.api.auth import verify_api_key
     from app.main import app
+    from app.agent.loop import _EXACT_QUESTION_CACHE
+    _EXACT_QUESTION_CACHE.clear()
 
     tenant = MagicMock(org_id="default")
     overrides = dict(app.dependency_overrides)
@@ -274,30 +277,7 @@ def run_golden_set(
 
     Returns structured report (per-question + aggregate) consumable by compare_runs.py.
     """
-    from datasets import Dataset
-    from ragas import evaluate
-    from ragas.metrics import (
-        faithfulness,
-        answer_relevancy,
-        context_precision,
-        context_recall,
-    )
-    try:
-        from ragas.run_config import RunConfig
-    except Exception:
-        RunConfig = None
-    from eval.ragas_providers import get_judge_llm, get_judge_embeddings
-
-    path = _resolve_golden_path(golden_path, target_repo_id=target_repo_id)
-    eval_data = load_golden_set(path, target_repo_id=target_repo_id)
-
-    max_q = int(settings.EVAL_MAX_QUESTIONS)
-    if max_q > 0:
-        eval_data = eval_data[:max_q]
-
-    if not eval_data:
-        raise ValueError("Golden set is empty (no questions for this repository)")
-
+    # Pre-check readiness BEFORE importing heavy RAGAS dependencies
     job_id = (target_repo_id or "").strip()
     if not job_id:
         raise ValueError(
@@ -315,6 +295,37 @@ def run_golden_set(
             f"Precondition failed: Repo {job_id} is not fully ingested "
             f"(status: {status})"
         )
+
+    # Now safe to import heavy dependencies after readiness check passes
+    try:
+        from datasets import Dataset
+        from ragas import evaluate
+        from ragas.metrics import (
+            faithfulness,
+            answer_relevancy,
+            context_precision,
+            context_recall,
+        )
+        try:
+            from ragas.run_config import RunConfig
+        except Exception:
+            RunConfig = None
+        from eval.ragas_providers import get_judge_llm, get_judge_embeddings
+    except ImportError as e:
+        raise ImportError(
+            f"RAGAS evaluation requires optional dependencies: {e}. "
+            "Install with: pip install -r requirements.txt"
+        ) from e
+
+    path = _resolve_golden_path(golden_path, target_repo_id=target_repo_id)
+    eval_data = load_golden_set(path, target_repo_id=target_repo_id)
+
+    max_q = int(settings.EVAL_MAX_QUESTIONS)
+    if max_q > 0:
+        eval_data = eval_data[:max_q]
+
+    if not eval_data:
+        raise ValueError("Golden set is empty (no questions for this repository)")
 
     asset_repo_id = readiness.asset_repo_id
 
@@ -573,7 +584,10 @@ if __name__ == "__main__":
     import sys
 
     try:
-        result = run_golden_set()
+        _repo = os.environ.get("EVAL_TARGET_REPO_ID") or (
+            sys.argv[1] if len(sys.argv) > 1 else None
+        )
+        result = run_golden_set(target_repo_id=_repo)
         print(json.dumps(result, indent=2, default=str))
         if result.get("manual_review_required"):
             print("\n[WARN] Manual review required — see regression_flags")

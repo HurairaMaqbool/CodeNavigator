@@ -343,7 +343,7 @@ def validate_sources(sources: list[dict[str, Any]], repo_id: str) -> list[dict[s
             continue
         if check_file_existence(citation) and check_line_bounds(citation):
             valid.append(src)
-    return valid
+    return valid[:2]
 
 
 def has_placeholder_citations(answer: str) -> bool:
@@ -760,9 +760,25 @@ def _build_sources_from_hits(
     max_sources: int = 5,
 ) -> list[dict[str, Any]]:
     """Build sources from retrieval metadata (always includes line numbers)."""
+    def _is_test_file(path: str) -> bool:
+        p = path.replace("\\", "/").lower()
+        return (
+            "/tests/" in p or p.startswith("tests/")
+            or "/test/" in p or p.startswith("test/")
+            or "test_" in p.split("/")[-1]
+            or "_test." in p.split("/")[-1]
+        )
+
+    # Sort primarily by whether it is a test file (False first, True second),
+    # and secondarily by rerank_score (descending).
+    sorted_hits = sorted(
+        retrieval_hits,
+        key=lambda h: (_is_test_file(h.get("file_path", "")), -float(h.get("rerank_score", 0.0)))
+    )
+
     sources: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for hit in sorted(retrieval_hits, key=lambda h: h.get("rerank_score", 0), reverse=True):
+    for hit in sorted_hits:
         fp = hit.get("file_path") or ""
         if not fp:
             continue
