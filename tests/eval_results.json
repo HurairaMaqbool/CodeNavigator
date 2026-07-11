@@ -1959,5 +1959,287 @@
         }
       ]
     }
+  },
+  {
+    "version": "f200e26",
+    "git_sha": "f200e26a2b0dd7b6681ecda9985b985d03d3c477",
+    "timestamp": "2026-07-11T15:52:03.026896+00:00",
+    "golden_set_path": "tests\\eval_set.json",
+    "per_question": [
+      {
+        "question": "What is the purpose of the PreparedRequest class in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/models.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/requests/models.py",
+          "src/requests/sessions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/models.py"
+        ],
+        "gt_hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.2,
+          "answer_relevancy": 0.9307249748563207,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      },
+      {
+        "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/auth.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/auth.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/auth.py"
+        ],
+        "gt_hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.16666666666666666,
+          "answer_relevancy": 0.7474965607066449,
+          "context_precision": 0.99999999995,
+          "context_recall": 0.5
+        }
+      },
+      {
+        "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/exceptions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/exceptions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/exceptions.py"
+        ],
+        "gt_hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.6492116130787964,
+          "context_precision": 0.99999999995,
+          "context_recall": 1.0
+        }
+      }
+    ],
+    "aggregate": {
+      "ragas_scores": {
+        "faithfulness": 0.18333333333333335,
+        "answer_relevancy": 0.775811049547254,
+        "context_precision": 0.6666666666333333,
+        "context_recall": 0.8333333333333334
+      },
+      "mean_confidence_score": 10.0,
+      "retrieval_precision_at_3": 0.8333333333333334,
+      "state_path_consistency_rate": 1.0,
+      "state_path_consistency_passed": 3,
+      "state_path_consistency_total": 3,
+      "gated_count": 0
+    },
+    "ragas_scores": {
+      "faithfulness": 0.18333333333333335,
+      "answer_relevancy": 0.775811049547254,
+      "context_precision": 0.6666666666333333,
+      "context_recall": 0.8333333333333334
+    },
+    "mean_confidence_score": 10.0,
+    "retrieval_precision_at_3": 0.8333333333333334,
+    "state_path_consistency": {
+      "passed": 3,
+      "total": 3,
+      "rate": 1.0,
+      "failures": []
+    },
+    "regression_flags": {
+      "gated_flips": [],
+      "state_path_failures": []
+    },
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 0,
+      "empty_source_count": 0,
+      "sentinel_context_count": 0,
+      "per_question": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/models.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/requests/models.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/models.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.2,
+            "answer_relevancy": 0.9307249748563207,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        },
+        {
+          "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/auth.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/auth.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/auth.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.16666666666666666,
+            "answer_relevancy": 0.7474965607066449,
+            "context_precision": 0.99999999995,
+            "context_recall": 0.5
+          }
+        },
+        {
+          "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/exceptions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/exceptions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/exceptions.py"
+          ],
+          "gt_hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.6492116130787964,
+            "context_precision": 0.99999999995,
+            "context_recall": 1.0
+          }
+        }
+      ],
+      "gated_regressions": [],
+      "state_path_failures": []
+    }
   }
 ]
