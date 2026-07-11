@@ -428,7 +428,20 @@ def evaluate_structured_claims(
         verified_factual = factual_count - unsupported
         score = round(10.0 * verified_factual / factual_count, 1) if factual_count else 0.0
 
-        answer = render_claims_markdown(verified_claims) if verified_claims else ""
+        # Budget claims to keep word count under 105 words for conciseness
+        concise_claims = []
+        current_word_count = 0
+        for claim in verified_claims:
+            claim_text = str(claim.get("claim") or "").strip()
+            # 8 words overhead for the formatted citation link
+            claim_words = len(claim_text.split()) + 8
+            if not concise_claims or current_word_count + claim_words <= 105:
+                concise_claims.append(claim)
+                current_word_count += claim_words
+            else:
+                break
+
+        answer = render_claims_markdown(concise_claims) if concise_claims else ""
         fail_ratio = unsupported / factual_count if factual_count else 1.0
         gated = (
             (verified_factual == 0 and factual_count > 0)

@@ -404,7 +404,7 @@ def _groq_text(
                 error=str(exc),
             )
             max_attempts = max(1, int(settings.GROQ_LLM_RATE_LIMIT_ATTEMPTS))
-            if attempt + 1 < max_attempts:
+            if attempt + 1 < max_attempts and (retry_s is None or retry_s <= 10.0):
                 delay = retry_s if retry_s is not None else 5.0
                 time.sleep(min(delay, settings.LLM_RATE_LIMIT_MAX_BACKOFF_S))
                 continue
@@ -450,6 +450,7 @@ def _hits_to_sources(chunks: list[dict[str, Any]], max_sources: int = 5) -> list
         out.append({
             "file_path": s.get("file_path", ""),
             "function_name": s.get("function_name", ""),
+            "lines": s.get("lines") or (f"{start_line}-{end_line}" if start_line != end_line else str(start_line)),
             "start_line": start_line,
             "end_line": end_line,
         })
@@ -847,6 +848,22 @@ def _handle_verify(ctx: AgentContext) -> AgentState:
         else:
             ctx.answer = sanitize_user_answer(result["answer"])
             ctx.sources = validate_sources(ctx.sources, ctx.repo_id)
+            if ctx.answer and len(ctx.answer.split()) > 110:
+                import re
+                sentences = re.split(r'(?<=[.!?])\s+', ctx.answer)
+                truncated_sentences = []
+                words_count = 0
+                for sent in sentences:
+                    sent_words_len = len(sent.split())
+                    if not truncated_sentences or words_count + sent_words_len <= 110:
+                        truncated_sentences.append(sent)
+                        words_count += sent_words_len
+                    else:
+                        break
+                if truncated_sentences:
+                    ctx.answer = " ".join(truncated_sentences)
+                else:
+                    ctx.answer = " ".join(ctx.answer.split()[:110]) + "..."
         return _transition(ctx, AgentState.RESPOND)
 
     repair_hits = _chunks_to_repair_hits(ctx.chunks)
@@ -899,7 +916,22 @@ def _handle_verify(ctx: AgentContext) -> AgentState:
     else:
         ctx.answer = result["answer"]
         ctx.sources = validate_sources(ctx.sources, ctx.repo_id)
-
+        if ctx.answer and len(ctx.answer.split()) > 110:
+            import re
+            sentences = re.split(r'(?<=[.!?])\s+', ctx.answer)
+            truncated_sentences = []
+            words_count = 0
+            for sent in sentences:
+                sent_words_len = len(sent.split())
+                if not truncated_sentences or words_count + sent_words_len <= 110:
+                    truncated_sentences.append(sent)
+                    words_count += sent_words_len
+                else:
+                    break
+            if truncated_sentences:
+                ctx.answer = " ".join(truncated_sentences)
+            else:
+                ctx.answer = " ".join(ctx.answer.split()[:110]) + "..."
     return _transition(ctx, AgentState.RESPOND)
 
 

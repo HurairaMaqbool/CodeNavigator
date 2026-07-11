@@ -56,6 +56,8 @@ def _symbols_in_sentence(sent: str) -> list[str]:
             token = token[:-2]
         if token and token[0].isalpha():
             out.append(token.split(".")[-1])
+    for m in re.finditer(r"\b[A-Z]\w+\b", sent):
+        out.append(m.group(0))
     for m in re.finditer(r"\bclass\s+([A-Z]\w+)\b", sent):
         out.append(m.group(1))
     for m in re.finditer(r"\b([A-Z]\w+)\s+class\b", sent):
