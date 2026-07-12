@@ -118,7 +118,7 @@ def _store_cached_path(
 
 
 def _get_commit_hash(repo_id: str) -> str:
-    status_file = Path(settings.REPOS_PATH) / repo_id / "sync_status.json"
+    status_file = Path(settings.REPOS_PATH) / repo_id / "metadata.json"
     if status_file.exists():
         try:
             data = json.loads(status_file.read_text(encoding="utf-8"))

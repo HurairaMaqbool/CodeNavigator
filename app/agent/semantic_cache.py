@@ -246,7 +246,7 @@ def answer_question(question: str, repo_id: str, **kwargs: Any) -> dict[str, Any
 def _get_repo_metadata(repo_id: str) -> dict[str, Any]:
     from pathlib import Path
 
-    status_file = Path(settings.REPOS_PATH) / repo_id / "sync_status.json"
+    status_file = Path(settings.REPOS_PATH) / repo_id / "metadata.json"
     if status_file.exists():
         try:
             return json.loads(status_file.read_text(encoding="utf-8"))
@@ -403,3 +403,30 @@ def sweep_expired_entries(repo_id: str, commit_hash: str = "") -> None:
         col.delete(where={"timestamp": {"$lt": cutoff_ts}})
     except Exception as exc:
         logger.error("semantic_cache_sweep_failed", error=str(exc))
+
+
+def clear_repo_semantic_cache(repo_id: str) -> int:
+    """
+    Delete all semantic-cache Chroma collections for *repo_id*.
+    Called on force_reindex so stale answers cannot survive vector rebuild.
+    """
+    if not repo_id:
+        return 0
+    safe_repo = "".join(c if c.isalnum() or c in "-_" else "_" for c in repo_id)[:40]
+    prefix = f"sc_{safe_repo}_"
+    deleted = 0
+    try:
+        client = chromadb.PersistentClient(
+            path=settings.CHROMA_DB_PATH,
+            settings=chroma_settings(),
+        )
+        names = client.list_collections()
+        for col in names:
+            name = col if isinstance(col, str) else getattr(col, "name", "")
+            if name and name.startswith(prefix):
+                client.delete_collection(name)
+                deleted += 1
+        logger.info("semantic_cache_cleared", repo_id=repo_id, collections_deleted=deleted)
+    except Exception as exc:
+        logger.warning("semantic_cache_clear_failed", repo_id=repo_id, error=str(exc))
+    return deleted
