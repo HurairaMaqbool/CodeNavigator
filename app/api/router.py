@@ -28,16 +28,16 @@ from app.api.auth import verify_api_key
 
 # Ingestion
 from app.ingestion.clone import (
-    clone_repo, repo_id_for,
+    repo_id_for, clone_repo,  # noqa: F401
     IngestionError, InvalidURLError, RepoNotFoundError, PrivateRepoError, NetworkTimeoutError, RepoTooLargeError
 )
 from app.ingestion.metadata_store import metadata_store
 from app.ingestion.locking import lock_manager
-from app.ingestion.file_filter import filter_repo_files, safe_decode
+from app.ingestion.file_filter import safe_decode, filter_repo_files  # noqa: F401
 from app.parsing.chunker import chunk_all_files
 from app.parsing.tree_sitter_parser import parse_file
 from app.retrieval.vector_store import store_chunks
-from app.retrieval.bm25_store import store_bm25, build_bm25_index
+from app.retrieval.bm25_store import build_bm25_index
 from app.graph.builder import build_graph
 from app.graph.queries import get_subgraph
 
@@ -261,7 +261,7 @@ def _run_ingest_pipeline_remaining(job_id: str, clone_res: Any, files: list[Any]
 
 
 def trigger_ingest(repo_url: str, ref: str | None, force_reindex: bool, bg_tasks: BackgroundTasks) -> IngestJobResponse:
-    from app.ingestion.clone import _validate_url, InvalidURLError as _InvalidURLError, repo_id_for
+    from app.ingestion.clone import _validate_url, InvalidURLError as _InvalidURLError
     try:
         _validate_url(repo_url)
     except _InvalidURLError as e:
@@ -886,7 +886,7 @@ def run_eval_endpoint(repo_id: str | None = None):
     """
     from app.platform.tenant_context import get_tenant
     from app.platform.usage_meter import check_quota, increment
-    from eval.health_check import EvalPreconditionError, run_full_eval_precheck
+    from eval.health_check import run_full_eval_precheck
 
     tenant = get_tenant()
     if not check_quota(tenant.org_id, "eval"):

@@ -1,0 +1,22 @@
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E402", # Module level import not at top of file
+    "F841", # Local variable is assigned to but never used
+    "E741", # Ambiguous variable name
+    "W291", # Trailing whitespace
+    "W292", # No newline at end of file
+    "W293", # Blank line contains whitespace
+    "E501", # Line too long
+    "F401", # Unused import
+    "E701", # Multiple statements on one line (colon)
+    "E702", # Multiple statements on one line (semicolon)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["F401"]
+"scratch/**/*.py" = ["F401"]
+"scripts/**/*.py" = ["F401"]

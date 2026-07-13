@@ -61,7 +61,7 @@ import hashlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
 from app.observability.logging_config import logger
 from app.config import settings
@@ -73,7 +73,7 @@ from app.parsing.tree_sitter_parser import ParsedClass, ParsedFile, ParsedFuncti
 
 #: A class body shorter than this (in source lines) is emitted as one chunk.
 #: At or above this threshold its methods are chunked individually.
-MAX_CLASS_LINES_BEFORE_SPLIT: int = 200
+MAX_CLASS_LINES_BEFORE_SPLIT: int = 80
 
 # ---------------------------------------------------------------------------
 # Secret masking patterns (applied BEFORE fingerprinting — see module docstring)

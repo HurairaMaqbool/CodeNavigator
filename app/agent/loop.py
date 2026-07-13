@@ -16,7 +16,6 @@ settings.MAX_ITERATIONS.
 """
 from __future__ import annotations
 
-import json
 import re
 import time
 from dataclasses import dataclass, field
@@ -27,12 +26,12 @@ from typing import Any, Callable
 from app.agent.llm_client import ProviderError, RateLimitError, get_llm_client
 from app.agent.confidence import VERIFY_SYSTEM_ERROR_MESSAGE
 from app.config import settings
-from app.ingestion.metadata_store import metadata_store
 from app.observability.logging_config import logger
 
 # Re-exported for tests and semantic_cache refresh (Module #24 integration).
 from app.agent.context_manager import compress_older_tool_results  # noqa: F401
 from app.agent.tools import execute_tool_with_retry  # noqa: F401
+from app.ingestion.metadata_store import metadata_store  # noqa: F401
 from app.cache.tool_cache import ToolCache
 
 _TOOL_CACHE = ToolCache()
@@ -1211,7 +1210,6 @@ def _handle_finalize(ctx: AgentContext) -> AgentState:
     from app.agent.confidence import GATED_FALLBACK_MESSAGE
     from app.agent.grounding import (
         claims_to_sources,
-        dedupe_claims,
         looks_like_leaked_finalize_json,
         parse_finalize_json,
         polish_claims,

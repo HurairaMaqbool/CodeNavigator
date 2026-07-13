@@ -54,7 +54,6 @@ What is deliberately NOT parsed (v1 scope)
 """
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -938,15 +937,10 @@ def extract_definitions(ast: Any) -> list[dict[str, Any]]:
         "method_definition": "function",
         "class_declaration": "class",
         "class": "class",
-        # Go
-        "function_declaration": "function",
+        # Go & Java
         "method_declaration": "function",
         "import_declaration": "import",
-        # Java
-        "method_declaration": "function",
-        "class_declaration": "class",
         "interface_declaration": "class",
-        "import_declaration": "import",
         # Rust
         "function_item": "function",
         "struct_item": "class",
