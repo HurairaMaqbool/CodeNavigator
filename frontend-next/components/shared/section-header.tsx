@@ -5,42 +5,70 @@ export function SectionHeader({
   title,
   caption,
   className,
+  dense,
 }: {
   title: string;
   caption?: string;
   className?: string;
+  dense?: boolean;
 }) {
   return (
-    <div className={cn("mb-4", className)}>
-      <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+    <header className={cn(dense ? "mb-4" : "mb-6", className)}>
+      <h2 className="text-title">
+        {title}
+      </h2>
       {caption && (
-        <p className="mt-1 text-sm text-muted-foreground">{caption}</p>
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          {caption}
+        </p>
       )}
-      <div className="mt-2 h-0.5 w-12 rounded-full bg-primary" />
-    </div>
+    </header>
   );
 }
+
+type StatCardProps = {
+  label: string;
+  value: ReactNode;
+  className?: string;
+  status?: "ok" | "warn" | "error" | "neutral";
+};
+
+const statusDot: Record<NonNullable<StatCardProps["status"]>, string> = {
+  ok: "bg-success",
+  warn: "bg-warning",
+  error: "bg-error",
+  neutral: "bg-tertiary",
+};
 
 export function StatCard({
   label,
   value,
   className,
-}: {
-  label: string;
-  value: ReactNode;
-  className?: string;
-}) {
+  status = "neutral",
+}: StatCardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface p-4 shadow-sm",
+        "card-surface flex flex-col gap-3 p-6 transition-colors duration-150 hover:border-border-strong",
         className,
       )}
     >
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
+      <div className="flex items-center justify-between gap-2">
+        <p className="micro-label">{label}</p>
+        <span
+          className={cn("h-2 w-2 shrink-0 rounded-full", statusDot[status])}
+          aria-hidden
+        />
+      </div>
+      <p
+        className={cn(
+          "text-display truncate max-w-full",
+          typeof value === "string" && value.length > 12 && "text-base sm:text-lg font-mono"
+        )}
+        title={typeof value === "string" ? value : undefined}
+      >
+        {value}
       </p>
-      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }
