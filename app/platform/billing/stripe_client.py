@@ -22,7 +22,7 @@ def stripe_enabled() -> bool:
 
 def _stripe():
     if not stripe_enabled():
-        raise RuntimeError("Stripe is not configured (set STRIPE_SECRET_KEY)")
+        raise RuntimeError("Stripe billing portal is temporarily unavailable.")
     import stripe
 
     stripe.api_key = settings.STRIPE_SECRET_KEY

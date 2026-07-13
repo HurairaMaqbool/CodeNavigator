@@ -29,13 +29,13 @@ def list_tenant_repositories(org_id: str) -> list[dict[str, Any]]:
         repo_id = meta_path.parent.name
         
         # Filter out debug, test, and temporary repositories
-        if repo_id.startswith(("test_", "debug_", "audit-", "stale_", "concurrent_", "empty_", "repo-", "_tmp_")):
-            continue
-        if repo_id in ("test-repo", "debug_repo", "shared-repo", "empty-repo"):
+        if any(x in repo_id.lower() for x in ("test", "debug", "mock", "fixture", "stale", "empty", "concurrent", "audit", "tmp", "temp")):
             continue
 
         meta = metadata_store.get(repo_id)
         if meta is None:
+            continue
+        if any(x in (meta.repo_url or "").lower() for x in ("test", "debug", "mock", "fixture", "stale", "empty", "concurrent")):
             continue
         record_org = getattr(meta, "org_id", None) or "default"
         if record_org != org_id:

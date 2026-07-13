@@ -37,15 +37,16 @@ def list_plans() -> list[dict[str, Any]]:
 
 @router.get("/subscription")
 def subscription_status(auth: ApiKeyContext = Depends(verify_api_key)) -> dict[str, Any]:
+    from app.platform.usage_meter import _effective_limit
     sub = get_subscription(auth.org_id)
     plan = get_plan(sub["plan_id"])
     return {
         **sub,
         "plan_name": plan.name,
         "limits": {
-            "chat_per_month": plan.chat_per_month,
-            "ingest_per_month": plan.ingest_per_month,
-            "eval_per_month": plan.eval_per_month,
+            "chat_per_month": _effective_limit(auth.org_id, "chat"),
+            "ingest_per_month": _effective_limit(auth.org_id, "ingest"),
+            "eval_per_month": _effective_limit(auth.org_id, "eval"),
         },
         "stripe_enabled": stripe_client.stripe_enabled(),
     }
@@ -56,7 +57,7 @@ def create_checkout(req: CheckoutRequest, auth: ApiKeyContext = Depends(verify_a
     if not stripe_client.stripe_enabled():
         raise HTTPException(
             status_code=503,
-            detail="Stripe not configured. Set STRIPE_SECRET_KEY and price IDs in .env",
+            detail="Stripe billing portal is temporarily unavailable. Please contact support or try again later.",
         )
     try:
         return stripe_client.create_checkout_session(
