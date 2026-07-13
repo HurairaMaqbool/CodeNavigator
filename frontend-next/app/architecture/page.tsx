@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GitBranchPlus, Loader2, Network } from "lucide-react";
+import { AlertTriangle, GitBranchPlus, Loader2, Network } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import { PanelErrorBoundary } from "@/components/shared/error-boundary";

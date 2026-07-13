@@ -52,53 +52,7 @@ export function ApiKeysPanel({ enabled }: { enabled: boolean }) {
     },
   });
 
-  return (
-    <div className="card-panel space-y-4">
-      <SectionHeader
-        title="API keys"
-        caption="Keys are stored hashed; only prefixes are listed. Full secret shown once on create."
-      />
 
-      {revealedSecret && (
-        <div className="rounded-lg border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
-          <p className="font-medium">New key — copy now</p>
-          <code className="mt-2 block break-all text-xs">{revealedSecret}</code>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => {
-              void navigator.clipboard.writeText(revealedSecret);
-              toast.success("Copied to clipboard");
-            }}
-          >
-            Copy key
-          </Button>
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        <Input
-          placeholder="Key label"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          className="max-w-xs"
-          aria-label="API key label"
-        />
-        <Button
-          type="button"
-          disabled={createMut.isPending}
-          onClick={() => createMut.mutate()}
-        >
-          {createMut.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
-          Create key
-        </Button>
-      </div>
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;

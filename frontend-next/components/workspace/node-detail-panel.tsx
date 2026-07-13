@@ -40,7 +40,7 @@ export function NodeDetailPanel({
       try {
         const res = await getFileSnippet(
           repoId,
-          filePath,
+          filePath!,
           startLine ?? undefined,
           endLine ?? undefined
         );
