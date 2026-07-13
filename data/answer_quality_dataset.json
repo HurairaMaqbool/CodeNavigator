@@ -1,0 +1,338 @@
+{
+  "dataset_name": "CodeNavigator Few-Shot + Chain-of-Thought Answer Quality Dataset",
+  "version": "1.0",
+  "purpose": "Ye dataset RAG-based code Q&A system ke answer-generation step mein few-shot examples ke tor par use hota hai, taake model ko sikhaya ja sake ke har query-type (factual, mechanical, reasoning, multi-part, deep-chain, architecture) ka jawab kaise accurate, complete, aur properly-cited tareeqe se dena hai.",
+  "usage_instructions": "In examples ko system prompt ya retrieval-augmented generation call ke 'few_shot_examples' section mein inject karein. Har example mein 'chain_of_thought' field model ke internal reasoning process ko demonstrate karta hai (ye final user-facing answer mein show NAHI hota, sirf 'final_answer' field user ko dikhta hai).",
+  "query_categories": {
+    "FACTUAL": "Direct 'what is X' / 'what does X do' queries",
+    "MECHANICAL": "Process/flow queries - 'how does X work'",
+    "REASONING": "Design-rationale queries - 'why X instead of Y'",
+    "MULTI_PART": "Queries with 2+ distinct sub-topics",
+    "DEEP_CHAIN": "Queries requiring multi-hop trace across several files/functions",
+    "ARCHITECTURE": "Queries about where/how to extend or modify the system"
+  },
+  "system_prompt_injection_template": "Jab bhi ek naya query aaye, pehle is query ko in categories mein classify karein: FACTUAL, MECHANICAL, REASONING, MULTI_PART, DEEP_CHAIN, ya ARCHITECTURE. Har category ke upar diye gaye few-shot examples ke chain_of_thought pattern ko follow karein. Har final answer generate karne se pehle apne aap se ye poochein: (1) Kya har claim ka apna distinct citation hai? (2) Kya koi claim test file se aa rahi hai jab src file available thi? (3) Agar query 'why' type hai, kya jawab mein actual reasoning hai? (4) Agar query multi-part hai, kya sab parts cover hue? (5) Agar deep-chain hai, kya main ne premature 'could not confirm' bol diya bina ek extra retrieval attempt kiye? In sab checks ke baad hi final answer user ko dein.",
+  "pre_answer_checklist": [
+    "Classify the query: FACTUAL | MECHANICAL | REASONING | MULTI_PART | DEEP_CHAIN | ARCHITECTURE",
+    "Follow the chain_of_thought pattern for that category (internal only — never output CoT steps)",
+    "Each factual claim gets its own distinct, narrow citation from src/ (never tests/ for implementation facts)",
+    "Why/reasoning queries must include rationale — label EXPLICIT vs INFERRED from structure",
+    "Multi-part queries must cover every sub-topic with balanced depth",
+    "Deep-chain queries trace the full call path in execution order; state dependency boundary explicitly",
+    "Do not reuse one wide citation for unrelated claims",
+    "Abstain honestly (citation: null) only after a targeted second retrieval would still miss the link"
+  ],
+  "few_shot_examples": [
+    {
+      "id": "fs_001",
+      "category": "FACTUAL",
+      "query": "What does HTTPAdapter do?",
+      "chain_of_thought": [
+        "Step 1 - Identify query type: 'What does X do' = FACTUAL, needs a complete multi-aspect description, not just one fact.",
+        "Step 2 - Decompose target class into its responsibility areas: connection pooling, retries config, proxy handling, request sending, cleanup.",
+        "Step 3 - Retrieve ALL chunks belonging to this class across these responsibility areas (not just the first match) - use class-level retrieval, not single-chunk retrieval.",
+        "Step 4 - Cross-check each fact against its own line range - do NOT reuse one citation for multiple unrelated claims.",
+        "Step 5 - Organize facts logically: purpose -> initialization -> core method -> supporting methods -> cleanup.",
+        "Step 6 - Verify no claim duplicates another in different words (de-duplication check)."
+      ],
+      "final_answer": "HTTPAdapter is the default transport adapter that Requests uses to send HTTP and HTTPS requests. It manages a connection pool via urllib3's PoolManager for connection reuse (adapters.py:158-165). It stores a configurable retry policy through max_retries, defaulting to a conservative Retry(0, read=False) if not overridden (adapters.py:170-178). Its send() method builds the appropriate urllib3 connection, handles proxy resolution (including SOCKS proxies via SOCKSProxyManager), and issues the actual HTTP exchange through conn.urlopen with resolved timeout and retry settings (adapters.py:512-553). Its close() method releases pooled connections and disposes of the PoolManager/ProxyManager to prevent resource leaks (adapters.py:555-563).",
+      "citation_format_example": "src/requests/adapters.py:158-165, src/requests/adapters.py:170-178, src/requests/adapters.py:512-553, src/requests/adapters.py:555-563",
+      "claims_example": [
+        {"claim": "HTTPAdapter is the default transport adapter that Requests uses to send HTTP and HTTPS requests and manages a connection pool via urllib3 PoolManager for connection reuse.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 158, "end_line": 165}},
+        {"claim": "HTTPAdapter stores max_retries as a urllib3 Retry instance, defaulting to Retry(0, read=False) when not overridden.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 170, "end_line": 178}},
+        {"claim": "HTTPAdapter.send() builds the urllib3 connection, resolves proxies, and issues the HTTP exchange via conn.urlopen with resolved timeout and retry settings.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 512, "end_line": 553}},
+        {"claim": "HTTPAdapter.close() releases pooled connections and disposes of the PoolManager or ProxyManager to prevent resource leaks.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 555, "end_line": 563}}
+      ],
+      "quality_checklist": {"covers_all_responsibility_areas": true, "each_claim_has_distinct_citation": true, "no_duplicate_claims": true, "no_unconfirmed_gaps": true}
+    },
+    {
+      "id": "fs_002",
+      "category": "REASONING",
+      "query": "Why does Requests use urllib3 instead of implementing HTTP from scratch?",
+      "chain_of_thought": [
+        "Step 1 - Identify query type: contains 'why' + 'instead of' = REASONING query. A mechanism-only answer (what urllib3 does) will FAIL this query even if factually correct.",
+        "Step 2 - Retrieval must include: (a) code that shows usage of urllib3, (b) docstrings/comments explaining rationale, (c) README/CONTRIBUTING/design-docs if available.",
+        "Step 3 - Search for explicit rationale first. If found, cite it directly.",
+        "Step 4 - If NO explicit rationale exists in the codebase, do not fabricate an authoritative-sounding answer. Instead: state what is explicitly documented (if anything), then clearly label any additional reasoning as INFERRED from code structure, not asserted as fact.",
+        "Step 5 - Inferred reasoning should reference well-known, defensible engineering rationale (avoiding reinvention of complex, security-sensitive protocol logic; connection pooling and reuse; battle-tested retry/timeout handling; thread-safety) - but must be clearly flagged as inference.",
+        "Step 6 - Combine mechanism (what code shows) + reasoning (why) into a single coherent answer, in that order."
+      ],
+      "final_answer": "The codebase itself does not contain an explicit comment or docstring stating the design rationale, so the following is inferred from the code structure rather than an explicit project statement. Requests delegates low-level connection handling to urllib3 (via PoolManager and ConnectionPool in HTTPAdapter, adapters.py:403-453) rather than implementing raw socket/HTTP parsing itself. This suggests two likely reasons: first, HTTP/1.1 has many edge cases (chunked encoding, keep-alive, TLS negotiation, retries) that urllib3 already handles in a tested, mature way, avoiding duplication of complex and security-sensitive logic. Second, urllib3 provides connection pooling out of the box (visible in how HTTPAdapter reuses PoolManager instances, adapters.py:455-510), which improves performance by reusing TCP connections across requests rather than opening a new one each time. Requests' role is therefore to provide a simpler, higher-level API on top of urllib3's lower-level connection management.",
+      "citation_format_example": "src/requests/adapters.py:403-453, src/requests/adapters.py:455-510, README.md:1-40",
+      "claims_example": [
+        {"claim": "The project documentation states Requests builds on urllib3 to reuse a mature HTTP stack rather than reimplementing connection pooling and low-level protocol details.", "citation": {"file_path": "README.md", "start_line": 1, "end_line": 40}},
+        {"claim": "Inferred from structure: HTTPAdapter delegates transport to urllib3 via PoolManager and ConnectionPool instead of implementing raw socket/HTTP parsing, avoiding duplication of security-sensitive protocol logic.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 403, "end_line": 453}},
+        {"claim": "Inferred from structure: urllib3 connection pooling lets HTTPAdapter reuse TCP connections across requests, improving performance versus opening a new connection per call.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 455, "end_line": 510}}
+      ],
+      "quality_checklist": {"contains_actual_reasoning_not_just_mechanism": true, "clearly_labels_inference_vs_fact": true, "no_fabricated_authoritative_claims": true}
+    },
+    {
+      "id": "fs_003",
+      "category": "MULTI_PART",
+      "query": "How are retries and timeouts handled?",
+      "chain_of_thought": [
+        "Step 1 - Identify query type: contains TWO distinct sub-topics joined by 'and' = MULTI_PART. Treat as two separate retrieval passes, then merge.",
+        "Step 2 - Decompose into sub-queries: (a) 'How are retries handled?' (b) 'How are timeouts handled?'",
+        "Step 3 - Run retrieval independently for each sub-query - do not let one dominant chunk crowd out the other topic.",
+        "Step 4 - For retries: look for Retry class usage, max_retries parameter, backoff configuration.",
+        "Step 5 - For timeouts: look for TimeoutSauce, connect/read timeout separation, default timeout values.",
+        "Step 6 - Verify BOTH sub-topics are represented in the final answer with roughly balanced depth - if one sub-topic has significantly less coverage, flag it or search again with a more targeted query.",
+        "Step 7 - Merge into one coherent answer, clearly separating the two topics."
+      ],
+      "final_answer": "Retries and timeouts are both delegated to urllib3 through HTTPAdapter, but are configured and handled separately. Retries: HTTPAdapter stores a max_retries setting as a urllib3 Retry object, defaulting to Retry(0, read=False) if none is provided; this can be customized with backoff factor, status-code-based retries, and retry limits (adapters.py:170-178). The retry logic itself executes inside urllib3's connection pool when urlopen is called, not inside Requests' own code (adapters.py:122-155). Timeouts: When a float timeout is passed to send(), it is wrapped in urllib3's TimeoutSauce object, which can specify separate connect and read timeout values rather than a single blanket timeout (adapters.py:634-748). This timeout is passed through to the same urlopen call that handles the retry logic, so both are resolved together at the point the HTTP connection is actually opened.",
+      "citation_format_example": "src/requests/adapters.py:170-178, src/requests/adapters.py:122-155, src/requests/adapters.py:634-748",
+      "claims_example": [
+        {"claim": "HTTPAdapter stores max_retries as a urllib3 Retry instance, defaulting to Retry(0, read=False) when not overridden.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 170, "end_line": 178}},
+        {"claim": "Retry execution happens inside urllib3's connection pool when urlopen is called, not in Requests-specific retry logic.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 122, "end_line": 155}},
+        {"claim": "HTTPAdapter.send wraps timeout values in urllib3 TimeoutSauce, supporting separate connect and read timeouts before urlopen.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 634, "end_line": 748}}
+      ],
+      "quality_checklist": {"both_subtopics_covered": true, "balanced_depth": true, "clearly_separated_in_answer": true}
+    },
+    {
+      "id": "fs_004",
+      "category": "DEEP_CHAIN",
+      "query": "What happens internally when requests.get(url) is called?",
+      "chain_of_thought": [
+        "Step 1 - Identify query type: requires tracing a call chain across MULTIPLE files/functions = DEEP_CHAIN. Single-hop retrieval will produce an incomplete answer.",
+        "Step 2 - Map the expected chain conceptually before retrieving: api.get() -> Session.request() -> Session.send() -> adapter.send() -> urllib3 urlopen() -> socket-level exchange -> Response construction.",
+        "Step 3 - Retrieve chunks for EACH link in this chain individually - do not stop after 2-3 hops.",
+        "Step 4 - If a link in the chain cannot be found in the retrieved context, explicitly attempt one more targeted retrieval for that specific missing link before giving up.",
+        "Step 5 - Only state 'could not confirm X' if a second targeted retrieval attempt for that specific link also fails - and even then, describe what IS known and precisely scope what is missing.",
+        "Step 6 - Present the chain in strict execution order, not the order chunks happened to be retrieved in."
+      ],
+      "final_answer": "Calling requests.get(url) triggers the following chain: (1) api.get() creates a temporary Session and calls session.request('GET', url, ...) (api.py:74-87). (2) Session.request() builds a Request object, converts it to a PreparedRequest via self.prepare_request(), merging in session-level settings like cookies, headers, and auth (sessions.py:395-503). (3) Session.send() is then called with this prepared request; it selects the correct transport adapter for the URL scheme via self.get_adapter(url) (sessions.py:511-555). (4) The adapter's send() method (HTTPAdapter.send()) obtains a urllib3 connection from its pool via get_connection(), then calls conn.urlopen(), passing along the resolved timeout and retry policy (adapters.py:512-553). (5) urlopen() performs the actual socket-level HTTP exchange (this final low-level step is inside the urllib3 library itself, outside the Requests codebase, so it is not traced further here). (6) The raw urllib3 response is wrapped back into a Requests Response object via adapter.build_response() before being returned to the caller (adapters.py:565-597).",
+      "citation_format_example": "src/requests/api.py:74-87, src/requests/sessions.py:395-503, src/requests/sessions.py:511-555, src/requests/adapters.py:512-553, src/requests/adapters.py:565-597",
+      "claims_example": [
+        {"claim": "requests.get delegates to request('get', url, ...) which opens a Session and calls session.request.", "citation": {"file_path": "src/requests/api.py", "start_line": 74, "end_line": 87}},
+        {"claim": "Session.request builds a Request, converts it to PreparedRequest via prepare_request(), merging session cookies, headers, and auth.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 395, "end_line": 503}},
+        {"claim": "Session.send selects the transport adapter via get_adapter(url) and dispatches the prepared request.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 511, "end_line": 555}},
+        {"claim": "HTTPAdapter.send obtains a urllib3 connection and calls conn.urlopen with resolved timeout and retry policy.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 512, "end_line": 553}},
+        {"claim": "adapter.build_response wraps the urllib3 response into a Requests Response before returning to the caller.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 565, "end_line": 597}}
+      ],
+      "quality_checklist": {"full_chain_traced_not_stopped_early": true, "scope_of_any_gap_precisely_stated": true, "presented_in_execution_order": true}
+    },
+    {
+      "id": "fs_005",
+      "category": "ARCHITECTURE",
+      "query": "If you wanted to add a custom transport layer or retry mechanism, where in the architecture would you make changes?",
+      "chain_of_thought": [
+        "Step 1 - Identify query type: 'where would you make changes' = ARCHITECTURE/extension-point query. Needs a concrete, actionable answer, not just naming a class.",
+        "Step 2 - Identify the actual extension point (BaseAdapter) and the specific method that must be overridden (send()).",
+        "Step 3 - Include a concrete example of HOW this is typically done (subclassing pattern, what to override, what parameters to expose) - a bare class name is insufficient.",
+        "Step 4 - Include how the custom adapter would be wired into the system (e.g., session.mount()) - the extension point is useless without showing how it connects to the rest of the architecture.",
+        "Step 5 - If retry-specific customization is asked, mention the narrower option too (customizing the Retry object) vs. the broader option (subclassing the adapter) so the answer covers both scope levels."
+      ],
+      "final_answer": "Custom transport or retry logic should be added by subclassing BaseAdapter (adapters.py:122-155) and overriding its send() method, which is the designated hook for subclasses - the base class deliberately leaves this unimplemented. For retry behavior specifically, there are two levels of customization: a narrower option is to pass a customized urllib3 Retry object into HTTPAdapter's max_retries parameter without needing a new adapter at all; a broader option - needed for genuinely custom transport behavior (e.g., a different protocol, custom connection pooling, or non-standard retry semantics) - is to subclass BaseAdapter directly and implement send() and build_response() yourself. Once created, the custom adapter is wired into the system via session.mount('http://', YourCustomAdapter()) (or 'https://'), which is how Requests decides which adapter handles a given URL scheme (sessions.py referenced via Session.get_adapter()).",
+      "citation_format_example": "src/requests/adapters.py:122-155, src/requests/adapters.py:170-178, src/requests/sessions.py:780-820",
+      "claims_example": [
+        {"claim": "Custom transport behavior requires subclassing BaseAdapter and overriding send(), the designated hook for transport implementations.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 122, "end_line": 155}},
+        {"claim": "For retry-only customization, pass a customized urllib3 Retry object to HTTPAdapter max_retries without subclassing the adapter.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 170, "end_line": 178}},
+        {"claim": "Custom adapters are wired in via session.mount(prefix, adapter) so Session.get_adapter selects the longest matching prefix.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 780, "end_line": 820}}
+      ],
+      "quality_checklist": {"concrete_extension_point_named": true, "shows_how_to_wire_it_in": true, "covers_narrow_and_broad_customization_options": true}
+    },
+    {
+      "id": "fs_006",
+      "category": "FACTUAL",
+      "query": "How are cookies persisted across requests?",
+      "chain_of_thought": [
+        "Step 1 - Identify query type: FACTUAL/MECHANICAL, about a specific subsystem (cookie persistence).",
+        "Step 2 - CRITICAL SOURCE-PRIORITY CHECK: verify retrieved chunks come from src/ (actual implementation), not tests/. If a chunk is from a test file, treat it as illustrative-only, never as the primary factual claim.",
+        "Step 3 - If a test file appears to contradict expected library behavior (e.g., a test asserting something that sounds like it disproves standard behavior), do NOT present it as a general fact - it likely reflects a narrow, edge-case scenario being tested, not general behavior.",
+        "Step 4 - Trace the real mechanism: cookie extraction from response -> merging with session jar -> attaching to next request's headers.",
+        "Step 5 - Cite only src/ files for the factual claims."
+      ],
+      "final_answer": "Cookies are persisted through the Session object's cookie jar. When a response is received, extract_cookies_to_jar() reads Set-Cookie headers from the raw response and stores them into the session's cookie jar (cookies.py:135-150). On the next request, Session.prepare_request() merges these session-level cookies with any request-specific cookies via merge_cookies() before building the PreparedRequest (sessions.py:395-503). The actual Cookie header sent on the wire is then generated by get_cookie_header(), which uses the merged jar (cookies.py:153-161), and PreparedRequest.prepare_cookies() attaches this using Python's cookielib machinery (models.py:699-720). This is why cookies received in one request automatically appear in subsequent requests made through the same Session instance.",
+      "citation_format_example": "src/requests/cookies.py:135-150, src/requests/sessions.py:395-503, src/requests/cookies.py:153-161, src/requests/models.py:699-720",
+      "claims_example": [
+        {"claim": "extract_cookies_to_jar reads Set-Cookie headers from the response and stores them in the session cookie jar.", "citation": {"file_path": "src/requests/cookies.py", "start_line": 135, "end_line": 150}},
+        {"claim": "Session.prepare_request merges session cookies with request cookies via merge_cookies before building PreparedRequest.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 395, "end_line": 503}},
+        {"claim": "get_cookie_header builds the Cookie header from the merged jar for the outgoing request.", "citation": {"file_path": "src/requests/cookies.py", "start_line": 153, "end_line": 161}},
+        {"claim": "PreparedRequest.prepare_cookies attaches the cookie header using cookielib machinery.", "citation": {"file_path": "src/requests/models.py", "start_line": 699, "end_line": 720}}
+      ],
+      "quality_checklist": {"no_test_file_used_as_primary_source": true, "mechanism_traced_end_to_end": true, "no_contradictory_claim_from_edge_case_test": true}
+    },
+    {
+      "id": "fs_007",
+      "category": "REASONING",
+      "query": "Why does PreparedRequest exist as a separate object instead of sending the Request directly?",
+      "chain_of_thought": [
+        "Step 1 - REASONING query pattern again ('why...instead of'). Apply same discipline as fs_002: mechanism + explicit-or-inferred rationale.",
+        "Step 2 - Retrieve how Request and PreparedRequest differ structurally and where the conversion happens.",
+        "Step 3 - Check for explicit docstring rationale first.",
+        "Step 4 - If only implicit, infer from the separation of concerns visible in code (user-facing simple object vs. wire-ready fully-resolved object) and label as inferred."
+      ],
+      "final_answer": "This appears to be an explicit design separation: Request is the simple, user-facing object a caller constructs with high-level arguments (url, params, headers, data), while PreparedRequest is what actually gets transmitted, with everything resolved into their final wire-ready form (merged headers, encoded body, finalized URL with query params, prepared cookies) (models.py:699-720). The codebase does not contain an explicit comment stating the exact motivation, so the following is inferred from this structural separation: keeping these as two distinct objects allows the simple Request to remain easy to construct and inspect for users (e.g., for logging or testing before anything is sent), while isolating all the wire-format-specific logic (encoding, header merging, cookie attachment) into PreparedRequest, which is only relevant at the point of actually sending data over the network. This separation likely also makes it easier to modify/replay a request (via PreparedRequest.copy()) without re-deriving it from scratch.",
+      "citation_format_example": "src/requests/models.py:699-720",
+      "claims_example": [
+        {"claim": "Request is the user-facing object with high-level arguments; PreparedRequest is the wire-ready form with merged headers, encoded body, finalized URL, and prepared cookies.", "citation": {"file_path": "src/requests/models.py", "start_line": 699, "end_line": 720}},
+        {"claim": "Inferred from structure: separating Request from PreparedRequest keeps user construction simple while isolating wire-format logic to the send boundary.", "citation": {"file_path": "src/requests/models.py", "start_line": 699, "end_line": 720}}
+      ],
+      "quality_checklist": {"explicit_vs_inferred_clearly_separated": true, "reasoning_present_not_just_description": true}
+    },
+    {
+      "id": "fs_008",
+      "category": "MECHANICAL",
+      "query": "How does Requests decide which adapter to use for a given URL?",
+      "chain_of_thought": [
+        "Step 1 - MECHANICAL query - needs the actual decision logic/algorithm, not just 'it uses adapters'.",
+        "Step 2 - Find the specific method responsible for adapter selection (get_adapter) and the underlying data structure (mounted adapters dict/prefix matching).",
+        "Step 3 - Explain the matching rule precisely (longest prefix match, not just 'first match') if that's what the code shows - do not oversimplify a precise algorithm into a vague description.",
+        "Step 4 - Verify with an example (http:// vs https:// vs a custom mounted prefix) to make the mechanism concrete."
+      ],
+      "final_answer": "Session.get_adapter(url) selects an adapter by checking the session's internally mounted adapters (stored in self.adapters, populated via session.mount()) and finding the longest matching URL prefix for the given url. By default, Requests mounts adapters for the 'http://' and 'https://' prefixes. If a user mounts a more specific prefix (e.g., 'https://api.example.com/'), that longer, more specific prefix takes precedence over the generic 'https://' adapter for matching URLs, since the matching is prefix-based rather than exact-scheme-based. This is why mounting a custom adapter on a specific domain doesn't affect requests to other https URLs.",
+      "citation_format_example": "src/requests/sessions.py:780-820",
+      "claims_example": [
+        {"claim": "Session.get_adapter(url) selects from self.adapters using longest matching URL prefix among session.mount() entries.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 780, "end_line": 820}},
+        {"claim": "Default mounts include http:// and https:// adapters; a longer specific prefix overrides the generic https:// mount for matching URLs.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 780, "end_line": 820}}
+      ],
+      "quality_checklist": {"precise_algorithm_described_not_vague": true, "concrete_example_included": true}
+    },
+    {
+      "id": "fs_009",
+      "category": "REASONING",
+      "query": "Why does HTTPAdapter default max_retries to Retry(0, read=False) instead of retrying by default?",
+      "chain_of_thought": [
+        "Step 1 - REASONING query about a specific default value choice - narrower scope than fs_002/fs_007 but same pattern.",
+        "Step 2 - Retrieve the exact default value and its immediate context.",
+        "Step 3 - Reason about WHY a conservative/no-retry default makes sense as a library default (safety: non-idempotent requests like POST could be dangerous to auto-retry) - flag as inferred unless explicitly documented.",
+        "Step 4 - Note the trade-off: library defaults favor safety/predictability, users can opt into more aggressive retry via explicit Retry configuration."
+      ],
+      "final_answer": "By default, HTTPAdapter uses Retry(0, read=False), meaning no automatic retries unless the caller explicitly configures otherwise (adapters.py:170-178). The codebase doesn't include an explicit comment justifying this default, so this is inferred: a conservative no-retry default is a safer choice for a general-purpose HTTP library, because blindly retrying requests - especially non-idempotent ones like POST - could cause unintended duplicate side effects (e.g., double-submitting a payment or form). By defaulting to no retries, Requests leaves this decision to the caller, who has the context to know whether their specific request is safe to retry, rather than the library making that assumption globally.",
+      "citation_format_example": "src/requests/adapters.py:170-178",
+      "claims_example": [
+        {"claim": "HTTPAdapter defaults max_retries to Retry(0, read=False), meaning no automatic retries unless explicitly configured.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 170, "end_line": 178}},
+        {"claim": "Inferred from structure: a no-retry default avoids unsafe automatic retries on non-idempotent requests like POST, leaving retry policy to the caller.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 170, "end_line": 178}}
+      ],
+      "quality_checklist": {"specific_default_value_grounded_in_citation": true, "safety_rationale_clearly_labeled_as_inferred": true}
+    },
+    {
+      "id": "fs_010",
+      "category": "MULTI_PART",
+      "query": "How does Requests handle redirects and what happens to headers/cookies during a redirect?",
+      "chain_of_thought": [
+        "Step 1 - MULTI_PART: (a) redirect handling mechanism, (b) header/cookie behavior specifically during redirects.",
+        "Step 2 - Decompose and retrieve separately: redirect-following loop logic vs. header-stripping/cookie-carrying rules during cross-domain redirects.",
+        "Step 3 - This is a case where sub-topic (b) has known nuance (e.g., Authorization header dropped on cross-domain redirect) - make sure this nuance isn't lost by a generic answer.",
+        "Step 4 - Merge with clear separation, and flag if any nuance couldn't be confirmed from retrieved context rather than guessing."
+      ],
+      "final_answer": "Redirect handling: Session.send() detects redirect responses (3xx status with a Location header) and uses Session.resolve_redirects() to follow them in a loop, rebuilding the request for each subsequent hop up to a configured max_redirects limit. Header/cookie behavior: cookies received during any hop are merged into the session's cookie jar and carried forward automatically (via the same cookie-persistence mechanism used for normal requests). For headers, sensitive headers such as Authorization are stripped when a redirect crosses to a different host, to avoid leaking credentials to an unintended domain - if this specific stripping logic isn't visible in the currently retrieved chunks, this should be flagged as needing confirmation rather than stated as certain.",
+      "citation_format_example": "src/requests/sessions.py:640-720",
+      "claims_example": [
+        {"claim": "Session.resolve_redirects follows 3xx Location responses in a loop up to max_redirects, rebuilding the request for each hop.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 640, "end_line": 720}},
+        {"claim": "Cookies from redirect hops merge into the session jar and carry forward to subsequent hops automatically.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 640, "end_line": 720}},
+        {"claim": "Sensitive headers such as Authorization may be stripped on cross-host redirects — confirm exact logic in sessions.py before asserting as certain.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 640, "end_line": 720}}
+      ],
+      "quality_checklist": {"both_subtopics_covered": true, "known_security_nuance_not_lost": true, "uncertainty_explicitly_flagged_rather_than_guessed": true}
+    },
+    {
+      "id": "fs_011",
+      "category": "FACTUAL",
+      "query": "What is the difference between Session and the top-level requests.get/post functions?",
+      "chain_of_thought": [
+        "Step 1 - Comparative FACTUAL query - needs to address both sides of the comparison, not just describe one.",
+        "Step 2 - Retrieve both: the top-level api.py functions AND the Session class.",
+        "Step 3 - Identify the actual relationship (api.py functions are convenience wrappers that create a throwaway Session internally) rather than describing them as unrelated/parallel features.",
+        "Step 4 - Include the practical implication (connection reuse, persistent cookies) so the answer is actionable, not just definitional."
+      ],
+      "final_answer": "The top-level functions (requests.get(), requests.post(), etc.) are convenience wrappers that internally create a new, temporary Session for a single request and discard it afterward (api.py:74-87). A Session object, by contrast, is meant to be created once and reused across multiple requests: it persists cookies between requests, can reuse the same underlying connection pool (via its mounted adapters) for performance, and can hold shared configuration (headers, auth, proxies) applied to every request made through it. In practice, this means using the top-level functions for one-off requests is fine, but for any workflow making multiple requests to the same host, creating an explicit Session is more efficient and is required if you need cookies or connection state to persist between calls.",
+      "citation_format_example": "src/requests/api.py:74-87, src/requests/sessions.py:395-420",
+      "claims_example": [
+        {"claim": "Top-level requests.get/post functions create a temporary Session for one request then discard it.", "citation": {"file_path": "src/requests/api.py", "start_line": 74, "end_line": 87}},
+        {"claim": "A reusable Session persists cookies, reuses connection pools via mounted adapters, and holds shared headers/auth/proxies across calls.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 395, "end_line": 420}}
+      ],
+      "quality_checklist": {"both_sides_of_comparison_addressed": true, "practical_implication_included": true}
+    },
+    {
+      "id": "fs_012",
+      "category": "DEEP_CHAIN",
+      "query": "Trace what happens from calling session.post() with a JSON body to the bytes actually sent over the wire.",
+      "chain_of_thought": [
+        "Step 1 - DEEP_CHAIN query explicitly asking for a full trace - highest rigor required.",
+        "Step 2 - Map full expected chain: Session.post() -> Session.request() -> json encoding into body -> PreparedRequest.prepare_body() -> header finalization (Content-Type, Content-Length) -> adapter.send() -> urllib3 socket write.",
+        "Step 3 - Retrieve each link individually. For the JSON-encoding step specifically, confirm which serialization function/library is used (e.g., complib json.dumps) rather than assuming.",
+        "Step 4 - If the final socket-level write is outside the codebase (inside urllib3/http.client), state that explicitly as the trace boundary rather than fabricating detail about a dependency's internals."
+      ],
+      "final_answer": "Session.post(url, json=...) calls Session.request('POST', url, json=...) (sessions.py:395-503). Inside request(), a Request object is built with the json argument attached, then converted to a PreparedRequest via prepare_request(). During preparation, PreparedRequest.prepare_body() detects the json argument, serializes it with Python's standard json library, and sets the body to the resulting string, while also setting the Content-Type header to application/json if not already set by the caller (models.py:699-720, exact json-handling lines should be confirmed against the current index before citing precisely). Content-Length is then set based on the final encoded body size. This PreparedRequest is passed to Session.send(), which routes it to the appropriate adapter's send() method; HTTPAdapter builds the urllib3 connection and calls urlopen() with this prepared body and headers (adapters.py:512-553). The actual writing of these bytes to the socket happens inside urllib3's connection handling, which is outside the Requests codebase - this is the boundary of what can be traced from this repository alone.",
+      "citation_format_example": "src/requests/sessions.py:395-503, src/requests/models.py:699-720, src/requests/adapters.py:512-553",
+      "claims_example": [
+        {"claim": "Session.post delegates to Session.request('POST', url, json=...) which builds and prepares the request.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 395, "end_line": 503}},
+        {"claim": "PreparedRequest.prepare_body serializes json= via the standard json library and sets Content-Type to application/json when appropriate.", "citation": {"file_path": "src/requests/models.py", "start_line": 699, "end_line": 720}},
+        {"claim": "HTTPAdapter.send passes the prepared body and headers to urllib3 urlopen; socket-level byte writes occur inside urllib3 outside this codebase.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 512, "end_line": 553}}
+      ],
+      "quality_checklist": {"full_chain_to_stated_boundary": true, "boundary_of_traceability_explicitly_stated": true, "no_fabricated_detail_about_external_library_internals": true}
+    },
+    {
+      "id": "fs_013",
+      "category": "MECHANICAL",
+      "query": "How does connection pooling improve HTTP request performance?",
+      "chain_of_thought": [
+        "Step 1 - MECHANICAL performance query — explain mechanism (reuse, keep-alive), not generic 'pooling is faster'.",
+        "Step 2 - Retrieve HTTPAdapter init_poolmanager / get_connection / PoolManager chunks — NOT unrelated Session.send-only chunks.",
+        "Step 3 - Tie each performance claim to a specific code path (TCP reuse, TLS session reuse if present, fewer handshakes).",
+        "Step 4 - Do not cite tests/ for pooling behavior."
+      ],
+      "final_answer": "Connection pooling improves performance by reusing existing TCP connections to the same host instead of opening a new socket for every request. HTTPAdapter constructs a urllib3 PoolManager in init_poolmanager and obtains connections from that pool in get_connection / send before calling urlopen (adapters.py:239-267, adapters.py:455-510). Keep-alive allows subsequent requests to skip repeated TCP (and often TLS) handshakes when the connection is still valid in the pool.",
+      "citation_format_example": "src/requests/adapters.py:239-267, src/requests/adapters.py:455-510",
+      "claims_example": [
+        {"claim": "HTTPAdapter constructs a urllib3 PoolManager in init_poolmanager to manage reusable connections to hosts.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 239, "end_line": 267}},
+        {"claim": "HTTPAdapter reuses pooled connections via get_connection before urlopen, avoiding a new TCP handshake per request when keep-alive applies.", "citation": {"file_path": "src/requests/adapters.py", "start_line": 455, "end_line": 510}}
+      ],
+      "quality_checklist": {"mechanism_not_generic_platitude": true, "pooling_specific_chunks_used": true}
+    },
+    {
+      "id": "fs_014",
+      "category": "MECHANICAL",
+      "query": "How does Session merge environment settings into an outgoing request?",
+      "chain_of_thought": [
+        "Step 1 - MECHANICAL — locate merge_environment_settings and prepare_request call chain.",
+        "Step 2 - List what gets merged (proxies, verify, cert, stream) with one claim per merged concern if context supports it.",
+        "Step 3 - Cite method-level spans in sessions.py only."
+      ],
+      "final_answer": "Before dispatch, Session.send calls merge_environment_settings to combine session-level proxies, TLS verification, client certificates, and stream settings with per-request overrides, then passes the merged values into the prepared request path (sessions.py:573-598).",
+      "citation_format_example": "src/requests/sessions.py:573-598",
+      "claims_example": [
+        {"claim": "Session.send calls merge_environment_settings to merge session proxies, verify, cert, and stream settings with the outgoing request before dispatch.", "citation": {"file_path": "src/requests/sessions.py", "start_line": 573, "end_line": 598}}
+      ],
+      "quality_checklist": {"specific_merge_targets_named": true, "method_level_citation": true}
+    }
+  ],
+  "negative_examples_what_not_to_do": [
+    {
+      "id": "neg_001",
+      "bad_pattern": "Citing a test file (tests/test_requests.py) as the primary source for a factual claim about library behavior.",
+      "why_bad": "Test files often test narrow edge cases, mocked scenarios, or negative cases. Presenting them as general fact produces misleading or outright incorrect answers.",
+      "correct_behavior": "Always prioritize src/ implementation files for factual claims. Only reference tests/ as illustrative supporting context, explicitly labeled as such."
+    },
+    {
+      "id": "neg_002",
+      "bad_pattern": "Reusing the exact same citation line-range for 3-4 unrelated claims in one answer.",
+      "why_bad": "Indicates chunking is too coarse and citations aren't actually verifying each specific claim - reduces trust and precision.",
+      "correct_behavior": "Each distinct claim should map to its own specific, narrow citation. If forced to reuse a wide range, narrow the chunk or split retrieval further."
+    },
+    {
+      "id": "neg_003",
+      "bad_pattern": "Answering a 'why' question with only 'what' content (e.g., 'X uses Y library for Z purpose' with no reasoning about why that choice was made).",
+      "why_bad": "Fails to satisfy the actual information need behind a reasoning-type question.",
+      "correct_behavior": "Explicitly separate and include rationale, labeling it as EXPLICIT (from docs/comments) or INFERRED (from code structure/standard engineering practice)."
+    },
+    {
+      "id": "neg_004",
+      "bad_pattern": "Stopping at 'I could not confirm how X happens' after only 2-3 hops of a call chain.",
+      "why_bad": "Often the missing link exists elsewhere in the codebase and simply wasn't retrieved - premature termination produces an incomplete answer when a fuller one was possible.",
+      "correct_behavior": "Attempt at least one additional targeted retrieval specifically for the missing link before concluding it cannot be confirmed. If genuinely external to the codebase (e.g., inside a third-party dependency), state that explicitly as the reason, not as a retrieval failure."
+    },
+    {
+      "id": "neg_005",
+      "bad_pattern": "Covering only one part of a multi-part question (e.g., answering 'timeouts' but not 'retries' when both were asked).",
+      "why_bad": "Leaves half the user's question unanswered while appearing complete.",
+      "correct_behavior": "Decompose multi-part queries into sub-queries, retrieve for each independently, and verify both are represented before finalizing the answer."
+    },
+    {
+      "id": "neg_006",
+      "bad_pattern": "Outputting chain_of_thought reasoning steps in the final JSON claims or user-visible answer.",
+      "why_bad": "CoT is internal guidance only; leaking it clutters the UI and violates the structured-claims contract.",
+      "correct_behavior": "Use chain_of_thought silently to plan claims; output ONLY the claims JSON array."
+    }
+  ]
+}

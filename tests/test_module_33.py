@@ -74,16 +74,18 @@ def test_tts_widget_feature_detects_and_cancels():
 
 
 def test_speak_returns_none_and_strips_before_widget():
-    with patch("frontend.voice_output.components.html") as mock_html:
+    mock_components = MagicMock()
+    with patch("frontend.voice_output.components", mock_components):
         result = speak("See `foo.py:1-2` for details.", language="en-US")
+        mock_components.html.assert_called_once()
+        html_arg = mock_components.html.call_args[0][0]
+        assert "according to foo.py" in html_arg
+        assert "foo.py:1-2" not in html_arg
     assert result is None
-    mock_html.assert_called_once()
-    html_arg = mock_html.call_args[0][0]
-    assert "according to foo.py" in html_arg
-    assert "foo.py:1-2" not in html_arg
 
 
 def test_speak_skips_empty_after_strip():
-    with patch("frontend.voice_output.components.html") as mock_html:
+    mock_components = MagicMock()
+    with patch("frontend.voice_output.components", mock_components):
         speak("   ")
-    mock_html.assert_not_called()
+        mock_components.html.assert_not_called()
