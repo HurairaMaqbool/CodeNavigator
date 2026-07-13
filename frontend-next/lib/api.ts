@@ -1,17 +1,22 @@
-import { API_BASE_URL, API_KEY } from "./constants";
+import { API_BASE_URL, API_KEY, CHAT_ABSOLUTE_MAX_MS, CHAT_IDLE_TIMEOUT_MS } from "./constants";
 import type {
+  ApiKeySummary,
   AuditEvent,
+  BillingPlan,
   ChatRequest,
   ChatResponse,
   CompareResult,
+  CreateApiKeyResponse,
   DiagramResponse,
   EvalHealthResponse,
   EvalJobStatus,
   EvalRun,
+  GitHubInstallation,
   GoldenStatus,
   HealthResponse,
   IngestResponse,
   IngestStatusResponse,
+  PlatformRepo,
   SubscriptionStatus,
   UsageSummary,
 } from "./types";
@@ -21,6 +26,50 @@ function headers(): HeadersInit {
   const h: Record<string, string> = { "Content-Type": "application/json" };
   if (API_KEY) h["X-API-Key"] = API_KEY;
   return h;
+}
+
+function isAbortError(e: unknown): boolean {
+  return (
+    e instanceof DOMException && e.name === "AbortError"
+  ) || (e instanceof Error && e.name === "AbortError");
+}
+
+export type ChatRequestGuard = {
+  signal: AbortSignal;
+  /** Call on SSE chunks / state events so idle timeout resets while work is active. */
+  bump: () => void;
+  /** Clear timers; pass abort=true only to cancel an in-flight request. */
+  dispose: (abort?: boolean) => void;
+};
+
+/** Idle + absolute timeout — slow but active streams stay alive via bump(). */
+export function createChatRequestGuard(
+  idleTimeoutMs = CHAT_IDLE_TIMEOUT_MS,
+  absoluteMaxMs = CHAT_ABSOLUTE_MAX_MS,
+): ChatRequestGuard {
+  const ctrl = new AbortController();
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+  let absoluteTimer: ReturnType<typeof setTimeout> | null = null;
+  let disposed = false;
+
+  const bump = () => {
+    if (disposed) return;
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => ctrl.abort(), idleTimeoutMs);
+  };
+
+  const dispose = (abort = false) => {
+    if (disposed) return;
+    disposed = true;
+    if (idleTimer) clearTimeout(idleTimer);
+    if (absoluteTimer) clearTimeout(absoluteTimer);
+    if (abort) ctrl.abort();
+  };
+
+  absoluteTimer = setTimeout(() => ctrl.abort(), absoluteMaxMs);
+  bump();
+
+  return { signal: ctrl.signal, bump, dispose };
 }
 
 function fetchWithTimeout(
@@ -33,6 +82,24 @@ function fetchWithTimeout(
   return fetch(url, { ...init, signal: ctrl.signal }).finally(() =>
     clearTimeout(timer),
   );
+}
+
+async function fetchWithSignal(
+  url: string,
+  init: RequestInit,
+  signal: AbortSignal,
+): Promise<Response> {
+  try {
+    return await fetch(url, { ...init, signal });
+  } catch (e) {
+    if (isAbortError(e)) {
+      throw new ApiError(
+        408,
+        "This query is taking longer than expected and was cancelled locally. The backend may still be processing it. Try again or ask a more specific question.",
+      );
+    }
+    throw e;
+  }
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -88,7 +155,26 @@ async function apiFetch<T>(
   init: RequestInit,
   timeoutMs: number,
 ): Promise<T> {
-  const res = await fetchWithTimeout(url, init, timeoutMs);
+  try {
+    const res = await fetchWithTimeout(url, init, timeoutMs);
+    return handleResponse<T>(res);
+  } catch (e) {
+    if (isAbortError(e)) {
+      throw new ApiError(
+        408,
+        "This query is taking longer than expected and was cancelled locally. The backend may still be processing it. Try again or ask a more specific question.",
+      );
+    }
+    throw e;
+  }
+}
+
+async function apiFetchWithSignal<T>(
+  url: string,
+  init: RequestInit,
+  signal: AbortSignal,
+): Promise<T> {
+  const res = await fetchWithSignal(url, init, signal);
   return handleResponse<T>(res);
 }
 
@@ -128,26 +214,59 @@ export async function getIngestStatus(
   );
 }
 
-export async function chat(body: ChatRequest): Promise<ChatResponse> {
-  return apiFetch(
-    `${API_BASE_URL}/chat`,
-    {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify(body),
-    },
-    300_000,
-  );
+export async function chat(
+  body: ChatRequest,
+  guard?: ChatRequestGuard,
+): Promise<ChatResponse> {
+  const init: RequestInit = {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body),
+  };
+  if (guard) {
+    return apiFetchWithSignal(`${API_BASE_URL}/chat`, init, guard.signal);
+  }
+  return apiFetch(`${API_BASE_URL}/chat`, init, CHAT_ABSOLUTE_MAX_MS);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Chat with automatic backoff retry when Groq/API returns 429. */
+export async function chatWithRetry(
+  body: ChatRequest,
+  guard?: ChatRequestGuard,
+  maxAttempts = 3,
+): Promise<ChatResponse> {
+  let lastError: ApiError | null = null;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      guard?.bump();
+      return await chat(body, guard);
+    } catch (e) {
+      if (!(e instanceof ApiError) || e.statusCode !== 429 || attempt + 1 >= maxAttempts) {
+        throw e;
+      }
+      lastError = e;
+      const waitS = e.retryAfterS ?? 16;
+      await sleep((waitS + 1) * 1000);
+      guard?.bump();
+    }
+  }
+  throw lastError ?? new ApiError(429, "Rate limited after retries");
 }
 
 export function openChatStream(
   sessionId: string,
   onEvent: (state: string, label: string) => void,
   onError?: (err: Error) => void,
+  onActivity?: () => void,
 ): () => void {
   const url = `${API_BASE_URL}/chat/stream/${sessionId}`;
   const ctrl = new AbortController();
   let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let closed = false;
 
   (async () => {
     try {
@@ -162,14 +281,16 @@ export function openChatStream(
       reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      while (true) {
+      while (!closed) {
         const { done, value } = await reader.read();
         if (done) break;
+        onActivity?.();
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split("\n\n");
         buffer = parts.pop() ?? "";
         for (const part of parts) {
           const line = part.trim();
+          if (!line || line.startsWith(":")) continue;
           if (!line.startsWith("data:")) continue;
           try {
             const data = JSON.parse(line.slice(5).trim()) as {
@@ -177,27 +298,31 @@ export function openChatStream(
               label: string;
             };
             onEvent(data.state, data.label);
+            onActivity?.();
           } catch {
             /* skip malformed */
           }
         }
       }
     } catch (e) {
-      if ((e as Error).name !== "AbortError") {
+      if (!closed && !isAbortError(e)) {
         onError?.(e as Error);
       }
     } finally {
       try {
         await reader?.cancel();
       } catch {
-        /* ignore */
+        /* ignore abort/cancel noise */
       }
     }
   })();
 
   return () => {
+    closed = true;
     ctrl.abort();
-    void reader?.cancel();
+    void reader?.cancel().catch(() => {
+      /* intentional close — swallow BodyStreamBuffer abort */
+    });
   };
 }
 
@@ -205,13 +330,52 @@ export async function getDiagram(
   repoId: string,
   functionName: string,
   depth = 2,
+  direction: "upstream" | "downstream" | "both" = "downstream",
 ): Promise<DiagramResponse> {
   const fn = encodeURIComponent(functionName);
   return apiFetch(
-    `${API_BASE_URL}/diagram/${repoId}/${fn}?depth=${depth}`,
+    `${API_BASE_URL}/diagram/${repoId}/${fn}?depth=${depth}&direction=${direction}`,
     { headers: headers() },
     30_000,
   );
+}
+
+export type SymbolItem = {
+  id: string;
+  name: string;
+  path: string;
+  type: string;
+  start_line: number | null;
+  end_line: number | null;
+};
+
+export type FileSnippetResponse = {
+  code: string;
+  start_line: number;
+  end_line: number;
+  total_lines: number;
+};
+
+export async function getSymbols(repoId: string): Promise<SymbolItem[]> {
+  return apiFetch(
+    `${API_BASE_URL}/symbols/${repoId}`,
+    { headers: headers() },
+    15_000,
+  );
+}
+
+export async function getFileSnippet(
+  repoId: string,
+  filePath: string,
+  startLine?: number,
+  endLine?: number,
+): Promise<FileSnippetResponse> {
+  const pathParam = encodeURIComponent(filePath);
+  let url = `${API_BASE_URL}/file-snippet/${repoId}?file_path=${pathParam}`;
+  if (startLine !== undefined && endLine !== undefined) {
+    url += `&start_line=${startLine}&end_line=${endLine}`;
+  }
+  return apiFetch(url, { headers: headers() }, 15_000);
 }
 
 export async function getEvalHealth(
@@ -315,5 +479,111 @@ export async function getPlatformAudit(
     `${API_BASE_URL}/platform/audit?limit=${limit}`,
     { headers: headers() },
     10_000,
+  );
+}
+
+export async function listPlatformApiKeys(): Promise<ApiKeySummary[]> {
+  return apiFetch(
+    `${API_BASE_URL}/platform/api-keys`,
+    { headers: headers() },
+    10_000,
+  );
+}
+
+export async function createPlatformApiKey(
+  label: string,
+): Promise<CreateApiKeyResponse> {
+  return apiFetch(
+    `${API_BASE_URL}/platform/api-keys`,
+    {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ label }),
+    },
+    15_000,
+  );
+}
+
+export async function revokePlatformApiKey(
+  keyPrefix: string,
+): Promise<{ status: string; key_prefix: string }> {
+  return apiFetch(
+    `${API_BASE_URL}/platform/api-keys`,
+    {
+      method: "DELETE",
+      headers: headers(),
+      body: JSON.stringify({ key_prefix: keyPrefix }),
+    },
+    15_000,
+  );
+}
+
+export async function listGitHubInstallations(): Promise<GitHubInstallation[]> {
+  return apiFetch(
+    `${API_BASE_URL}/platform/github/installations`,
+    { headers: headers() },
+    10_000,
+  );
+}
+
+export async function listPlatformRepos(): Promise<PlatformRepo[]> {
+  return apiFetch(
+    `${API_BASE_URL}/platform/repos`,
+    { headers: headers() },
+    10_000,
+  );
+}
+
+export async function exportPlatformRepo(
+  repoId: string,
+): Promise<Record<string, unknown>> {
+  return apiFetch(
+    `${API_BASE_URL}/platform/repos/${encodeURIComponent(repoId)}/export`,
+    { headers: headers() },
+    30_000,
+  );
+}
+
+export async function purgePlatformRepo(
+  repoId: string,
+): Promise<{ status: string; purged_ids: string[] }> {
+  return apiFetch(
+    `${API_BASE_URL}/platform/repos/${encodeURIComponent(repoId)}`,
+    { method: "DELETE", headers: headers() },
+    60_000,
+  );
+}
+
+export async function getBillingPlans(): Promise<BillingPlan[]> {
+  return apiFetch(`${API_BASE_URL}/billing/plans`, { headers: {} }, 10_000);
+}
+
+export async function createBillingCheckout(
+  planId: "pro" | "team",
+  returnUrl = typeof window !== "undefined" ? window.location.href : "http://localhost:3000/platform",
+): Promise<{ checkout_url: string; session_id: string }> {
+  return apiFetch(
+    `${API_BASE_URL}/billing/checkout`,
+    {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({
+        plan_id: planId,
+        success_url: returnUrl,
+        cancel_url: returnUrl,
+      }),
+    },
+    15_000,
+  );
+}
+
+export async function openBillingPortal(
+  returnUrl = typeof window !== "undefined" ? window.location.href : "http://localhost:3000/platform",
+): Promise<{ portal_url: string }> {
+  const qs = new URLSearchParams({ return_url: returnUrl });
+  return apiFetch(
+    `${API_BASE_URL}/billing/portal?${qs.toString()}`,
+    { method: "POST", headers: headers() },
+    15_000,
   );
 }

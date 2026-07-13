@@ -177,6 +177,61 @@ def get_callees(repo_id: str, name: str) -> list[dict[str, Any]]:
     return callees
 
 
+def _neighbor_rank_score(graph: nx.DiGraph, node_id: str, edge_data: dict[str, Any]) -> float:
+    """Rank neighbors by call frequency and graph centrality (reuse onboarding signal)."""
+    call_count = float(edge_data.get("call_count", 1) or 1)
+    in_deg = float(graph.in_degree(node_id))
+    out_deg = float(graph.out_degree(node_id))
+    return call_count * 10.0 + in_deg + out_deg
+
+
+def _collect_capped_neighbors(
+    graph: nx.DiGraph,
+    u: str,
+    direction: str,
+    max_fanout: int,
+) -> tuple[list[tuple[str, str, dict[str, Any]]], list[dict[str, Any]]]:
+    """
+    Return kept edges (source, target, data) and hidden neighbor metadata.
+
+    Caps fan-out per node so hub symbols do not explode the subgraph.
+    """
+    candidates: list[tuple[str, str, dict[str, Any], str, float]] = []
+
+    if direction in ("downstream", "both"):
+        for v in graph.successors(u):
+            edge_data = graph.edges[u, v]
+            score = _neighbor_rank_score(graph, v, edge_data)
+            candidates.append((u, v, edge_data, "callee", score))
+
+    if direction in ("upstream", "both"):
+        for w in graph.predecessors(u):
+            edge_data = graph.edges[w, u]
+            score = _neighbor_rank_score(graph, w, edge_data)
+            candidates.append((w, u, edge_data, "caller", score))
+
+    candidates.sort(key=lambda item: item[4], reverse=True)
+    kept = candidates[:max_fanout]
+    hidden_raw = candidates[max_fanout:]
+
+    edges_out = [(src, tgt, data) for src, tgt, data, _, _ in kept]
+    parent_name = graph.nodes[u].get("name", u)
+    hidden_neighbors: list[dict[str, Any]] = []
+    for src, tgt, _, direction_kind, _ in hidden_raw:
+        neighbor_id = tgt if direction_kind == "callee" else src
+        hidden_neighbors.append(
+            {
+                "parent_id": u,
+                "parent_name": parent_name,
+                "direction": direction_kind,
+                "id": neighbor_id,
+                "name": graph.nodes[neighbor_id].get("name", neighbor_id),
+                "path": graph.nodes[neighbor_id].get("path", ""),
+            }
+        )
+    return edges_out, hidden_neighbors
+
+
 def get_subgraph(
     repo_id: str,
     entry_point: str,
@@ -184,6 +239,7 @@ def get_subgraph(
     max_depth: int = 3,
     *,
     depth: int | None = None,
+    max_fanout: int | None = None,
 ) -> dict[str, Any]:
     """
     Traverses outward from entry_point up to max_depth hops.
@@ -218,6 +274,9 @@ def get_subgraph(
     if depth is not None:
         max_depth = depth
 
+    fanout_cap = max_fanout if max_fanout is not None else settings.GRAPH_SUBGRAPH_MAX_FANOUT
+    direction = direction if direction in ("upstream", "downstream", "both") else "both"
+
     original_depth = max_depth
     clamped = (max_depth > 3)
     clamped_depth = min(max(1, max_depth), 3)
@@ -228,7 +287,9 @@ def get_subgraph(
             "nodes": [],
             "edges": [],
             "requested_depth": original_depth,
-            "clamped": clamped
+            "clamped": clamped,
+            "hidden_neighbors": [],
+            "truncated_count": 0,
         }
 
     # Resolve entry_point to node IDs
@@ -244,44 +305,35 @@ def get_subgraph(
             "edges": [],
             "requested_depth": original_depth,
             "clamped": clamped,
-            "not_found": True
+            "not_found": True,
+            "hidden_neighbors": [],
+            "truncated_count": 0,
         }
 
-    # BFS traversal using networkx successors (downstream) and predecessors (upstream)
+    # BFS traversal with per-node fan-out cap
     visited_nodes: set[str] = set(start_nodes)
     current_layer: set[str] = set(start_nodes)
     edges: list[dict[str, Any]] = []
+    hidden_neighbors: list[dict[str, Any]] = []
 
     for _ in range(clamped_depth):
         next_layer: set[str] = set()
         for u in current_layer:
-            # Downstream traversal (successors)
-            if direction in ("downstream", "both"):
-                for v in graph.successors(u):
-                    edge_data = graph.edges[u, v]
-                    edges.append({
-                        "source": u,
-                        "target": v,
-                        "type": edge_data.get("type", "unknown"),
-                        "call_count": edge_data.get("call_count", 1)
-                    })
-                    if v not in visited_nodes:
-                        visited_nodes.add(v)
-                        next_layer.add(v)
-
-            # Upstream traversal (predecessors)
-            if direction in ("upstream", "both"):
-                for w in graph.predecessors(u):
-                    edge_data = graph.edges[w, u]
-                    edges.append({
-                        "source": w,
-                        "target": u,
-                        "type": edge_data.get("type", "unknown"),
-                        "call_count": edge_data.get("call_count", 1)
-                    })
-                    if w not in visited_nodes:
-                        visited_nodes.add(w)
-                        next_layer.add(w)
+            kept_edges, hidden = _collect_capped_neighbors(
+                graph, u, direction, fanout_cap,
+            )
+            hidden_neighbors.extend(hidden)
+            for src, tgt, edge_data in kept_edges:
+                edges.append({
+                    "source": src,
+                    "target": tgt,
+                    "type": edge_data.get("type", "unknown"),
+                    "call_count": edge_data.get("call_count", 1),
+                })
+                neighbor = tgt if src == u else src
+                if neighbor not in visited_nodes:
+                    visited_nodes.add(neighbor)
+                    next_layer.add(neighbor)
 
         current_layer = next_layer
         if not current_layer:
@@ -290,12 +342,21 @@ def get_subgraph(
     # Dedup edges
     unique_edges = {f"{e['source']}->{e['target']}": e for e in edges}.values()
 
+    seen_hidden: dict[tuple[str, str, str], dict[str, Any]] = {}
+    for entry in hidden_neighbors:
+        dedupe_key = (entry["parent_id"], entry["id"], entry["direction"])
+        if dedupe_key not in seen_hidden:
+            seen_hidden[dedupe_key] = entry
+    hidden_neighbors = list(seen_hidden.values())
+
     nodes_out = [
         {
             "id": n,
             "name": graph.nodes[n].get("name", n),
             "path": graph.nodes[n].get("path", ""),
-            "type": graph.nodes[n].get("type", "")
+            "type": graph.nodes[n].get("type", ""),
+            "start_line": graph.nodes[n].get("start_line"),
+            "end_line": graph.nodes[n].get("end_line"),
         }
         for n in visited_nodes
     ]
@@ -304,7 +365,9 @@ def get_subgraph(
         "nodes": nodes_out,
         "edges": list(unique_edges),
         "requested_depth": original_depth,
-        "clamped": clamped
+        "clamped": clamped,
+        "hidden_neighbors": hidden_neighbors,
+        "truncated_count": len(hidden_neighbors),
     }
 
 

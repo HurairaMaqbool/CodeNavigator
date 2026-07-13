@@ -106,7 +106,14 @@ def build_graph(
                 truncated = True
                 break
             node_id = f"{path}:{f.name}"
-            graph.add_node(node_id, path=path, name=f.name, type="function")
+            graph.add_node(
+                node_id,
+                path=path,
+                name=f.name,
+                type="function",
+                start_line=f.start_line,
+                end_line=f.end_line,
+            )
             known_nodes.add(node_id)
             node_count += 1
 
@@ -117,7 +124,15 @@ def build_graph(
                     truncated = True
                     break
                 node_id = f"{path}:{c.name}.{m.name}"
-                graph.add_node(node_id, path=path, name=f"{c.name}.{m.name}", type="method", class_name=c.name)
+                graph.add_node(
+                    node_id,
+                    path=path,
+                    name=f"{c.name}.{m.name}",
+                    type="method",
+                    class_name=c.name,
+                    start_line=m.start_line,
+                    end_line=m.end_line,
+                )
                 known_nodes.add(node_id)
                 node_count += 1
 

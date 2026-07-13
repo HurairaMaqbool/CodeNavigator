@@ -340,7 +340,7 @@ def trigger_ingest(repo_url: str, ref: str | None, force_reindex: bool, bg_tasks
         )
 
     if not dispatched:
-        from app.tasks.ingestion_task import run_ingestion_sync
+        from app.ingestion.pipeline import run_ingestion_sync
         bg_tasks.add_task(
             run_ingestion_sync,
             repo_url,
@@ -534,12 +534,25 @@ def chat(request: Request, req: ChatRequest):
         if result.get("timed_out") or (
             result.get("groq_failed") and "too slow" in str(result.get("answer", "")).lower()
         ):
+            answer = str(result.get("answer") or "").strip()
+            if answer:
+                increment(tenant.org_id, "chat")
+                record_event(
+                    "chat.completed",
+                    org_id=tenant.org_id,
+                    resource_type="repository",
+                    resource_id=req.repo_id,
+                )
+                return {
+                    **result,
+                    "gated": True,
+                    "timed_out": True,
+                }
             raise HTTPException(
                 status_code=504,
                 detail=(
-                    "The request took too long to complete. "
-                    "The backend may be under heavy load or the AI provider is slow. "
-                    "Please try again in a moment."
+                    "The request took too long to complete before any answer was ready. "
+                    "Try a more specific question or retry shortly."
                 ),
             )
 
@@ -628,14 +641,105 @@ def generate_onboarding_path(request: Request, req: OnboardingPathRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/symbols/{repo_id}", dependencies=[Depends(verify_api_key)])
+def get_symbols_endpoint(repo_id: str):
+    meta, asset_repo_id = _resolve_repo_meta(repo_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Unknown repo_id")
+    _enforce_repo_org(meta)
+    _require_repo_ready(repo_id, asset_repo_id)
+
+    from app.graph.queries import _get_graph
+    graph = _get_graph(asset_repo_id)
+    if not graph:
+        return []
+
+    symbols = []
+    for n, attr in graph.nodes(data=True):
+        symbols.append({
+            "id": n,
+            "name": attr.get("name") or n,
+            "path": attr.get("path") or "",
+            "type": attr.get("type") or "",
+            "start_line": attr.get("start_line"),
+            "end_line": attr.get("end_line"),
+        })
+    return symbols
+
+
+@router.get("/file-snippet/{repo_id}", dependencies=[Depends(verify_api_key)])
+def get_file_snippet_endpoint(
+    repo_id: str,
+    file_path: str,
+    start_line: int | None = None,
+    end_line: int | None = None,
+):
+    meta, asset_repo_id = _resolve_repo_meta(repo_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Unknown repo_id")
+    _enforce_repo_org(meta)
+    _require_repo_ready(repo_id, asset_repo_id)
+
+    from app.config import settings
+    repo_dir = Path(settings.REPOS_PATH) / asset_repo_id
+    full_path = repo_dir / file_path
+
+    # Security check: prevent directory traversal
+    try:
+        if not full_path.resolve().relative_to(repo_dir.resolve()):
+            raise HTTPException(status_code=403, detail="Forbidden path traversal")
+    except Exception:
+        raise HTTPException(status_code=403, detail="Forbidden path traversal")
+
+    if not full_path.exists() or not full_path.is_file():
+        raise HTTPException(status_code=404, detail=f"File {file_path} not found")
+
+    try:
+        from app.ingestion.file_filter import safe_decode
+        text, _ = safe_decode(full_path)
+        if not text:
+            return {"code": ""}
+        lines = text.splitlines()
+
+        if start_line is not None and end_line is not None:
+            # 1-indexed slice, apply context padding of 5 lines
+            s_idx = max(0, start_line - 1 - 5)
+            e_idx = min(len(lines), end_line + 5)
+            snippet = "\n".join(lines[s_idx:e_idx])
+            return {
+                "code": snippet,
+                "start_line": s_idx + 1,
+                "end_line": e_idx,
+                "total_lines": len(lines),
+            }
+        return {
+            "code": text,
+            "start_line": 1,
+            "end_line": len(lines),
+            "total_lines": len(lines),
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 @router.get("/diagram/{repo_id}", dependencies=[Depends(verify_api_key)])
-def get_function_diagram_query(repo_id: str, function_name: str, depth: int = 2):
+def get_function_diagram_query(
+    repo_id: str,
+    function_name: str,
+    depth: int = 2,
+    direction: str | None = None,
+):
     """Backward-compatible route used by tests and older clients (function_name as query param)."""
-    return get_function_diagram(repo_id, function_name, depth)
+    return get_function_diagram(repo_id, function_name, depth, direction=direction)
 
 
 @router.get("/diagram/{repo_id}/{function_name}", dependencies=[Depends(verify_api_key)])
-def get_function_diagram(repo_id: str, function_name: str, depth: int = 2):
+def get_function_diagram(
+    repo_id: str,
+    function_name: str,
+    depth: int = 2,
+    direction: str | None = None,
+):
     from app.debug_trace import debug_log
 
     meta, asset_repo_id = _resolve_repo_meta(repo_id)
@@ -655,9 +759,20 @@ def get_function_diagram(repo_id: str, function_name: str, depth: int = 2):
         raise HTTPException(status_code=404, detail="Unknown repo_id")
     _enforce_repo_org(meta)
     _require_repo_ready(repo_id, asset_repo_id)
+
+    from app.config import settings
+
+    traversal = (direction or settings.DIAGRAM_DEFAULT_DIRECTION).strip().lower()
+    if traversal not in ("upstream", "downstream", "both"):
+        traversal = settings.DIAGRAM_DEFAULT_DIRECTION
         
     try:
-        sub = get_subgraph(asset_repo_id, function_name, direction="both", max_depth=depth)
+        sub = get_subgraph(
+            asset_repo_id,
+            function_name,
+            direction=traversal,
+            max_depth=depth,
+        )
         sub_with_entry = {**sub, "entry_point": function_name}
         debug_log(
             "router.py:get_function_diagram",
@@ -667,6 +782,8 @@ def get_function_diagram(repo_id: str, function_name: str, depth: int = 2):
                 "node_count": len(sub.get("nodes", [])),
                 "edge_count": len(sub.get("edges", [])),
                 "not_found": sub.get("not_found", False),
+                "truncated_count": sub.get("truncated_count", 0),
+                "direction": traversal,
             },
             hypothesis_id="B,C",
         )
@@ -674,9 +791,9 @@ def get_function_diagram(repo_id: str, function_name: str, depth: int = 2):
             sub_with_entry,
             sub.get("requested_depth", depth),
             3 if sub.get("clamped") else sub.get("requested_depth", depth),
-            max_nodes=25,
+            max_nodes=settings.GRAPH_SUBGRAPH_MAX_NODES,
             repo_id=asset_repo_id,
-            direction="both",
+            direction=traversal,
         )
     except ValueError as e: # Function not found
         if "not found in graph" in str(e):
@@ -692,6 +809,28 @@ from app.jobs.eval_job_store import get_eval_job, set_eval_job
 
 def _set_eval_job(job_id: str, **updates: Any) -> None:
     set_eval_job(job_id, **updates)
+
+
+def _run_job_with_timeout(
+    job_id: str,
+    label: str,
+    worker,
+    *args: Any,
+    **kwargs: Any,
+) -> Any:
+    """Run a blocking eval worker with a wall-clock cap so jobs always terminate."""
+    from app.config import settings
+    import concurrent.futures
+
+    limit = max(120, int(settings.EVAL_JOB_MAX_SECONDS))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(worker, *args, **kwargs)
+        try:
+            return future.result(timeout=limit)
+        except concurrent.futures.TimeoutError as exc:
+            msg = f"{label} timed out after {limit}s"
+            _set_eval_job(job_id, status="error", error=msg)
+            raise TimeoutError(msg) from exc
 
 
 def _run_eval_background(eval_job_id: str) -> None:
@@ -711,14 +850,21 @@ def _run_eval_background(eval_job_id: str) -> None:
             hypothesis_id="A",
         )
         from eval.run_eval import run_eval as execute_eval
-        res = execute_eval(target_repo_id=target_repo)
+        res = _run_job_with_timeout(
+            eval_job_id,
+            "RAGAS evaluation",
+            execute_eval,
+            target_repo_id=target_repo,
+        )
         res["supplementary"] = {
-            "mean_confidence_score": res["mean_confidence_score"],
-            "average_iterations": res["average_iterations"],
-            "invalid_reference_rate": res["invalid_reference_rate"],
-            "retrieval_precision_at_3": res["retrieval_precision_at_3"],
+            "mean_confidence_score": res.get("mean_confidence_score"),
+            "average_iterations": res.get("average_iterations"),
+            "invalid_reference_rate": res.get("invalid_reference_rate"),
+            "retrieval_precision_at_3": res.get("retrieval_precision_at_3"),
         }
         _set_eval_job(eval_job_id, status="done", result=res)
+    except TimeoutError:
+        return
     except Exception as exc:
         from app.debug_trace import debug_log
         debug_log(
@@ -768,18 +914,21 @@ def run_eval_endpoint(repo_id: str | None = None):
         )
 
     eval_job_id = uuid.uuid4().hex
+    correlation_id = uuid.uuid4().hex
     increment(tenant.org_id, "eval")
     _set_eval_job(
         eval_job_id,
         status="queued",
         started_at=datetime.now(timezone.utc).isoformat(),
         target_repo_id=target_repo,
+        correlation_id=correlation_id,
+        job_type="ragas",
         result=None,
         error=None,
     )
     thread = threading.Thread(target=_run_eval_background, args=(eval_job_id,), daemon=True)
     thread.start()
-    return {"job_id": eval_job_id, "status": "queued"}
+    return {"job_id": eval_job_id, "status": "queued", "correlation_id": correlation_id}
 
 
 @router.get("/eval/health/{repo_id}", dependencies=[Depends(verify_api_key)])
@@ -812,6 +961,8 @@ def eval_status(job_id: str):
         "job_id": job_id,
         "status": job["status"],
         "started_at": job.get("started_at"),
+        "correlation_id": job.get("correlation_id"),
+        "job_type": job.get("job_type"),
         "result": job.get("result"),
         "error": job.get("error"),
     }
@@ -890,8 +1041,10 @@ def _run_golden_background(job_id: str) -> None:
     _set_eval_job(job_id, status="running")
     try:
         from eval.golden_runner import run_golden_set
-        result = run_golden_set()
+        result = _run_job_with_timeout(job_id, "Golden CI", run_golden_set)
         _set_eval_job(job_id, status="done", result=result)
+    except TimeoutError:
+        return
     except Exception as exc:
         _set_eval_job(job_id, status="error", error=str(exc))
 
@@ -901,14 +1054,17 @@ def _run_golden_background(job_id: str) -> None:
 def run_golden_endpoint():
     """Trigger a fresh Golden Set CI run; poll /eval/status/{job_id}."""
     job_id = uuid.uuid4().hex
+    correlation_id = uuid.uuid4().hex
     _set_eval_job(
         job_id,
         status="queued",
         started_at=datetime.now(timezone.utc).isoformat(),
+        correlation_id=correlation_id,
+        job_type="golden",
         result=None,
         error=None,
     )
     thread = threading.Thread(target=_run_golden_background, args=(job_id,), daemon=True)
     thread.start()
-    return {"job_id": job_id, "status": "queued"}
+    return {"job_id": job_id, "status": "queued", "correlation_id": correlation_id}
 
