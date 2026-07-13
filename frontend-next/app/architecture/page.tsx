@@ -38,14 +38,7 @@ export default function ArchitecturePage() {
   const handleQuickStart = useIngestFlow();
 
   // Settings states
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolItem | null>({
-    id: "default-id",
-    name: "Session.send",
-    path: "src/requests/sessions.py",
-    type: "method",
-    start_line: 10,
-    end_line: 50,
-  });
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolItem | null>(null);
   const [depth, setDepth] = useState(2);
   const [direction, setDirection] = useState<Direction>("downstream");
   const [granularity, setGranularity] = useState<"function" | "file">("function");
@@ -402,6 +395,11 @@ export default function ArchitecturePage() {
                       <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
+                    ) : selectedSymbol === null ? (
+                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                        <Network className="h-10 w-10 mb-3 text-primary animate-pulse" />
+                        <p className="font-semibold text-foreground text-xs mb-1">Select a symbol to begin</p>
+                      </div>
                     ) : mermaid ? (
                       <DiagramCanvas
                         markdown={mermaid}
@@ -426,6 +424,11 @@ export default function ArchitecturePage() {
                     {candidateLoading ? (
                       <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : selectedSymbol === null ? (
+                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                        <Network className="h-10 w-10 mb-3 text-primary animate-pulse" />
+                        <p className="font-semibold text-foreground text-xs mb-1">Select a symbol to begin</p>
                       </div>
                     ) : candidateError ? (
                       <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-warning">
@@ -454,6 +457,12 @@ export default function ArchitecturePage() {
                 {loading ? (
                   <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : selectedSymbol === null ? (
+                  <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                    <Network className="h-12 w-12 mb-4 text-primary animate-pulse" />
+                    <p className="font-semibold text-foreground text-base mb-1">Select a symbol to visualize its call graph</p>
+                    <p className="text-xs text-muted-foreground max-w-sm">Use the Go to Symbol search bar above to fuzzy search functions, classes, or methods and explore their relationship dependencies.</p>
                   </div>
                 ) : mermaid ? (
                   <DiagramCanvas
