@@ -1,16 +1,22 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useBackendOnline } from "@/lib/hooks/use-backend-health";
 import { useQuery } from "@tanstack/react-query";
 import {
   getBillingSubscription,
   getPlatformAudit,
   getPlatformUsage,
+  listGitHubInstallations,
 } from "@/lib/api";
+import { ApiError } from "@/lib/types";
 import { AppShell } from "@/components/layout/app-shell";
+import { ApiKeysPanel } from "@/components/platform/api-keys-panel";
+import { AuditLogTable } from "@/components/platform/audit-log-table";
+import { BillingPlansPanel } from "@/components/platform/billing-plans-panel";
+import { GdprRepoPanel } from "@/components/platform/gdpr-repo-panel";
+import { UsageQuotaPanel } from "@/components/platform/usage-quota-panel";
 import { QueryError } from "@/components/shared/empty-state";
-import { SectionHeader, StatCard } from "@/components/shared/section-header";
+import { SectionHeader } from "@/components/shared/section-header";
 import { Alert } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,27 +28,38 @@ export default function PlatformPage() {
     queryKey: ["usage"],
     queryFn: getPlatformUsage,
     enabled: backendOk,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
   const sub = useQuery({
     queryKey: ["subscription"],
     queryFn: getBillingSubscription,
     enabled: backendOk,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
   const audit = useQuery({
     queryKey: ["audit"],
     queryFn: () => getPlatformAudit(50),
     enabled: backendOk,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
+  });
+  const github = useQuery({
+    queryKey: ["githubInstallations"],
+    queryFn: listGitHubInstallations,
+    enabled: backendOk,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
   return (
     <AppShell>
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="space-y-8"
-      >
-        <SectionHeader title="Platform" caption="Usage, billing, and audit log" />
+      <div className="page-enter space-y-10">
+        <SectionHeader
+          title="Platform"
+          caption="Usage, billing, API keys, GDPR, GitHub App, and audit trail"
+        />
 
         {backendOffline && (
           <Alert kind="warning">
@@ -54,90 +71,87 @@ export default function PlatformPage() {
           <QueryError message="Cannot reach API" onRetry={() => window.location.reload()} />
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {usage.isLoading ? (
-            <>
-              <Skeleton className="h-20" />
-              <Skeleton className="h-20" />
-              <Skeleton className="h-20" />
-              <Skeleton className="h-20" />
-            </>
-          ) : usage.data ? (
-            <>
-              <StatCard label="Org" value={usage.data.org_id} />
-              <StatCard label="Plan" value={usage.data.plan_id} />
-              <StatCard
-                label="Chat (month)"
-                value={usage.data.metrics?.chat ?? 0}
-              />
-              <StatCard
-                label="Ingest (month)"
-                value={usage.data.metrics?.ingest ?? 0}
-              />
-            </>
-          ) : null}
-        </div>
+        {usage.isLoading ? (
+          <Skeleton className="h-40 w-full" />
+        ) : usage.isError ? (
+          <QueryError
+            message={
+              usage.error instanceof ApiError
+                ? usage.error.message
+                : "Failed to load usage"
+            }
+            onRetry={() => void usage.refetch()}
+          />
+        ) : usage.data ? (
+          <UsageQuotaPanel usage={usage.data} />
+        ) : null}
 
-        {sub.data && (
-          <details className="rounded-xl border border-border bg-surface p-4">
-            <summary className="cursor-pointer font-medium text-foreground">
-              Subscription details
-            </summary>
-            <pre className="mt-3 overflow-auto text-xs">
-              {JSON.stringify(sub.data, null, 2)}
-            </pre>
-          </details>
-        )}
+        {sub.isLoading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : sub.isError ? (
+          <QueryError
+            message={
+              sub.error instanceof ApiError
+                ? sub.error.message
+                : "Failed to load subscription"
+            }
+            onRetry={() => void sub.refetch()}
+          />
+        ) : sub.data ? (
+          <BillingPlansPanel sub={sub.data} enabled={backendOk} />
+        ) : null}
 
-        {usage.data && (
-          <details className="rounded-xl border border-border bg-surface p-4">
-            <summary className="cursor-pointer font-medium text-foreground">
-              Usage details
-            </summary>
-            <pre className="mt-3 overflow-auto text-xs">
-              {JSON.stringify(usage.data, null, 2)}
-            </pre>
-          </details>
-        )}
+        <ApiKeysPanel enabled={backendOk} />
 
-        <div>
-          <SectionHeader title="Audit log" caption="Last 50 events" />
-          {audit.isLoading ? (
-            <Skeleton className="h-48 w-full" />
-          ) : audit.data && audit.data.length > 0 ? (
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-border bg-muted/50 text-xs uppercase text-muted-foreground">
-                  <tr>
-                    <th className="p-2">Time</th>
-                    <th className="p-2">Action</th>
-                    <th className="p-2">Actor</th>
-                    <th className="p-2">Resource</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {audit.data.map((row, i) => (
-                    <tr key={i} className="border-b border-border/50">
-                      <td className="p-2 font-mono text-xs">{row.timestamp}</td>
-                      <td className="p-2">{row.action}</td>
-                      <td className="p-2">{row.actor}</td>
-                      <td className="p-2 font-mono text-xs">
-                        {row.resource_type}/{row.resource_id}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <GdprRepoPanel enabled={backendOk} />
+
+        <div className="card-panel space-y-3">
+          <SectionHeader
+            title="GitHub App installations"
+            caption="Org-scoped GitHub App links (Connect tab handles repo ingest)"
+          />
+          {github.isLoading ? (
+            <Skeleton className="h-16 w-full" />
+          ) : github.isError ? (
+            <p className="text-sm text-muted-foreground">
+              {github.error instanceof ApiError
+                ? github.error.message
+                : "Could not load installations"}
+            </p>
+          ) : (github.data?.length ?? 0) === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No GitHub App installations registered for this organization.
+            </p>
           ) : (
-            <p className="text-sm text-muted-foreground">No audit events yet.</p>
+            <ul className="space-y-2 text-sm">
+              {github.data!.map((row) => (
+                <li key={row.installation_id} className="font-mono text-xs">
+                  #{row.installation_id}
+                  {row.account_login ? ` · ${row.account_login}` : ""}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Admin console: http://localhost:3000
-        </p>
-      </motion.div>
+        <div className="space-y-3">
+          <SectionHeader title="Audit log" caption="Last 50 events (with request correlation IDs)" />
+          {audit.isLoading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : audit.isError ? (
+            <QueryError
+              message={
+                audit.error instanceof ApiError
+                  ? audit.error.message
+                  : "Failed to load audit log"
+              }
+              onRetry={() => void audit.refetch()}
+            />
+          ) : (
+            <AuditLogTable events={audit.data ?? []} />
+          )}
+        </div>
+      </div>
     </AppShell>
   );
 }

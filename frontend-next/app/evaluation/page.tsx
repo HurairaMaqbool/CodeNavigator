@@ -219,6 +219,14 @@ export default function EvaluationPage() {
                   : formatEvalRunLabel(displayRun)
               }
             />
+            <div className="rounded-lg border border-info/20 bg-info/5 p-4 text-xs text-muted-foreground space-y-2">
+              <p className="font-semibold text-foreground">Understanding RAG Metrics & Scores:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li><strong>Golden CI (100% PASS) vs RAGAS Faithfulness</strong>: Golden CI measures source file retrieval correctness. RAGAS Faithfulness measures generation grounding (whether the AI answer is strictly supported by the retrieved context). A 100% CI pass means correct files were retrieved, but RAGAS score can drop if the LLM answers with outside knowledge.</li>
+                <li><strong>Gated Status & 0.0 Confidence</strong>: Gating triggers when retrieval fails or rate limits (HTTP 429) cut off LLM queries. These fall back to safe responses.</li>
+                <li><strong>Verified Confidence (Base 10.0)</strong>: Base confidence score is 10.0 and decreases only on citation syntax errors, invalid line bounds, or call-graph mismatches.</li>
+              </ul>
+            </div>
             <RagasChart scores={displayRun.ragas_scores} />
             {displayRun.regression_warning && (
               <Alert kind="warning" className="mt-4">

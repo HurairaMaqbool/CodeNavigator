@@ -42,6 +42,8 @@ export function GdprRepoPanel({ enabled }: { enabled: boolean }) {
     queryKey: ["platformRepos"],
     queryFn: listPlatformRepos,
     enabled,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
   const exportMut = useMutation({
