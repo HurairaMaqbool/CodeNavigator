@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GitBranchPlus } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
@@ -16,12 +16,18 @@ import { useRepoStatus } from "@/lib/hooks/use-repo-status";
 
 export default function ChatPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const { repoId, clearSession } = useApp();
   const status = useRepoStatus(repoId);
   const ready = status.data ? repoIsReady(status.data) : false;
   const handleQuickStart = useIngestFlow();
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     if (!repoId) {
       router.replace("/onboarding");
       return;
@@ -31,7 +37,7 @@ export default function ChatPage() {
     }
   }, [repoId, status.isLoading, status.data, router]);
 
-  if (!repoId || status.isLoading || !ready) {
+  if (!mounted || !repoId || status.isLoading || !ready) {
     return (
       <AppShell onQuickStart={(url, ref) => void handleQuickStart(url, ref)}>
         <div className="page-enter">
