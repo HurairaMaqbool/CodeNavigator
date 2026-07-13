@@ -87,7 +87,7 @@ def get_usage(org_id: str) -> dict[str, Any]:
 
 
 def _effective_limit(org_id: str, metric: str) -> int:
-    """Env quotas override plan tiers; plan limits apply in production only."""
+    """Env quotas override plan tiers; plan limits are displayed consistently."""
     env_cap = {
         "chat": settings.QUOTA_CHAT_PER_MONTH,
         "ingest": settings.QUOTA_INGEST_PER_MONTH,
@@ -95,14 +95,14 @@ def _effective_limit(org_id: str, metric: str) -> int:
     }.get(metric, 0)
     if env_cap > 0:
         return env_cap
-    if settings.ENVIRONMENT.lower() != "production":
-        return 0
     sub = get_subscription(org_id)
     return quota_for_plan(sub.get("plan_id", "free"), metric)
 
 
 def check_quota(org_id: str, metric: str) -> bool:
-    """Return True if under quota (or quota disabled)."""
+    """Return True if under quota (or quota disabled in non-production)."""
+    if settings.ENVIRONMENT.lower() != "production":
+        return True
     cap = _effective_limit(org_id, metric)
     if cap <= 0:
         return True

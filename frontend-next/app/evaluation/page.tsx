@@ -1,23 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { Loader2, Play, TestTube } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import {
-  compareEvalRuns,
-  getEvalJobStatus,
-  startEval,
-  startGoldenRun,
-} from "@/lib/api";
-import { useApp } from "@/lib/context/app-context";
-import { useBackendOnline } from "@/lib/hooks/use-backend-health";
-import { useEvalHealth } from "@/lib/hooks/use-eval-health";
-import { useEvalHistory } from "@/lib/hooks/use-eval-history";
-import { useRepoStatus } from "@/lib/hooks/use-repo-status";
-import { ApiError, type EvalRun } from "@/lib/types";
 import { AppShell } from "@/components/layout/app-shell";
+import { CompareRegressionsTable } from "@/components/evaluation/compare-regressions-table";
+import { useEvalAutomationOverlay } from "@/components/evaluation/eval-automation-bridge";
+import { GoldenCiPanel } from "@/components/evaluation/golden-ci-panel";
 import { EmptyState, QueryError } from "@/components/shared/empty-state";
 import { SectionHeader, StatCard } from "@/components/shared/section-header";
 import { PerQuestionDiagnostics } from "@/components/evaluation/per-question-diagnostics";
@@ -33,134 +21,124 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useApp } from "@/lib/context/app-context";
+import { useBackendOnline } from "@/lib/hooks/use-backend-health";
+import { useEvalHealth } from "@/lib/hooks/use-eval-health";
+import { useEvalHistory } from "@/lib/hooks/use-eval-history";
+import { useEvalRunners } from "@/lib/hooks/use-eval-runners";
 import { useGoldenStatus } from "@/lib/hooks/use-golden-status";
-
-async function pollEvalJob(
-  jobId: string,
-  onTick?: (status: string) => void,
-  maxMs = 1_800_000,
-): Promise<Awaited<ReturnType<typeof getEvalJobStatus>>> {
-  const t0 = Date.now();
-  while (Date.now() - t0 < maxMs) {
-    const st = await getEvalJobStatus(jobId);
-    onTick?.(st.status);
-    if (st.status === "done" || st.status === "error") return st;
-    await new Promise((r) => setTimeout(r, 3000));
-  }
-  throw new Error("Timed out after 30 minutes");
-}
+import { useRepoStatus } from "@/lib/hooks/use-repo-status";
+import { pickDisplayRun } from "@/lib/eval-run-utils";
+import { formatChunkSummary } from "@/lib/repo-display";
+import { formatEvalRunLabel, getEvalRunKey } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export default function EvaluationPage() {
   const { repoId } = useApp();
-  const qc = useQueryClient();
   const { online: backendOk } = useBackendOnline();
   const status = useRepoStatus(repoId);
   const evalHealth = useEvalHealth(repoId, status.data);
   const history = useEvalHistory(backendOk);
   const golden = useGoldenStatus(backendOk);
+  const { autoProgress, autoCompareResult, autoLastRun, autoLastRefreshAt } =
+    useEvalAutomationOverlay(repoId);
 
-  const [ragasLoading, setRagasLoading] = useState(false);
-  const [goldenLoading, setGoldenLoading] = useState(false);
-  const [lastResult, setLastResult] = useState<EvalRun | null>(null);
-  const [compareLoading, setCompareLoading] = useState(false);
-  const [compareResult, setCompareResult] = useState<Awaited<
-    ReturnType<typeof compareEvalRuns>
-  > | null>(null);
+  const {
+    runRagas,
+    runGolden,
+    compare,
+    ragasLoading,
+    goldenLoading,
+    compareLoading,
+    ragasProgress,
+    goldenProgress,
+    lastResult,
+    setLastResult,
+    goldenLiveResult,
+    compareResult,
+    setCompareResult,
+  } = useEvalRunners(repoId);
 
   const runs = history.data ?? [];
+  const [selectedRunKey, setSelectedRunKey] = useState<string | null>(null);
   const [baseline, setBaseline] = useState("");
   const [candidate, setCandidate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  const baselineVal = baseline || runs[0]?.version || "";
+  useEffect(() => {
+    setLastResult(null);
+    setSelectedRunKey(null);
+    setCompareResult(null);
+    setBaseline("");
+    setCandidate("");
+  }, [repoId, setLastResult, setCompareResult]);
+
+  useEffect(() => {
+    if (autoLastRun && !lastResult) {
+      setLastResult(autoLastRun);
+      setSelectedRunKey(getEvalRunKey(autoLastRun));
+    }
+  }, [autoLastRun, lastResult, setLastResult]);
+
+  useEffect(() => {
+    if (autoCompareResult && !compareResult) {
+      setCompareResult(autoCompareResult);
+    }
+  }, [autoCompareResult, compareResult, setCompareResult]);
+
+  const baselineVal = baseline || (runs[0] ? getEvalRunKey(runs[0]) : "");
   const candidateVal =
-    candidate || (runs.length > 1 ? runs[1]?.version : runs[0]?.version) || "";
+    candidate ||
+    (runs.length > 1 ? getEvalRunKey(runs[1]) : runs[0] ? getEvalRunKey(runs[0]) : "");
   const sameSelection = baselineVal && candidateVal && baselineVal === candidateVal;
 
+  const selectedFromHistory = selectedRunKey
+    ? runs.find((r) => getEvalRunKey(r) === selectedRunKey)
+    : undefined;
+  const displayRun = pickDisplayRun(
+    runs,
+    lastResult ?? selectedFromHistory ?? null,
+  );
+
   const evalReady = Boolean(evalHealth.data?.ok);
-  const details = evalHealth.data?.details ?? {};
-
-  async function runRagas() {
-    if (!repoId) return;
-    setRagasLoading(true);
-    setLastResult(null);
-    try {
-      const { job_id } = await startEval(repoId);
-      toast.info("RAGAS evaluation queued");
-      void qc.invalidateQueries({ queryKey: ["evalHealth", repoId] });
-      const done = await pollEvalJob(job_id);
-      if (done.status === "error") {
-        toast.error(done.error ?? "Eval failed");
-      } else if (done.result && "ragas_scores" in done.result) {
-        setLastResult(done.result as EvalRun);
-        toast.success("Evaluation complete");
-        void qc.invalidateQueries({ queryKey: ["evalHistory"] });
-      }
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Eval failed");
-    } finally {
-      setRagasLoading(false);
-    }
-  }
-
-  async function runGolden() {
-    setGoldenLoading(true);
-    try {
-      const { job_id } = await startGoldenRun();
-      toast.info("Golden CI running…");
-      const t0 = Date.now();
-      while (Date.now() - t0 < 1_200_000) {
-        const st = await getEvalJobStatus(job_id);
-        if (st.status === "done") {
-          toast.success("Golden CI complete");
-          void golden.refetch();
-          break;
-        }
-        if (st.status === "error") {
-          toast.error(st.error ?? "Golden CI failed");
-          break;
-        }
-        await new Promise((r) => setTimeout(r, 2000));
-      }
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Golden CI failed");
-    } finally {
-      setGoldenLoading(false);
-    }
-  }
-
-  async function compare() {
-    if (sameSelection) return;
-    setCompareLoading(true);
-    setCompareResult(null);
-    try {
-      const res = await compareEvalRuns(baselineVal, candidateVal);
-      setCompareResult(res);
-      if (res.regressions_found) toast.warning("Regressions detected");
-      else toast.success("No regressions within tolerance");
-    } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Compare failed");
-    } finally {
-      setCompareLoading(false);
-    }
-  }
+  const chunkSummary = formatChunkSummary(status.data, evalHealth.data);
+  const effectiveRagasProgress = ragasProgress ?? autoProgress;
+  const lastDataRefreshMs =
+    autoLastRefreshAt ??
+    (history.dataUpdatedAt > 0 ? history.dataUpdatedAt : null);
+  const lastDataRefreshLabel =
+    lastDataRefreshMs != null
+      ? (() => {
+          const mins = Math.round((Date.now() - lastDataRefreshMs) / 60_000);
+          if (mins < 1) return "just now";
+          if (mins < 60) return `${mins} min ago`;
+          return `${Math.round(mins / 60)} hr ago`;
+        })()
+      : null;
 
   return (
     <AppShell>
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="space-y-8"
-      >
+      <div className="page-enter space-y-10">
         <SectionHeader
           title="Evaluation & quality assurance"
-          caption="RAGAS metrics, version compare, golden-set CI"
+          caption={
+            lastDataRefreshLabel
+              ? `RAGAS metrics, version compare, and golden-set CI — auto-updates after indexing and chat (last refresh: ${lastDataRefreshLabel})`
+              : "RAGAS metrics, version compare, and golden-set CI — updates automatically after indexing and chat"
+          }
         />
+
+        {autoProgress && !ragasLoading && (
+          <Alert kind="info">
+            Background evaluation: {autoProgress}
+          </Alert>
+        )}
 
         {!repoId ? (
           <EmptyState
             title="No repository selected"
-            description="Ingest a repo on the Workspace tab first."
+            description="Connect and index a repository on the Connect screen first."
           />
         ) : evalHealth.isLoading ? (
           <div className="grid grid-cols-3 gap-3">
@@ -179,14 +157,13 @@ export default function EvaluationPage() {
               <StatCard
                 label="Index"
                 value={evalReady ? "Ready" : "Not ready"}
+                status={evalReady ? "ok" : "warn"}
               />
-              <StatCard
-                label="Chunks"
-                value={String(details.chroma_chunk_count ?? "—")}
-              />
+              <StatCard label="Chunks" value={chunkSummary} status="neutral" />
               <StatCard
                 label="Probe hits"
-                value={String(details.probe_hit_count ?? "—")}
+                value={String(evalHealth.data?.details?.probe_hit_count ?? "—")}
+                status="neutral"
               />
             </div>
             {!evalReady &&
@@ -198,7 +175,7 @@ export default function EvaluationPage() {
           </>
         )}
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             disabled={!repoId || !evalReady || ragasLoading}
             onClick={() => void runRagas()}
@@ -210,6 +187,11 @@ export default function EvaluationPage() {
             )}
             Run RAGAS eval
           </Button>
+          {effectiveRagasProgress && (
+            <span className="text-sm text-muted-foreground">
+              {effectiveRagasProgress}
+            </span>
+          )}
           <Button
             variant="secondary"
             disabled={!backendOk || goldenLoading}
@@ -222,26 +204,46 @@ export default function EvaluationPage() {
             )}
             Run Golden CI
           </Button>
+          {goldenProgress && (
+            <span className="text-sm text-muted-foreground">{goldenProgress}</span>
+          )}
         </div>
 
-        {lastResult?.ragas_scores && (
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <SectionHeader title="RAGAS scores" />
-            <RagasChart scores={lastResult.ragas_scores} />
-            {lastResult.regression_warning && (
+        {displayRun?.ragas_scores && (
+          <div className="card-panel space-y-4">
+            <SectionHeader
+              title="RAGAS scores"
+              caption={
+                displayRun === lastResult
+                  ? "Latest run"
+                  : formatEvalRunLabel(displayRun)
+              }
+            />
+            <RagasChart scores={displayRun.ragas_scores} />
+            {displayRun.regression_warning && (
               <Alert kind="warning" className="mt-4">
-                {lastResult.regression_warning}
+                {displayRun.regression_warning}
               </Alert>
             )}
-            <PerQuestionDiagnostics run={lastResult} />
+            <PerQuestionDiagnostics run={displayRun} />
           </div>
         )}
 
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <SectionHeader title="Compare versions" />
-          {runs.length < 2 ? (
+        <div className="card-panel space-y-4">
+          <SectionHeader
+            title="Compare versions"
+            caption="Auto-compares when a new RAGAS run completes — manual override below"
+          />
+          <Alert kind="info" className="mb-4">
+            Chat always queries the current indexed codebase (see Active repo bar above).
+            Baseline/candidate here only affect evaluation metrics comparison, not live Q&A.
+          </Alert>
+          {history.isLoading ? (
+            <Skeleton className="mt-2 h-24 w-full" />
+          ) : runs.length < 2 ? (
             <p className="text-sm text-muted-foreground">
-              Run RAGAS eval at least twice to compare versions.
+              Run RAGAS eval at least twice to compare versions (second run triggers
+              automatically after indexing).
             </p>
           ) : (
             <>
@@ -253,11 +255,14 @@ export default function EvaluationPage() {
                       <SelectValue placeholder="Select baseline" />
                     </SelectTrigger>
                     <SelectContent>
-                      {runs.map((r) => (
-                        <SelectItem key={r.version} value={r.version}>
-                          {r.version}
-                        </SelectItem>
-                      ))}
+                      {runs.map((r) => {
+                        const runKey = getEvalRunKey(r);
+                        return (
+                          <SelectItem key={runKey} value={runKey}>
+                            {formatEvalRunLabel(r)}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -268,11 +273,14 @@ export default function EvaluationPage() {
                       <SelectValue placeholder="Select candidate" />
                     </SelectTrigger>
                     <SelectContent>
-                      {runs.map((r) => (
-                        <SelectItem key={r.version} value={r.version}>
-                          {r.version}
-                        </SelectItem>
-                      ))}
+                      {runs.map((r) => {
+                        const runKey = getEvalRunKey(r);
+                        return (
+                          <SelectItem key={runKey} value={runKey}>
+                            {formatEvalRunLabel(r)}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -285,48 +293,117 @@ export default function EvaluationPage() {
               <Button
                 className="mt-4"
                 disabled={sameSelection || compareLoading}
-                onClick={() => void compare()}
+                onClick={() => void compare(baselineVal, candidateVal)}
               >
                 {compareLoading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Compare runs
               </Button>
               {compareResult && (
-                <p className="mt-3 text-sm">
-                  {compareResult.regressions_found
-                    ? `${compareResult.regressions.length} regression(s) found`
-                    : "No regressions within tolerance"}
-                </p>
+                <CompareRegressionsTable result={compareResult} />
               )}
             </>
           )}
         </div>
 
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <SectionHeader title="Golden set CI" />
-          {golden.isLoading ? (
-            <Skeleton className="h-16 w-full" />
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-3">
-              <StatCard
-                label="Status"
-                value={(golden.data?.status ?? "not_yet_run").toUpperCase()}
-              />
-              <StatCard
-                label="Score"
-                value={
-                  golden.data?.score != null
-                    ? `${Math.round(golden.data.score * 100)}%`
-                    : "—"
-                }
-              />
-              <StatCard
-                label="Passed"
-                value={`${golden.data?.passed ?? "—"}/${golden.data?.total ?? "—"}`}
-              />
-            </div>
-          )}
+        <div className="card-panel space-y-4">
+          <SectionHeader
+            title="Golden set CI"
+            caption="Refreshes automatically after each successful index (backend pipeline)"
+          />
+          <GoldenCiPanel
+            data={golden.data}
+            loading={golden.isLoading}
+            liveResult={goldenLiveResult}
+          />
         </div>
-      </motion.div>
+
+        {runs.length > 0 && (() => {
+          const totalPages = Math.max(1, Math.ceil(runs.length / itemsPerPage));
+          const paginatedRuns = runs.slice(
+            (currentPage - 1) * itemsPerPage,
+            currentPage * itemsPerPage
+          );
+          return (
+            <div className="card-panel space-y-4">
+              <SectionHeader
+                title="Eval history"
+                caption="Click a row to view RAGAS scores and per-question breakdown"
+              />
+              <div className="space-y-2">
+                <div className="table-wrap">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Version</th>
+                        <th>When</th>
+                        <th>Questions</th>
+                        <th>Faithfulness</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedRuns.map((r) => {
+                        const key = getEvalRunKey(r);
+                        const active = key === getEvalRunKey(displayRun ?? r);
+                        return (
+                          <tr
+                            key={key}
+                            className={cn(
+                              "row-clickable",
+                              active && "row-active",
+                            )}
+                            onClick={() => setSelectedRunKey(key)}
+                          >
+                            <td className="font-mono text-xs">
+                              {formatEvalRunLabel(r)}
+                            </td>
+                            <td className="text-xs text-muted-foreground">
+                              {r.timestamp
+                                ? new Date(r.timestamp).toLocaleString()
+                                : "—"}
+                            </td>
+                            <td>{r.diagnostics?.question_count ?? "—"}</td>
+                            <td>
+                              {r.ragas_scores?.faithfulness?.toFixed(3) ?? "—"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border border-border bg-surface-raised px-4 py-2 rounded-lg">
+                    <p className="text-xs text-muted-foreground">
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, runs.length)} of {runs.length} runs
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
     </AppShell>
   );
 }
