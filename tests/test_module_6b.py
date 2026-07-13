@@ -10,11 +10,8 @@ Module 6b: Cross-Encoder Reranker + Query Expansion + Final search_code Assembly
 """
 import sys
 import ast
-import tempfile
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Any
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -78,7 +75,6 @@ def test_step1_deliverables():
 def test_ec1_and_ec2_reranker_bounds():
     print("\n--- EC1 & EC2: Reranker bounds and small list handling ---")
     from app.retrieval.hybrid_search import FusedCandidate
-    from app.retrieval.reranker import cross_encoder_rerank
     import app.retrieval.reranker as reranker_mod
 
     # We need to mock the CrossEncoder instance

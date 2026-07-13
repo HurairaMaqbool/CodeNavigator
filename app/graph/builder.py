@@ -30,7 +30,6 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Any
 
 import networkx as nx  # type: ignore[import]
 

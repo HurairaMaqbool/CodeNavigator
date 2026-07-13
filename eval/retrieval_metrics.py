@@ -37,7 +37,13 @@ def collect_cited_files(res: dict[str, Any], *, top_k: int = 5) -> list[str]:
         add(s.get("file_path", ""))
 
     for h in (res.get("retrieval_hits") or [])[:top_k]:
-        add(h.get("file_path") or "")
+        meta = h.get("chunk_metadata") or h.get("metadata") or {}
+        add(
+            h.get("file_path")
+            or meta.get("display_path")
+            or meta.get("file_path")
+            or ""
+        )
 
     try:
         from app.agent.confidence import extract_file_path_mentions

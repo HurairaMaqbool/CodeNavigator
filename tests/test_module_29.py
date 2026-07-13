@@ -4,8 +4,6 @@
 """Module #29 — eval/compare_runs.py tests."""
 from __future__ import annotations
 
-import json
-from pathlib import Path
 
 import pytest
 

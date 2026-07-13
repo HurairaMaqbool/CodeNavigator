@@ -1,13 +1,12 @@
 export const BRAND = {
   name: "CodeNavigator",
-  logo: "⚡",
   tagline: "Understand any codebase in minutes",
   version: "1.0.0",
 } as const;
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
-  "http://localhost:8000";
+  "http://127.0.0.1:8000";
 
 export const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
@@ -59,6 +58,11 @@ export const CHAT_STARTER_PROMPTS = [
   "Where is HTTPBasicAuth defined?",
   "The role of urllib3.PoolManager",
 ] as const;
+
+/** Reset when SSE activity arrives; only abort if the stream goes silent. */
+export const CHAT_IDLE_TIMEOUT_MS = 120_000;
+/** Hard ceiling for one chat POST — active-but-slow requests are not cut early. */
+export const CHAT_ABSOLUTE_MAX_MS = 300_000;
 
 export function repoIsReady(meta: {
   ready?: boolean;

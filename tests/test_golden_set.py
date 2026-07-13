@@ -4,7 +4,6 @@
 # or commercial use of this file is strictly prohibited.
 
 import json
-import os
 import pytest
 from datetime import datetime, timezone
 from pathlib import Path

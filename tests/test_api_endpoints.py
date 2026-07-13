@@ -13,7 +13,6 @@ Run with:
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import unittest
@@ -31,10 +30,8 @@ _chroma_mock = MagicMock()
 
 
 from app.main import app
-from app.ingestion.clone import CloneResult
 from app.ingestion.locking import LockResult
-from app.ingestion.metadata_store import metadata_store, RepoMetadata
-from app.api.router import IngestRequest
+from app.ingestion.metadata_store import RepoMetadata
 
 from app.api.auth import verify_api_key
 
@@ -198,8 +195,8 @@ class TestAPIEndpoints(unittest.TestCase):
     @patch("app.api.router.metadata_store.get")
     @patch("app.api.router.run")
     @patch("app.api.router.metadata_store.get_alias")
-    def test_chat_timed_out_returns_504(self, mock_alias, mock_answer, mock_meta_get):
-        """POST /chat returns 504 when the loop returns timed_out=True dict."""
+    def test_chat_timed_out_with_answer_returns_partial(self, mock_alias, mock_answer, mock_meta_get):
+        """POST /chat returns 200 with gated partial answer when timed_out but answer exists."""
         mock_alias.return_value = None
         mock_meta_get.return_value = RepoMetadata(
             repo_id="repo123",
@@ -208,9 +205,39 @@ class TestAPIEndpoints(unittest.TestCase):
             sync_status="synced",
             schema_version=1
         )
-        # Simulate the graceful timeout dict returned by loop.py
         mock_answer.return_value = {
-            "answer": "The request took too long to complete. Please try again in a moment.",
+            "answer": "Partial answer before server time limit.",
+            "sources": [],
+            "confidence": "low",
+            "confidence_score": 0.0,
+            "invalid_reference_ratio": None,
+            "gated": True,
+            "timed_out": True,
+            "trace": [],
+        }
+
+        resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
+
+        self.assertEqual(resp.status_code, 200)
+        body = resp.json()
+        self.assertTrue(body.get("timed_out"))
+        self.assertIn("Partial answer", body.get("answer", ""))
+
+    @patch("app.api.router.metadata_store.get")
+    @patch("app.api.router.run")
+    @patch("app.api.router.metadata_store.get_alias")
+    def test_chat_timed_out_without_answer_returns_504(self, mock_alias, mock_answer, mock_meta_get):
+        """POST /chat returns 504 only when timed_out and no answer was produced."""
+        mock_alias.return_value = None
+        mock_meta_get.return_value = RepoMetadata(
+            repo_id="repo123",
+            repo_url="x",
+            ref="main",
+            sync_status="synced",
+            schema_version=1
+        )
+        mock_answer.return_value = {
+            "answer": "",
             "sources": [],
             "confidence": "low",
             "confidence_score": 0.0,

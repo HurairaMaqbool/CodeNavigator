@@ -6,14 +6,12 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from app.agent.context_manager import (
     KEEP_RECENT_TOOL_RESULTS,
     OBSERVE_TOOL_RESULT_TOKEN_BUDGET,
     compress,
     compress_older_tool_results,
-    memory_token_count,
     should_compress,
 )
 from app.agent.llm_client import LLMResponse

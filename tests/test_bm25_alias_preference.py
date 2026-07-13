@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 from app.agent.confidence import (
     _load_repo_metadata,
-    _read_bm25_records,
     check_file_existence,
 )
 

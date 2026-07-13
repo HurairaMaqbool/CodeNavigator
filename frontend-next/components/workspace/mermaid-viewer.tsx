@@ -19,9 +19,12 @@ export function MermaidViewer({ markdown }: MermaidViewerProps) {
       if (!containerRef.current || !markdown.trim()) return;
       try {
         const mermaid = (await import("mermaid")).default;
+        const isDark =
+          document.documentElement.classList.contains("dark") ||
+          !document.documentElement.classList.contains("light");
         mermaid.initialize({
           startOnLoad: false,
-          theme: "neutral",
+          theme: isDark ? "dark" : "neutral",
           securityLevel: "loose",
         });
         const { svg } = await mermaid.render(`mmd-${id}`, markdown);
@@ -56,7 +59,7 @@ export function MermaidViewer({ markdown }: MermaidViewerProps) {
   return (
     <div
       ref={containerRef}
-      className="max-h-[480px] overflow-auto rounded-lg border border-border bg-white p-4 dark:bg-slate-900"
+      className="max-h-[480px] overflow-auto rounded-lg border border-border bg-surface-raised p-4"
       aria-label="Mermaid diagram"
     />
   );

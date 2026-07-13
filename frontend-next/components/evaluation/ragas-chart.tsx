@@ -32,8 +32,16 @@ export function RagasChart({ scores }: { scores: RagasScores }) {
             height={60}
           />
           <YAxis domain={[0, 1]} tick={{ fontSize: 11 }} />
-          <Tooltip />
-          <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+          <Tooltip
+            contentStyle={{
+              background: "var(--surface-raised)",
+              border: "1px solid var(--border)",
+              borderRadius: "8px",
+              fontSize: "12px",
+              color: "var(--foreground)",
+            }}
+          />
+          <Bar dataKey="value" fill="var(--primary)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

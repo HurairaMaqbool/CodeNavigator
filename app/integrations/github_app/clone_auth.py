@@ -13,7 +13,7 @@ from __future__ import annotations
 from urllib.parse import urlparse
 
 from app.config import settings
-from app.integrations.github_app.auth import app_configured, clone_auth_header, get_installation_token
+from app.integrations.github_app.auth import clone_auth_header
 from app.integrations.github_app.installations import get_installation_for_repo, list_installations
 
 

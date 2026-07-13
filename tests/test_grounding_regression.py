@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -173,8 +173,7 @@ def test_finalize_prompt_includes_few_shot_and_json():
 
     out = finalize_prompt({"question": "Q?", "assembled_context": "ctx"})
     assert "RESPOND WITH JSON ONLY" in out
-    assert "EXAMPLE — GOOD" in out
-    assert "EXAMPLE — GOOD ABSTENTION" in out
-    assert "EXAMPLE — BAD" in out
+    assert "FEW-SHOT GUIDANCE" in out or "EXAMPLE — GOOD" in out
+    assert "ANTI-PATTERNS" in out or "EXAMPLE — BAD" in out
     assert "Use ONLY the provided code context" in out
     assert "JSON" in finalize_system_prompt()

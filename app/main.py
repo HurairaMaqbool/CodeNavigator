@@ -79,38 +79,21 @@ def on_startup() -> None:
     Spec contract
     -------------
     * Runs exactly once at process start, inside the FastAPI lifespan event.
-    * Runs in a background daemon thread so it does not block request
-      acceptance while models download/load.
-    * Any individual warm-up failure is logged as a WARNING — the process
-      continues serving requests (degraded search quality is preferable to
-      refusing all traffic).
+    * Runs synchronously before the app accepts traffic.
+    * Any warm-up failure aborts startup (fail fast, fail closed).
     * COST NOTE: both models are local HuggingFace models — zero Groq calls,
       zero external API cost.
-
-    Forward-import note
-    -------------------
-    Modules #12 (embeddings.py) and #16 (reranker.py) are not yet built in
-    the current iteration of the build order. The private _get_model accessors
-    are the agreed public interface these modules will expose once built.
-    Until then the imports are wrapped in try/except so a missing module
-    never crashes startup.
     """
-    # Embedding model warm-up (Module #12: app/retrieval/embeddings.py)
-    try:
-        from app.retrieval.embeddings import get_model as _get_embedder  # type: ignore[import]
-        _get_embedder()
-        logger.info("embedding_model_warmed")
-    except Exception as exc:
-        logger.warning("embedding_warmup_failed", error=str(exc))
+    from app.retrieval.embeddings import get_model as _get_embedder
 
-    # Cross-Encoder reranker warm-up (Module #16: app/retrieval/reranker.py)
-    try:
-        from app.retrieval.reranker import get_model as _get_reranker  # type: ignore[import]
-        if settings.ENABLE_RERANKER:
-            _get_reranker()
-            logger.info("reranker_model_warmed")
-    except Exception as exc:
-        logger.warning("reranker_warmup_failed", error=str(exc))
+    _get_embedder()
+    logger.info("embedding_model_warmed")
+
+    if settings.ENABLE_RERANKER:
+        from app.retrieval.reranker import get_model as _get_reranker
+
+        _get_reranker()
+        logger.info("reranker_model_warmed")
 
     logger.info("model_warmup_complete")
 
@@ -126,14 +109,14 @@ async def _lifespan(_app: FastAPI):
 
     Startup sequence:
     1. Optional: initialise PostgreSQL schema if DATABASE_URL is configured.
-    2. Kick off model warm-up in a daemon thread (non-blocking).
+    2. Synchronously warm embedding + reranker models (abort startup on failure).
 
     Shutdown: no explicit teardown needed for stateless in-process state.
 
-    Error handling: any startup step failure is caught individually and logged;
-    the process never enters a silently half-broken state where some resources
-    are ready and others are not without a trace in the logs.
+    Error handling: model warm-up failures abort startup. PostgreSQL bootstrap
+    failures are logged but non-fatal (platform tier is optional).
     """
+    import os
     import threading
 
     # Optional PostgreSQL schema bootstrap (platform tier only)
@@ -148,9 +131,12 @@ async def _lifespan(_app: FastAPI):
         except Exception as exc:
             logger.warning("postgres_init_failed", error=str(exc))
 
-    # Model warm-up — daemon thread so startup doesn't block request acceptance
+    # Model warm-up — synchronous in production; skipped under pytest (lazy load in tests).
     logger.info("model_warmup_started")
-    threading.Thread(target=on_startup, daemon=True, name="model-warmup").start()
+    if os.environ.get("PYTEST_RUNNING"):
+        logger.info("model_warmup_skipped", reason="pytest")
+    else:
+        on_startup()
 
     def _consistency_loop() -> None:
         import time
@@ -254,8 +240,8 @@ def create_app(override_settings=None) -> FastAPI:
     _app.add_middleware(
         CORSMiddleware,
         allow_origins=_cfg.ALLOWED_ORIGINS,
-        allow_methods=["GET", "POST"],
-        allow_headers=["X-API-Key", "Content-Type", "X-Hub-Signature-256"],
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=["X-API-Key", "Content-Type", "Authorization", "X-Hub-Signature-256"],
     )
 
     # ── Request-ID middleware (added after CORS, applied inner-first) ─────────

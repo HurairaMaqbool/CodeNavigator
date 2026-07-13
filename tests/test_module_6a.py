@@ -13,12 +13,8 @@ Tests are split into:
   - Integration tests (require chromadb + sentence-transformers) — skipped if unavailable
 """
 import sys
-import shutil
 import tempfile
-import pickle
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Any
 from unittest.mock import patch, MagicMock
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -77,9 +73,9 @@ def assert_ok(cond: bool, msg: str) -> None:
 def test_step1_deliverables():
     print("\n--- STEP 1: Confirm Deliverables ---")
     from app.retrieval.embeddings import embed, embed_batch
-    from app.retrieval.vector_store import store_chunks, search_vectors, ModelMismatchError
+    from app.retrieval.vector_store import store_chunks, search_vectors
     from app.retrieval.bm25_store import store_bm25, search_bm25
-    from app.retrieval.hybrid_search import search_hybrid, FusedCandidate
+    from app.retrieval.hybrid_search import search_hybrid
 
     assert_ok(callable(embed), "embed() not callable")
     assert_ok(callable(embed_batch), "embed_batch() not callable")
@@ -347,7 +343,7 @@ def test_ec1_metadata_schema_and_ec8_model_lock():
     if not CHROMA_AVAILABLE or not ST_AVAILABLE:
         pass
         print(f"\n--- EC1 + EC8: SKIPPED (chromadb={CHROMA_AVAILABLE}, sentence-transformers={ST_AVAILABLE}) ---")
-        print(f"  (Install with: pip install chromadb sentence-transformers)")
+        print("  (Install with: pip install chromadb sentence-transformers)")
         return
 
     print("\n--- EC1 + EC8: ChromaDB metadata schema + model lock (integration) ---")
@@ -446,7 +442,7 @@ def test_ec1_metadata_schema_and_ec8_model_lock():
 def test_embed_standalone():
     print("\n--- embed() standalone test ---")
     if not ST_AVAILABLE:
-        print(f"  SKIPPED (sentence-transformers not available)")
+        print("  SKIPPED (sentence-transformers not available)")
         return
 
     from app.retrieval.embeddings import embed
@@ -516,9 +512,9 @@ def test_step4_handoff_contract_and_boundary():
     assert_ok("dedup_by_file" in hybrid_search_code, "dedup_by_file not found")
     assert_ok("search_code" in hybrid_search_code, "search_code not found")
     # Flag as boundary violation
-    print(f"  [BOUNDARY NOTE] dedup_by_file() and search_code() live in hybrid_search.py")
-    print(f"  [BOUNDARY NOTE] Per spec, diversity capping and final assembly belong to Module 6b.")
-    print(f"  [BOUNDARY NOTE] The RRF-only search_hybrid() respects the boundary; search_code() does not.")
+    print("  [BOUNDARY NOTE] dedup_by_file() and search_code() live in hybrid_search.py")
+    print("  [BOUNDARY NOTE] Per spec, diversity capping and final assembly belong to Module 6b.")
+    print("  [BOUNDARY NOTE] The RRF-only search_hybrid() respects the boundary; search_code() does not.")
 
 
 # ---------------------------------------------------------------------------

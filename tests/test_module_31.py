@@ -4,11 +4,9 @@
 """Module #31 — loading_experience state-aware progress UI tests."""
 from __future__ import annotations
 
-import json
 import time
 from unittest.mock import patch
 
-import pytest
 
 from frontend.loading_experience import (
     MICRO_COPY_ROTATE_S,

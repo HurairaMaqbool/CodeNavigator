@@ -4,14 +4,13 @@
 """Regression tests — /status must reflect pipeline progress and never stall polling."""
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
-from app.ingestion.metadata_store import MetadataStore, Stage, metadata_store
+from app.ingestion.metadata_store import MetadataStore, Stage
 from app.main import app
 
 JOB_ID = "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d"

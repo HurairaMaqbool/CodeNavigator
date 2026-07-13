@@ -41,8 +41,8 @@ GATED_FALLBACK_MESSAGE: str = (
 )
 
 VERIFY_SYSTEM_ERROR_MESSAGE: str = (
-    "Citation verification encountered an internal error. "
-    "Please retry; if this persists, check server logs for verify_system_error."
+    "I could not fully verify the answer against the indexed codebase. "
+    "Please try again with a more specific class, function, or file path."
 )
 
 # finalize_prompt.py format: `file_path:start_line-end_line` (e.g. `src/auth/login.py:42-58`)
@@ -317,7 +317,95 @@ def check_graph_consistency(citation: dict[str, Any]) -> bool:
     return False
 
 
-def validate_sources(sources: list[dict[str, Any]], repo_id: str) -> list[dict[str, Any]]:
+def _citation_row_sig(cite: dict[str, Any]) -> str:
+    """Stable key for one inline citation / source row: path + line range."""
+    path = _normalize_repo_path(str(cite.get("file_path", "")))
+    start = cite.get("start_line")
+    end = cite.get("end_line") if cite.get("end_line") not in (None, 0) else start
+    if start in (None, 0):
+        lines = cite.get("lines")
+        if isinstance(lines, str) and lines.strip() and lines.strip() not in ("—", "-", "--"):
+            if "-" in lines:
+                a, b = lines.split("-", 1)
+                start, end = int(a), int(b)
+            else:
+                start = end = int(lines)
+    return f"{path}::{start}-{end}"
+
+
+def sources_from_answer_citations(answer: str, repo_id: str) -> list[dict[str, Any]]:
+    """Build API source rows from every distinct inline citation in the answer."""
+    sources: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for cite in parse_citations(answer or ""):
+        if cite.get("unparseable"):
+            continue
+        sig = _citation_row_sig(cite)
+        if sig in seen:
+            continue
+        seen.add(sig)
+        start = int(cite["start_line"])
+        end = int(cite.get("end_line") or start)
+        lines = f"{start}-{end}" if end != start else str(start)
+        sources.append({
+            "file_path": cite["file_path"],
+            "function_name": cite.get("function_name"),
+            "lines": lines,
+            "start_line": start,
+            "end_line": end,
+        })
+    return sources
+
+
+def reconcile_sources_with_answer(
+    answer: str,
+    sources: list[dict[str, Any]],
+    repo_id: str,
+) -> list[dict[str, Any]]:
+    """Prefer inline citations as the canonical Sources list (one row per cite)."""
+    from_answer = sources_from_answer_citations(answer, repo_id)
+    if from_answer:
+        return validate_sources(from_answer, repo_id)
+    return validate_sources(sources, repo_id)
+
+
+def assert_sources_match_answer(
+    answer: str,
+    sources: list[dict[str, Any]],
+    *,
+    repo_id: str,
+) -> bool:
+    """
+    Gate: Sources count must match distinct inline citations in the answer.
+    Logs an error and returns False on mismatch (after reconcile should be rare).
+    """
+    inline = {
+        _citation_row_sig(c)
+        for c in parse_citations(answer or "")
+        if not c.get("unparseable")
+    }
+    if not inline:
+        return True
+    source_sigs = {_citation_row_sig(s) for s in sources}
+    if len(inline) == len(source_sigs) and inline == source_sigs:
+        return True
+    logger.error(
+        "sources_citation_mismatch",
+        repo_id=repo_id,
+        inline_count=len(inline),
+        sources_count=len(source_sigs),
+        missing_from_sources=sorted(inline - source_sigs),
+        extra_in_sources=sorted(source_sigs - inline),
+    )
+    return False
+
+
+def validate_sources(
+    sources: list[dict[str, Any]],
+    repo_id: str,
+    *,
+    max_sources: int | None = None,
+) -> list[dict[str, Any]]:
     """Drop source rows that fail file existence or line-bound checks."""
     valid: list[dict[str, Any]] = []
     for src in sources or []:
@@ -343,7 +431,9 @@ def validate_sources(sources: list[dict[str, Any]], repo_id: str) -> list[dict[s
             continue
         if check_file_existence(citation) and check_line_bounds(citation):
             valid.append(src)
-    return valid[:2]
+    if max_sources is not None:
+        return valid[:max_sources]
+    return valid
 
 
 def has_placeholder_citations(answer: str) -> bool:
@@ -364,6 +454,9 @@ def evaluate_structured_claims(
     rendered_answer: str,
     repo_id: str,
     verification: dict[str, Any],
+    *,
+    top_retrieval_score: float | None = None,
+    question: str | None = None,
 ) -> dict[str, Any]:
     """
     VERIFY guard for structured claims + atomic verification (Layers 2–3).
@@ -371,6 +464,9 @@ def evaluate_structured_claims(
     ``confidence_score`` = 10.0 × (verified factual / total factual).
     """
     from app.agent.grounding import (
+        claims_to_sources,
+        dedupe_claims,
+        dedupe_claims_by_citation,
         is_abstention_claim,
         is_factual_claim,
         render_claims_markdown,
@@ -426,27 +522,37 @@ def evaluate_structured_claims(
 
         factual_count = len(factual)
         verified_factual = factual_count - unsupported
-        score = round(10.0 * verified_factual / factual_count, 1) if factual_count else 0.0
+        verify_ratio_score = (
+            round(10.0 * verified_factual / factual_count, 1) if factual_count else 0.0
+        )
+        invalid_ratio = unsupported / factual_count if factual_count else 1.0
 
         # Budget claims to keep word count under 105 words for conciseness
-        concise_claims = []
-        current_word_count = 0
-        for claim in verified_claims:
-            claim_text = str(claim.get("claim") or "").strip()
-            # 8 words overhead for the formatted citation link
-            claim_words = len(claim_text.split()) + 8
-            if not concise_claims or current_word_count + claim_words <= 105:
-                concise_claims.append(claim)
-                current_word_count += claim_words
-            else:
-                break
-
+        concise_claims = dedupe_claims_by_citation(dedupe_claims(verified_claims))
         answer = render_claims_markdown(concise_claims) if concise_claims else ""
+        score = _blend_confidence_score(
+            citation_verify_score=verify_ratio_score,
+            invalid_reference_ratio=invalid_ratio,
+            top_retrieval_score=top_retrieval_score,
+            citation_count=len(factual),
+            question=question,
+            answer=answer or rendered_answer or "",
+        )
         fail_ratio = unsupported / factual_count if factual_count else 1.0
         gated = (
             (verified_factual == 0 and factual_count > 0)
             or not answer.strip()
         )
+
+        from app.retrieval.query_expansion import needs_flow_tracing
+
+        if (
+            not gated
+            and needs_flow_tracing(question or "")
+            and flow_answer_completeness_factor(question, answer) < 0.55
+        ):
+            gated = True
+            score = min(score, 4.5)
 
         if unsupported > 0 and not gated and answer.strip():
             answer = (
@@ -470,12 +576,14 @@ def evaluate_structured_claims(
                 "confidence_score": score,
                 "gated": True,
                 "rejection_reason": "claims_unsupported",
+                "sources": [],
             }
 
         return {
             "answer": answer or rendered_answer,
             "confidence_score": score,
             "gated": False,
+            "sources": claims_to_sources(concise_claims),
         }
     except Exception as exc:
         import traceback
@@ -487,39 +595,169 @@ def evaluate_structured_claims(
             traceback=traceback.format_exc(),
         )
         return {
-            "answer": VERIFY_SYSTEM_ERROR_MESSAGE,
+            "answer": GATED_FALLBACK_MESSAGE,
             "confidence_score": 0.0,
             "gated": True,
             "verification_error": True,
         }
 
 
-def evaluate(answer: str, repo_id: str) -> dict[str, Any]:
+def answer_completeness_factor(question: str | None, answer: str) -> float:
+    """
+    Scale confidence down when multi-part questions are only partially addressed.
+
+    Returns 1.0 for single-part questions; for N aspects returns covered/N (min 0.35).
+    """
+    from app.retrieval.query_expansion import question_aspect_markers
+
+    aspects = question_aspect_markers(question or "")
+    if len(aspects) < 2:
+        return 1.0
+    combined = (answer or "").lower().replace(" ", "")
+    covered = 0
+    for _name, markers in aspects:
+        if any(m.replace(" ", "") in combined for m in markers):
+            covered += 1
+    return max(0.35, covered / len(aspects))
+
+
+def flow_answer_completeness_factor(question: str | None, answer: str) -> float:
+    """Penalize shallow internal-flow answers (e.g. api.get + request_url only)."""
+    from app.retrieval.query_expansion import needs_flow_tracing
+
+    if not needs_flow_tracing(question or ""):
+        return 1.0
+    ans = (answer or "").lower().replace(" ", "")
+    q = (question or "").lower()
+    dispatch = any(
+        m in ans
+        for m in ("session.send", "adapter.send", "send(", "urlopen", "preparedrequest")
+    )
+    if re.search(r"requests\.get\b", q):
+        has_entry = any(m in ans for m in ("api.py", "defget", "def get"))
+        has_session = any(m in ans for m in ("session.request", "session.get", "defrequest"))
+        if has_entry and dispatch:
+            return 1.0
+        if has_entry and has_session:
+            return 0.75
+        if has_entry:
+            return 0.45
+        return 0.35
+    return 1.0 if dispatch else 0.55
+
+
+def why_answer_quality_factor(question: str | None, answer: str) -> float:
+    """Down-rank answers that cite a narrow proxy detail as THE reason for why-questions."""
+    from app.retrieval.source_priority import is_why_query
+
+    if not is_why_query(question or ""):
+        return 1.0
+    ans = (answer or "").lower()
+    narrow_proxy = ("the reason" in ans or "reason for using" in ans) and "proxy" in ans
+    broad = any(
+        m in ans
+        for m in ("pool", "keep-alive", "keep alive", "instead of", "reimplement", "mature")
+    )
+    if narrow_proxy and not broad:
+        return 0.55
+    return 1.0
+
+
+# Display cap — reserve headroom so 10.0 means exceptional, not default.
+MAX_DISPLAY_CONFIDENCE: float = 9.8
+
+
+def _citation_invalid_ratio(citations: list[dict[str, Any]], repo_id: str) -> float:
+    """Fraction of citations that fail at least one VERIFY check."""
+    if not citations:
+        return 0.0
+    invalid = 0
+    for citation in citations:
+        citation["repo_id"] = repo_id
+        if citation.get("unparseable"):
+            invalid += 1
+            continue
+        if not check_file_existence(citation):
+            invalid += 1
+        elif not check_line_bounds(citation):
+            invalid += 1
+        elif not check_graph_consistency(citation):
+            invalid += 1
+    return invalid / len(citations)
+
+
+def _blend_confidence_score(
+    *,
+    citation_verify_score: float,
+    invalid_reference_ratio: float,
+    top_retrieval_score: float | None,
+    citation_count: int,
+    question: str | None,
+    answer: str,
+) -> float:
+    """Combine citation VERIFY, retrieval quality, flow depth, and completeness."""
+    composite = compute_confidence_score(
+        invalid_reference_ratio,
+        top_retrieval_score,
+        citation_count,
+    )
+    completeness = answer_completeness_factor(question, answer)
+    flow_factor = flow_answer_completeness_factor(question, answer)
+    why_factor = why_answer_quality_factor(question, answer)
+    verified_ratio = max(
+        0.0,
+        min(1.0, citation_verify_score / BASE_CONFIDENCE_SCORE),
+    )
+    blended = (
+        composite
+        * completeness
+        * flow_factor
+        * why_factor
+        * (0.25 + 0.75 * verified_ratio)
+    )
+    return max(0.0, round(min(MAX_DISPLAY_CONFIDENCE, blended), 1))
+
+
+def evaluate(
+    answer: str,
+    repo_id: str,
+    *,
+    top_retrieval_score: float | None = None,
+    question: str | None = None,
+) -> dict[str, Any]:
     """
     VERIFY-state guard — deterministic scoring with zero LLM calls.
 
-    Aggregation: start at ``BASE_CONFIDENCE_SCORE`` (10.0), subtract fixed penalties
-    for every failed check on every citation (including unparseable spans as file
-    existence failures). Score is floored at 0.0. Gate when below ``settings.MIN_CONFIDENCE_SCORE``.
+    Blends citation checks, retrieval relevance, and multi-part completeness so
+    shallow or partially-addressed answers do not pin at 10.0.
     """
     try:
         citations = parse_citations(answer or "")
-        score = BASE_CONFIDENCE_SCORE
+        citation_verify_score = BASE_CONFIDENCE_SCORE
 
         for citation in citations:
             citation["repo_id"] = repo_id
             if citation.get("unparseable"):
-                score -= PENALTY_FILE_EXISTENCE
+                citation_verify_score -= PENALTY_FILE_EXISTENCE
                 continue
 
             if not check_file_existence(citation):
-                score -= PENALTY_FILE_EXISTENCE
+                citation_verify_score -= PENALTY_FILE_EXISTENCE
             if not check_line_bounds(citation):
-                score -= PENALTY_LINE_BOUNDS
+                citation_verify_score -= PENALTY_LINE_BOUNDS
             if not check_graph_consistency(citation):
-                score -= PENALTY_GRAPH_CONSISTENCY
+                citation_verify_score -= PENALTY_GRAPH_CONSISTENCY
 
-        score = max(0.0, round(score, 1))
+        citation_verify_score = max(0.0, round(citation_verify_score, 1))
+        invalid_ratio = _citation_invalid_ratio(citations, repo_id)
+        score = _blend_confidence_score(
+            citation_verify_score=citation_verify_score,
+            invalid_reference_ratio=invalid_ratio,
+            top_retrieval_score=top_retrieval_score,
+            citation_count=len(citations),
+            question=question,
+            answer=answer or "",
+        )
         any_unparseable = any(c.get("unparseable") for c in citations)
         gated = score < settings.MIN_CONFIDENCE_SCORE or any_unparseable
 

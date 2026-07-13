@@ -9,8 +9,6 @@ tests/test_module_8.py
 Module 8: LLM Provider Abstraction Tests
 """
 import sys
-import json
-from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -75,7 +73,7 @@ def assert_ok(cond: bool, msg: str) -> None:
 # ---------------------------------------------------------------------------
 def test_step1_deliverables():
     print("\n--- STEP 1: Confirm Deliverables ---")
-    from app.agent.llm_client import LLMResponse, get_llm_client, GroqAdapter, OllamaAdapter
+    from app.agent.llm_client import get_llm_client, GroqAdapter, OllamaAdapter
     
     assert_ok(callable(get_llm_client), "get_llm_client missing")
     assert_ok(hasattr(GroqAdapter, "create") and callable(GroqAdapter.create), "GroqAdapter.create missing")
@@ -168,7 +166,7 @@ def test_ec4_and_ec5_multi_property_schema():
 
 def test_ec6_to_ec8_stop_reasons_and_multi_tool():
     print("\n--- EC6, EC7 & EC8: Stop reasons and Multi-tool block parsing ---")
-    from app.agent.llm_client import GroqAdapter, OllamaAdapter
+    from app.agent.llm_client import GroqAdapter
     
     # We will test Groq's parser
     groq_adapter = GroqAdapter("key", "model")

@@ -9,12 +9,9 @@ tests/test_module_9a.py
 Module 9a Tests: Agentic RAG Loop
 """
 import sys
-import json
-import ast
-import time
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -79,7 +76,7 @@ MOCK_SEARCH_HITS = {
 def assert_ok(cond: bool, msg: str) -> None:
     if not cond:
         print(f"{FAIL} {msg}")
-        sys.exit(1)
+        raise AssertionError(msg)
 
 
 # -----------------------------------------------------------------------
@@ -184,7 +181,7 @@ def test_ec3_cache_key_order_invariance():
 # EC4: Schema-default equivalence
 def test_ec4_schema_default_equivalence():
     print("\n--- EC4: Schema-default equivalence ---")
-    from app.agent.cache_keys import normalize_cache_key, TOOL_DEFINITIONS
+    from app.agent.cache_keys import normalize_cache_key
 
     # Find a tool with a default (search_code has top_k default=5)
     # Confirm explicit `top_k=5` and omitted `top_k` produce the same key
@@ -483,12 +480,15 @@ def test_step4_best_retrieval_score_tracking():
 # EC13: Wall-clock timeout (Module #21 surfaces timed_out when set on context)
 def test_ec13_wall_clock_timeout():
     print("\n--- EC13: Wall-clock timeout ---")
-    from app.agent.loop import answer_question, AgentContext, AgentState, _handle_respond, run
+    from app.agent.loop import answer_question, AgentState
 
     # Production path: when ctx.timed_out is set, run() must surface it.
     with patch("app.agent.loop.semantic_cache_lookup", return_value=None), patch(
         "app.agent.loop.metadata_store.get",
         return_value=MagicMock(sync_status="synced"),
+    ), patch(
+        "app.ingestion.repo_readiness.evaluate_chat_readiness",
+        return_value=MagicMock(ready=True, block_message=""),
     ), patch(
         "app.retrieval.query_expansion.expand_query", return_value=["x"]
     ), patch("app.retrieval.hybrid_search.search", return_value=[]), patch(

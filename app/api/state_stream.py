@@ -204,6 +204,7 @@ def _iter_events(session_id: str, *, max_idle_s: float = _STREAM_IDLE_TIMEOUT_S)
             item = q.get(timeout=_QUEUE_GET_TIMEOUT_S)
         except queue.Empty:
             idle += _QUEUE_GET_TIMEOUT_S
+            yield ": keepalive\n\n"
             continue
 
         idle = 0.0
@@ -248,6 +249,7 @@ async def async_stream(session_id: str, request: Any) -> AsyncIterator[str]:
             )
         except queue.Empty:
             idle += _QUEUE_GET_TIMEOUT_S
+            yield ": keepalive\n\n"
             continue
 
         idle = 0.0

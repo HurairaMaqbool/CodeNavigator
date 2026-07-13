@@ -37,8 +37,27 @@ from typing import Any
 
 from app.config import settings
 from app.observability.logging_config import logger
-from app.retrieval.bm25_store import BM25SearchResult, search_bm25
-from app.retrieval.vector_store import VectorSearchResult, search_vectors
+from app.retrieval.bm25_store import search_bm25
+from app.retrieval.vector_store import search_vectors
+
+
+def _deterministic_hit_key(hit: dict[str, Any]) -> tuple[str, int, int]:
+    """Stable tie-breaker for equal RRF scores — prevents non-deterministic retrieval."""
+    meta = hit.get("chunk_metadata") or {}
+    return (
+        str(meta.get("file_path") or meta.get("display_path") or ""),
+        int(meta.get("start_line") or 0),
+        int(meta.get("end_line") or 0),
+    )
+
+
+def _deterministic_candidate_key(candidate: "FusedCandidate") -> tuple[str, int, int]:
+    meta = candidate.metadata or {}
+    return (
+        str(meta.get("file_path") or meta.get("display_path") or candidate.id or ""),
+        int(meta.get("start_line") or 0),
+        int(meta.get("end_line") or 0),
+    )
 
 # ---------------------------------------------------------------------------
 # Output dataclass
@@ -151,8 +170,7 @@ def search_hybrid(
     # 3. Sort by combined RRF score descending
     sorted_candidates = sorted(
         candidates.values(),
-        key=lambda c: c.rrf_score,
-        reverse=True,
+        key=lambda c: (-c.rrf_score, _deterministic_candidate_key(c)),
     )
 
     # Trim to final top K
@@ -254,15 +272,18 @@ def search_code(
     # Sort merged RRF pool
     merged_list = sorted(
         all_fused_candidates.values(),
-        key=lambda c: c.rrf_score,
-        reverse=True
+        key=lambda c: (-c.rrf_score, _deterministic_candidate_key(c)),
     )
     
     # 5. Cross-Encoder Reranking
     # We MUST ONLY run the cross-encoder on the top 20, regardless of how many
     # candidates bubbled up from the sub-queries. This is a strict performance bound.
     top_20 = merged_list[:20]
-    reranked = cross_encoder_rerank(query, top_20)
+    try:
+        reranked = cross_encoder_rerank(query, top_20)
+    except (ImportError, ModuleNotFoundError, RuntimeError) as exc:
+        logger.warning("reranker_unavailable_using_rrf_order", error=str(exc))
+        reranked = top_20
 
     # 6. Diversity Capping
     capped = dedup_by_file(reranked, max_per_file=max_per_file)
@@ -394,8 +415,19 @@ def search(
     # 4. Sort and return top_k
     sorted_fused = sorted(
         fused.values(),
-        key=lambda x: x["score"],
-        reverse=True
+        key=lambda x: (-x["score"], *_deterministic_hit_key(x)),
     )
 
-    return sorted_fused[:top_k]
+    from app.retrieval.source_priority import prefer_implementation_hits, source_path_penalty
+
+    for item in sorted_fused:
+        meta = item.get("chunk_metadata") or {}
+        path = meta.get("file_path") or meta.get("display_path") or ""
+        item["score"] = float(item.get("score", 0.0)) + source_path_penalty(path, query_text)
+
+    sorted_fused = sorted(
+        sorted_fused,
+        key=lambda x: (-x["score"], *_deterministic_hit_key(x)),
+    )
+
+    return prefer_implementation_hits(sorted_fused[:top_k], query_text)

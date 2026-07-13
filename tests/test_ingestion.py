@@ -25,9 +25,8 @@ import time
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 # ---------------------------------------------------------------------------
 # Bootstrap: set LLM_PROVIDER=ollama before any app import so the config
@@ -355,7 +354,7 @@ class TestCloneRepoSuccess(unittest.TestCase):
         """
         import tempfile
         from app.ingestion import clone as clone_mod
-        from app.ingestion.clone import clone_repo, repo_id_for
+        from app.ingestion.clone import clone_repo
 
         def make_clone_fn(branch: str):
             fake_repo = _make_fake_repo(branch_name=branch)
@@ -671,7 +670,6 @@ class TestRepoLockManager(unittest.TestCase):
         manager grants the new acquire.
         """
         import tempfile
-        from app.ingestion import locking as lock_mod
 
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
             mgr, store = self._make_manager_and_store(Path(td))

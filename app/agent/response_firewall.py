@@ -102,4 +102,8 @@ def has_forbidden_leak(text: str) -> bool:
         return True
     if _TOOL_NAME_LEAK.search(text):
         return True
+    from app.agent.grounding import looks_like_leaked_finalize_json
+
+    if looks_like_leaked_finalize_json(text):
+        return True
     return False

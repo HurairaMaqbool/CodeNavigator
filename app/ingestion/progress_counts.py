@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.ingestion.index_integrity import chroma_counts
 from app.observability.logging_config import logger
 
 
@@ -19,40 +20,33 @@ def ingest_progress_counts(
     *,
     job_id: str | None = None,
 ) -> tuple[int, int]:
-    """Resolve files/chunks from metadata with vector-store fallback on asset or job id."""
-    files = _safe_int(getattr(meta, "files_parsed", None)) or _safe_int(
+    """
+    Resolve files/chunks for readiness.
+
+    When Chroma has live data, it is the source of truth — metadata ``chunks_created``
+    can remain stale after a partial wipe or wrong collection id.
+    """
+    meta_files = _safe_int(getattr(meta, "files_parsed", None)) or _safe_int(
         getattr(meta, "file_count", None)
     )
-    chunks = _safe_int(getattr(meta, "chunks_created", None))
+    meta_chunks = _safe_int(getattr(meta, "chunks_created", None))
 
-    try:
-        from app.retrieval.vector_store import get_collection
+    chroma_files, chroma_chunks = chroma_counts(asset_repo_id, job_id)
 
-        for rid in (asset_repo_id, job_id):
-            if not rid:
-                continue
-            col = get_collection(rid)
-            if col is None or col.count() <= 0:
-                continue
-            if not chunks:
-                chunks = col.count()
-            if not files:
-                payload = col.get(include=["metadatas"])
-                raw_metas = payload.get("metadatas") or []
-                if raw_metas and isinstance(raw_metas[0], list):
-                    metas = raw_metas[0]
-                else:
-                    metas = raw_metas
-                paths = {
-                    m.get("file_path") or m.get("display_path")
-                    for m in metas
-                    if isinstance(m, dict)
-                    and (m.get("file_path") or m.get("display_path"))
-                }
-                files = len(paths)
-            if files and chunks:
-                break
-    except Exception as exc:
-        logger.debug("progress_count_fallback_failed", error=str(exc))
+    if chroma_chunks > 0:
+        if meta_chunks is not None and meta_chunks != chroma_chunks:
+            logger.warning(
+                "metadata_chroma_chunk_mismatch",
+                metadata_chunks=meta_chunks,
+                chroma_chunks=chroma_chunks,
+                asset_repo_id=asset_repo_id,
+                job_id=job_id,
+            )
+        files = chroma_files or int(meta_files or 0)
+        chunks = chroma_chunks
+        # Partial Chroma file scan (isolated tests / wrong collection) — keep metadata file count.
+        if meta_files and meta_files > max(files, 1) * 3:
+            files = meta_files
+        return files, chunks
 
-    return int(files or 0), int(chunks or 0)
+    return int(meta_files or 0), int(meta_chunks or 0)

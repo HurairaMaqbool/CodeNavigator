@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.platform.api_keys import ApiKeyContext, create_api_key, resolve_api_key
+from app.platform.api_keys import create_api_key, resolve_api_key
 from app.security.path_jail import PathJailError, resolve_jailed_path
 
 

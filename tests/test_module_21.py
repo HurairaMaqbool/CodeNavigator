@@ -1,10 +1,8 @@
 """Module #21 — agent loop state machine verification."""
 from __future__ import annotations
 
-from enum import Enum
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from app.agent.loop import (
     AgentContext,
@@ -15,7 +13,6 @@ from app.agent.loop import (
     run,
     semantic_cache_lookup,
 )
-from app.config import settings
 
 
 def test_state_handlers_registered():
@@ -83,6 +80,9 @@ def test_max_iterations_forces_finalize_gated():
     with patch("app.agent.loop.semantic_cache_lookup", return_value=None), patch(
         "app.agent.loop.metadata_store.get"
     ) as mock_meta, patch(
+        "app.ingestion.repo_readiness.evaluate_chat_readiness",
+        return_value=MagicMock(ready=True, block_message=""),
+    ), patch(
         "app.retrieval.query_expansion.expand_query", return_value=["q"]
     ), patch("app.retrieval.hybrid_search.search", return_value=[]), patch(
         "app.retrieval.reranker.rerank", return_value=[]

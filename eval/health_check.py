@@ -9,7 +9,6 @@ from typing import Any
 
 from app.ingestion.repo_readiness import is_repo_ready, readiness_snapshot
 from app.retrieval.bm25_store import _index_path_for
-from app.retrieval.vector_store import get_collection
 
 
 @dataclass
@@ -54,18 +53,27 @@ def check_index_health(
     *,
     min_chunks: int = 50,
     probe_query: str = "PreparedRequest class requests",
+    metadata_chunks: int | None = None,
+    job_id: str | None = None,
 ) -> HealthCheckResult:
     errors: list[str] = []
     details: dict[str, Any] = {"asset_repo_id": asset_repo_id}
+    if metadata_chunks is not None:
+        details["metadata_chunks_created"] = metadata_chunks
+    if job_id:
+        details["job_id"] = job_id
 
-    collection = get_collection(asset_repo_id)
-    chunk_count = collection.count() if collection else 0
-    details["chroma_chunk_count"] = chunk_count
-    if chunk_count < min_chunks:
-        errors.append(
-            f"Chroma collection for {asset_repo_id[:12]}... has {chunk_count} chunks "
-            f"(minimum {min_chunks}). Re-ingest may be incomplete or querying wrong repo_id."
-        )
+    from app.ingestion.index_integrity import chroma_counts, check_index_integrity
+
+    integrity = check_index_integrity(
+        asset_repo_id,
+        job_id=job_id,
+        metadata_chunks=metadata_chunks,
+        min_chunks=min_chunks,
+    )
+    chunk_count = integrity.chroma_chunks
+    details.update(integrity.to_dict())
+    errors.extend(integrity.errors)
 
     bm25_path = _index_path_for(asset_repo_id)
     details["bm25_index_path"] = str(bm25_path)
@@ -74,16 +82,23 @@ def check_index_health(
 
     if not errors:
         try:
-            from app.agent.llm_client import get_llm_client
-            from app.retrieval.hybrid_search import search_code
+            from app.config import settings
+            from app.retrieval.hybrid_search import search_hybrid
 
-            llm = get_llm_client()
-            hits = search_code(probe_query, asset_repo_id, llm, top_k=3)
-            details["probe_hit_count"] = len(hits)
-            if not hits:
-                errors.append(
-                    f"Hybrid search returned 0 hits for probe query on {asset_repo_id[:12]}..."
-                )
+            candidates = search_hybrid(asset_repo_id, probe_query, n_results=3)
+            details["probe_hit_count"] = len(candidates)
+            if not candidates:
+                from app.retrieval.bm25_store import search_bm25
+
+                bm25_hits = search_bm25(asset_repo_id, probe_query, top_k=3)
+                details["probe_hit_count"] = len(bm25_hits)
+                details["probe_mode"] = "bm25_fallback"
+                if not bm25_hits:
+                    errors.append(
+                        f"Hybrid search returned 0 hits for probe query on {asset_repo_id[:12]}..."
+                    )
+            else:
+                details["probe_mode"] = "hybrid"
         except Exception as exc:
             errors.append(f"Hybrid search probe failed: {exc}")
 
@@ -160,7 +175,11 @@ def run_full_eval_precheck(
         )
 
     asset_repo_id = snap["asset_repo_id"]
-    index_health = check_index_health(asset_repo_id)
+    index_health = check_index_health(
+        asset_repo_id,
+        metadata_chunks=snap.get("chunks_created"),
+        job_id=job_id,
+    )
     if not index_health.ok:
         return index_health
 

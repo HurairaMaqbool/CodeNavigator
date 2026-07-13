@@ -40,10 +40,10 @@ def run_tests():
         # Need to reload config
         importlib.reload(config_module)
         if not isinstance(config_module.settings.MAX_REPO_SIZE_MB, int):
-            print(f"[FAIL] MAX_REPO_SIZE_MB is not int")
+            print("[FAIL] MAX_REPO_SIZE_MB is not int")
             sys.exit(1)
         if not isinstance(config_module.settings.QUERY_EXPANSION_ENABLED, bool):
-            print(f"[FAIL] QUERY_EXPANSION_ENABLED is not bool")
+            print("[FAIL] QUERY_EXPANSION_ENABLED is not bool")
             sys.exit(1)
         print("[PASS] 1. Clean load with Ollama")
 

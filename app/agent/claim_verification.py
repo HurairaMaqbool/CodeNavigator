@@ -22,7 +22,14 @@ from app.agent.confidence import (
     check_line_bounds,
     path_key,
 )
-from app.agent.grounding import is_abstention_claim, is_factual_claim, strip_json_fences
+from app.agent.grounding import (
+    is_abstention_claim,
+    is_factual_claim,
+    normalize_citation,
+    normalize_claim,
+    strip_json_fences,
+)
+from app.retrieval.source_priority import is_test_path, is_src_path, chunk_path as _chunk_path_key
 from app.config import settings
 from app.observability.logging_config import logger
 
@@ -217,9 +224,19 @@ def _structural_ok(
     allowed_paths: set[str] | None = None,
     retrieval_hits: list[dict[str, Any]] | None = None,
 ) -> bool:
-    from app.agent.confidence import check_file_existence, path_key
+    citation = normalize_citation(citation)
+    if not isinstance(citation, dict):
+        return False
+    from app.agent.confidence import path_key
 
     raw_path = str(citation.get("file_path", ""))
+    if is_test_path(raw_path) and retrieval_hits:
+        src_available = any(
+            is_src_path(_chunk_path_key(h if isinstance(h, dict) else {}))
+            for h in retrieval_hits
+        )
+        if src_available:
+            return False
     pk = path_key(raw_path)
     cite = {
         **citation,
@@ -398,6 +415,19 @@ def _verify_claims_batch_inner(
     allowed_paths: set[str] | None = None,
     t0: float,
 ) -> dict[str, Any]:
+    normalized_claims: list[dict[str, Any]] = []
+    for raw in claims:
+        if isinstance(raw, dict):
+            normalized = normalize_claim(raw)
+            normalized_claims.append(
+                normalized
+                if normalized is not None
+                else {"claim": str(raw.get("claim") or raw.get("text") or ""), "citation": None}
+            )
+        else:
+            normalized_claims.append({"claim": "", "citation": None})
+    claims = normalized_claims
+
     threshold = float(getattr(settings, "CLAIM_EMBED_THRESHOLD", 0.40))
     borderline_low = threshold - settings.CLAIM_EMBED_BORDERLINE_MARGIN
     lexical_threshold = float(getattr(settings, "CLAIM_LEXICAL_THRESHOLD", 0.18))
@@ -421,7 +451,7 @@ def _verify_claims_batch_inner(
             })
             continue
 
-        citation = claim.get("citation")
+        citation = normalize_citation(claim.get("citation"))
         if not citation:
             results.append({
                 "index": i,
@@ -432,6 +462,7 @@ def _verify_claims_batch_inner(
             })
             continue
 
+        claim["citation"] = citation
         structural = _structural_ok(
             citation,
             repo_id,
@@ -487,23 +518,17 @@ def _verify_claims_batch_inner(
             "_cited_text": cited_text,
         })
 
-    # Embedding batch
+    # Embedding batch — on failure fall back to lexical overlap instead of hard-gating chat.
     scores, embed_error = _verify_embedding_batch(embed_pairs)
     if embed_error is not None and embed_pairs:
-        logger.error(
-            "verify_system_error",
+        logger.warning(
+            "claim_embed_batch_degraded",
             repo_id=repo_id,
             phase="claim_embed_batch",
             error=embed_error,
+            pair_count=len(embed_pairs),
         )
-        return {
-            "results": results,
-            "verified_count": 0,
-            "factual_count": sum(1 for c in claims if is_factual_claim(c)),
-            "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
-            "verification_error": True,
-            "error": embed_error,
-        }
+        scores = [0.0] * len(embed_pairs)
     for claim_idx, sim in zip(embed_indices, scores):
         row = next(r for r in results if r["index"] == claim_idx)
         row["similarity"] = round(sim, 4)

@@ -15,7 +15,6 @@ Run with:
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import tempfile
@@ -95,7 +94,7 @@ class TestSafeDecode(unittest.TestCase):
 
     def test_occasional_bad_bytes_below_threshold_passes(self):
         """A file with < 5% replacement chars should pass."""
-        from app.ingestion.file_filter import safe_decode, MAX_REPLACEMENT_CHAR_RATIO
+        from app.ingestion.file_filter import safe_decode
         with tempfile.TemporaryDirectory() as td:
             p = Path(td) / "ok.py"
             # 1000 ASCII bytes + 1 invalid byte → 0.1% ratio → well below 5%

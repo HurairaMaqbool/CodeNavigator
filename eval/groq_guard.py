@@ -39,7 +39,8 @@ def probe_groq_available() -> tuple[bool, str]:
     try:
         from langchain_groq import ChatGroq
 
-        llm = ChatGroq(model=model, groq_api_key=api_key, temperature=0, max_tokens=8)
+        llm = ChatGroq(model=model, groq_api_key=api_key, temperature=0, max_tokens=8,
+                       timeout=float(settings.GROQ_HTTP_TIMEOUT_S), max_retries=0)
         llm.invoke("ping")
         return True, f"Groq OK ({model})"
     except Exception as exc:
@@ -64,3 +65,9 @@ def eval_question_delay() -> None:
     delay = float(settings.EVAL_QUESTION_DELAY_S)
     if delay > 0:
         time.sleep(delay)
+
+
+def ragas_judge_cooldown() -> None:
+    """Pause after chat phase before RAGAS LLM-judge batch (TPM budget recovery)."""
+    delay = max(float(settings.EVAL_QUESTION_DELAY_S) * 3, 90.0)
+    time.sleep(delay)

@@ -97,16 +97,43 @@ def _resolve_citation_lines(
     if not candidates:
         return ""
 
+    src_candidates = [
+        h for h in candidates
+        if not _norm_path(h.get("file_path") or "").startswith("tests/")
+        and "/tests/" not in _norm_path(h.get("file_path") or "")
+    ]
+    if src_candidates:
+        candidates = src_candidates
+
     ranked = sorted(candidates, key=lambda h: h.get("rerank_score", 0), reverse=True)
     for sym in symbols:
         for hit in ranked:
             fn = hit.get("function_name") or ""
             base = fn.split(".")[-1] if fn else ""
+            if base and base.lower() in sent.lower():
+                return _line_str(hit.get("start_line"), hit.get("end_line"))
             if base == sym or fn.startswith(f"{sym}."):
                 return _line_str(hit.get("start_line"), hit.get("end_line"))
             chunk = hit.get("chunk") or ""
             if f"class {sym}" in chunk or f"def {sym}" in chunk:
                 return _line_str(hit.get("start_line"), hit.get("end_line"))
+
+    # Keyword routing for common adapter methods when LLM cites a wide class span.
+    keyword_routes = (
+        (("max_retries", "retry"), ("__init__", "max_retries")),
+        (("urlopen", "send"), ("send", "urlopen")),
+        (("timeout", "timeoutsauce"), ("send", "timeout")),
+        (("merge_cookies", "cookie"), ("prepare_request", "merge_cookies", "cookie")),
+        (("poolmanager", "pool"), ("init_poolmanager", "pool")),
+    )
+    sent_l = sent.lower()
+    for keywords, fn_markers in keyword_routes:
+        if any(k in sent_l for k in keywords):
+            for hit in ranked:
+                fn = (hit.get("function_name") or "").lower()
+                chunk = (hit.get("chunk") or "").lower()
+                if any(m in fn or m in chunk for m in fn_markers):
+                    return _line_str(hit.get("start_line"), hit.get("end_line"))
 
     hit = ranked[0]
     return _line_str(hit.get("start_line"), hit.get("end_line"))

@@ -3,14 +3,18 @@
 import { AGENT_STEPS, AGENT_STEP_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-export function AgentStepIndicator({ currentState }: { currentState: string | null }) {
+export function AgentStepIndicator({
+  currentState,
+}: {
+  currentState: string | null;
+}) {
   const idx = currentState
     ? AGENT_STEPS.indexOf(currentState as (typeof AGENT_STEPS)[number])
     : -1;
 
   return (
     <div
-      className="flex flex-wrap gap-1"
+      className="flex flex-wrap gap-1.5"
       aria-label="Agent progress"
       aria-live="polite"
     >
@@ -21,12 +25,12 @@ export function AgentStepIndicator({ currentState }: { currentState: string | nu
           <span
             key={step}
             className={cn(
-              "rounded-full px-2 py-0.5 text-xs font-medium transition-colors",
+              "rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors duration-150",
               active
-                ? "bg-primary text-primary-foreground"
+                ? "border-primary/40 bg-primary-muted text-foreground"
                 : done
-                  ? "bg-success/15 text-success"
-                  : "bg-muted text-muted-foreground",
+                  ? "border-success/25 bg-success/10 text-success"
+                  : "border-border bg-surface text-tertiary",
             )}
           >
             {AGENT_STEP_LABELS[step] ?? step}

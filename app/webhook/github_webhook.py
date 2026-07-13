@@ -21,7 +21,6 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 from fastapi.responses import JSONResponse

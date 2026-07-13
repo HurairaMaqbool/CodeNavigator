@@ -116,10 +116,21 @@ def test_run_golden_set_report_shape(tmp_path):
     ), patch("eval.run_eval.append_run"), patch("eval.run_eval.load_runs", return_value=[]), patch(
         "eval.run_eval.diagnose_pipeline_failure", return_value=(False, "")
     ), patch("eval.run_eval.eval_question_delay"), patch(
-        "datasets.Dataset.from_dict", return_value=MagicMock()
-    ), patch("ragas.evaluate", return_value=mock_ragas_result), patch(
-        "eval.ragas_providers.get_judge_llm", return_value=MagicMock()
-    ), patch("eval.ragas_providers.get_judge_embeddings", return_value=MagicMock()):
+        "eval.run_eval._load_ragas_deps",
+        return_value=(
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
+            None,
+            MagicMock(),
+            MagicMock(),
+        ),
+    ), patch(
+        "eval.run_eval._run_ragas_evaluate", return_value=mock_ragas_result
+    ):
         from eval.run_eval import run_golden_set
 
         report = run_golden_set(path, target_repo_id="job1")

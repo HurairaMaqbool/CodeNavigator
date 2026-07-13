@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import threading
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -79,17 +79,21 @@ def test_chat_unblocks_immediately_after_sync_completes(isolated_store):
         chunks_created=55,
     )
 
-    readiness = evaluate_chat_readiness(JOB_ID)
-    assert readiness.ready is True
-    assert readiness.files_parsed == 10
-    assert readiness.chunks_created == 55
+    with patch(
+        "app.ingestion.progress_counts.chroma_counts",
+        return_value=(10, 55),
+    ):
+        readiness = evaluate_chat_readiness(JOB_ID)
+        assert readiness.ready is True
+        assert readiness.files_parsed == 10
+        assert readiness.chunks_created == 55
 
-    from app.agent.loop import AgentContext, AgentState, _handle_intake
+        from app.agent.loop import AgentContext, AgentState, _handle_intake
 
-    ctx = AgentContext(repo_id=JOB_ID, job_id=JOB_ID, question="q")
-    nxt = _handle_intake(ctx)
-    assert not ctx.gated
-    assert nxt == AgentState.PLAN
+        ctx = AgentContext(repo_id=JOB_ID, job_id=JOB_ID, question="q")
+        nxt = _handle_intake(ctx)
+        assert not ctx.gated
+        assert nxt == AgentState.PLAN
 
 
 def test_concurrent_force_reindex_does_not_downgrade_synced_status(isolated_store):

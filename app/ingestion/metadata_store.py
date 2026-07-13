@@ -66,7 +66,7 @@ from __future__ import annotations
 import enum
 import json
 import threading
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal

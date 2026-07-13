@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any
 
 from app.config import settings
 from app.redis_client import get_redis

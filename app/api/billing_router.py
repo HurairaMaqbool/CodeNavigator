@@ -12,14 +12,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.api.auth import verify_api_key
 from app.platform.api_keys import ApiKeyContext
 from app.platform.billing import stripe_client
 from app.platform.billing.plans import get_plan
-from app.platform.billing.subscriptions import get_subscription, set_subscription
+from app.platform.billing.subscriptions import get_subscription
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 

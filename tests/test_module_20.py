@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.diagrams.mermaid_generator import generate_mermaid, graph_to_mermaid, sanitize_node_label

@@ -159,3 +159,45 @@ def symbol_paths(repo_id: str, symbol: str) -> set[str]:
         for m in _paths_for_symbol(repo_id, symbol)
         if m.get("display_path") or m.get("file_path")
     }
+
+
+def list_symbol_chunk_records(repo_id: str, symbol: str) -> list[dict[str, Any]]:
+    """
+    Return all BM25 index records for chunks belonging to *symbol*.
+
+    Sorted deterministically by (path, start_line, end_line) for stable retrieval.
+    """
+    sym = symbol.split(".")[-1]
+    target_paths = symbol_paths(repo_id, sym)
+    if not target_paths:
+        return []
+
+    rows: list[dict[str, Any]] = []
+    for rec in _load_records(repo_id):
+        meta = rec.get("metadata") or {}
+        path = _norm_path(meta.get("display_path") or meta.get("file_path") or "")
+        fn = str(meta.get("function_name") or "")
+        doc = rec.get("document") or ""
+        belongs = (
+            path in target_paths
+            or fn == sym
+            or fn.startswith(f"{sym}.")
+            or f"class {sym}" in doc
+            or f"Class: {sym}." in doc
+            or f"Class: {sym}\n" in doc
+        )
+        if belongs:
+            rows.append(rec)
+
+    rows.sort(
+        key=lambda r: (
+            _norm_path(
+                (r.get("metadata") or {}).get("display_path")
+                or (r.get("metadata") or {}).get("file_path")
+                or ""
+            ),
+            int((r.get("metadata") or {}).get("start_line") or 0),
+            int((r.get("metadata") or {}).get("end_line") or 0),
+        )
+    )
+    return rows

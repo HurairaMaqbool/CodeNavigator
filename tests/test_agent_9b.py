@@ -30,7 +30,6 @@ from app.agent.confidence import (
     extract_function_name_mentions,
     validate_and_return,
 )
-from app.config import settings
 
 class TestCitations(unittest.TestCase):
     def test_extract_files(self):

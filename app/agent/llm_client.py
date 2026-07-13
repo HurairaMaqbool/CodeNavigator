@@ -328,12 +328,16 @@ class GroqAdapter:
         parts: list[str] = []
 
         try:
-            stream = self._client.chat.completions.create(
-                model=use_model,
-                messages=api_messages,
-                max_tokens=max_tokens,
-                stream=True,
-            )
+            create_kwargs: dict[str, Any] = {
+                "model": use_model,
+                "messages": api_messages,
+                "max_tokens": max_tokens,
+                "stream": True,
+                "temperature": float(settings.GROQ_LLM_TEMPERATURE),
+            }
+            if purpose == "finalize":
+                create_kwargs["response_format"] = {"type": "json_object"}
+            stream = self._client.chat.completions.create(**create_kwargs)
             for chunk in stream:
                 now = _time.monotonic()
                 if ttft is None:
@@ -368,7 +372,7 @@ class GroqAdapter:
                 error=err_text[:240],
             )
             raise RateLimitError(
-                f"Groq API rate limit exceeded."
+                "Groq API rate limit exceeded."
                 + (f" Retry after {retry_after:.0f}s." if retry_after else "")
             ) from exc
         except APITimeoutError as exc:
@@ -410,6 +414,7 @@ class GroqAdapter:
                 "model": self._model,
                 "messages": api_messages,
                 "max_tokens": max_tokens,
+                "temperature": float(settings.GROQ_LLM_TEMPERATURE),
             }
             if groq_tools:
                 kwargs["tools"] = groq_tools

@@ -18,7 +18,6 @@ import os
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 # Bootstrap: mock structlog
@@ -36,7 +35,7 @@ from app.graph.queries import (
     get_callers,
     get_subgraph,
 )
-from app.parsing.tree_sitter_parser import ParsedClass, ParsedFile, ParsedFunction
+from app.parsing.tree_sitter_parser import ParsedFile, ParsedFunction
 
 
 class TestGraphBuilderAndQueries(unittest.TestCase):

@@ -3,5 +3,4 @@
 # Unauthorized copying, modification, distribution, reverse engineering,
 # or commercial use of this file is strictly prohibited.
 
-import app.api.router
 print("Router OK")

@@ -10,15 +10,12 @@ Module 7 Tests: Call Graph Builder (NetworkX)
 """
 import sys
 import os
-import time
 import json
 import ast
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-from collections import namedtuple
+from unittest.mock import patch
 
-import networkx as nx
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -82,7 +79,7 @@ def test_step1_deliverables():
 
 def test_ec1_and_ec2_real_data_and_edge_types():
     print("\n--- EC1 & EC2: Real parsed graph data & Edge Types ---")
-    from app.graph.builder import build_graph, _graph_path_for
+    from app.graph.builder import build_graph
     from app.graph.queries import get_callers, get_callees, _GRAPH_CACHE
     from app.config import settings
 
@@ -336,7 +333,7 @@ def test_ec9_and_ec10_cycle_detection():
 def test_ec11_dangling_edges():
     print("\n--- EC11: The dangling-edge test ---")
     from app.graph.builder import build_graph
-    from app.graph.queries import get_callers, get_callees, _GRAPH_CACHE, _get_graph
+    from app.graph.queries import get_callers, get_callees, _GRAPH_CACHE
     from app.config import settings
 
     repo_id = "repo_dangling"
@@ -432,7 +429,6 @@ def test_step5_static_checks():
     
     # Check for bare dictionary accesses into graph structures
     # Looking for graph.nodes[x] specifically
-    import ast
     tree = ast.parse(queries_code)
     
     unwrapped_accesses = []
@@ -446,7 +442,7 @@ def test_step5_static_checks():
     if unwrapped_accesses:
         for u in unwrapped_accesses:
             print(f"  [FLAGGED]: {u}")
-        print(f"  [BOUNDARY NOTE] Queries module contains latent KeyError risks by bypassing .get() style accesses.")
+        print("  [BOUNDARY NOTE] Queries module contains latent KeyError risks by bypassing .get() style accesses.")
     else:
         print(f"{PASS} Zero unwrapped/non-defensive graph lookups found")
 

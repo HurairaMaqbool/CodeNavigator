@@ -248,6 +248,26 @@ def test_symbol_lookup_session_class_line(requests_fixture_paths):
     assert "sessions.py" in loc["file_path"]
 
 
+def test_compare_rejects_mismatched_question_counts():
+    from eval.compare_runs import compare
+
+    baseline = {
+        "ragas_scores": {"faithfulness": 0.9, "answer_relevancy": 0.9,
+                         "context_precision": 0.9, "context_recall": 0.9},
+        "diagnostics": {"question_count": 3},
+    }
+    candidate = {
+        "ragas_scores": {"faithfulness": 0.5, "answer_relevancy": 0.5,
+                         "context_precision": 0.5, "context_recall": 0.5},
+        "diagnostics": {"question_count": 15},
+    }
+    result = compare(baseline, candidate)
+    assert result.get("incomparable") is True
+    assert len(result.get("regressions") or []) == 0
+    assert result["overall_pass"] is False
+    assert result.get("regressions_found") is False
+
+
 def test_eval_regression_only_compares_same_question_count():
     from eval.run_eval import _find_comparable_baseline, _check_regressions
 

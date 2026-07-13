@@ -15,9 +15,7 @@ from __future__ import annotations
 
 import os
 import sys
-import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock
 
 # Bootstrap: mock structlog
@@ -31,13 +29,10 @@ from app.parsing.tree_sitter_parser import (
     ParsedClass,
     ParsedFile,
     ParsedFunction,
-    ParsedImport,
-    ParserUnavailableError,
     _PARSERS_AVAILABLE,
     parse_file,
 )
 from app.parsing.chunker import (
-    CodeChunk,
     chunk_parsed_file,
     compute_fingerprint,
     mask_secrets,

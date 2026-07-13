@@ -11,6 +11,10 @@ This ensures we do NOT hit OpenAI or any paid APIs during tests.
 """
 from __future__ import annotations
 
+import re
+import time
+from typing import Any
+
 from ragas.llms import LangchainLLMWrapper
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -39,6 +43,8 @@ def get_judge_llm() -> LangchainLLMWrapper:
             groq_api_key=settings.GROQ_API_KEY,
             temperature=0,
             max_tokens=512,
+            timeout=float(settings.GROQ_HTTP_TIMEOUT_S),
+            max_retries=0,
         )
         return LangchainLLMWrapper(llm)
         

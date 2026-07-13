@@ -21,7 +21,7 @@ _structlog_mock.get_logger.return_value = MagicMock()
 sys.modules["structlog"] = _structlog_mock
 
 from app.agent.cache_keys import normalize_cache_key
-from app.agent.loop import _TOOL_CACHE, answer_question, compress_older_tool_results, run
+from app.agent.loop import _TOOL_CACHE, answer_question, compress_older_tool_results
 
 
 class TestCacheKeys(unittest.TestCase):

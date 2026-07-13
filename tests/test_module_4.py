@@ -9,7 +9,6 @@ tests/test_module_4.py
 Tests for Module 4 (File Filter).
 """
 import sys
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -18,8 +17,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import app.ingestion.clone as clone_mod
 
-from app.ingestion.clone import clone_repo
-from app.ingestion.file_filter import filter_repo_files, safe_decode, FileRecord
+from app.ingestion.file_filter import filter_repo_files, safe_decode
 from app.observability.logging_config import configure_logging
 
 configure_logging()

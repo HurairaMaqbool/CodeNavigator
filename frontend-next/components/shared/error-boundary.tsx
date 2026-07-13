@@ -24,7 +24,7 @@ export class PanelErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div
-          className="rounded-xl border border-warning/40 bg-warning/10 p-6 text-center"
+          className="rounded-lg border border-warning/40 bg-warning/10 p-6 text-center"
           role="alert"
         >
           <AlertTriangle className="mx-auto h-8 w-8 text-warning" />

@@ -22,7 +22,8 @@
       "sentinel_context_count": 0,
       "mean_confidence_score": 8.666666666666666,
       "retrieval_precision_at_3": 0.3333333333333333
-    }
+    },
+    "run_id": "eval_20260627_131737::2026-06-27T13:17:37.739121+00:00"
   },
   {
     "version": "eval_20260627_132450",
@@ -47,7 +48,8 @@
       "sentinel_context_count": 0,
       "mean_confidence_score": 8.666666666666666,
       "retrieval_precision_at_3": 0.3333333333333333
-    }
+    },
+    "run_id": "eval_20260627_132450::2026-06-27T13:24:50.441547+00:00"
   },
   {
     "version": "eval_20260627_135959",
@@ -72,7 +74,8 @@
       "sentinel_context_count": 0,
       "mean_confidence_score": 9.0,
       "retrieval_precision_at_3": 0.7777777777777778
-    }
+    },
+    "run_id": "eval_20260627_135959::2026-06-27T13:59:59.393608+00:00"
   },
   {
     "version": "eval_20260627_143922",
@@ -97,7 +100,8 @@
       "sentinel_context_count": 0,
       "mean_confidence_score": 7.88,
       "retrieval_precision_at_3": 0.7
-    }
+    },
+    "run_id": "eval_20260627_143922::2026-06-27T14:39:22.051501+00:00"
   },
   {
     "version": "eval_20260627_175738",
@@ -122,7 +126,8 @@
       "sentinel_context_count": 0,
       "mean_confidence_score": 9.0,
       "retrieval_precision_at_3": 0.611111111111111
-    }
+    },
+    "run_id": "eval_20260627_175738::2026-06-27T17:57:38.113852+00:00"
   },
   {
     "version": "eval_20260627_180532",
@@ -147,7 +152,8 @@
       "sentinel_context_count": 0,
       "mean_confidence_score": 9.0,
       "retrieval_precision_at_3": 1.0
-    }
+    },
+    "run_id": "eval_20260627_180532::2026-06-27T18:05:32.427093+00:00"
   },
   {
     "version": "eval_20260627_181941",
@@ -174,7 +180,8 @@
       "retrieval_precision_at_3": 0.7777777777777778
     },
     "regression_warning": "Regression detected in evaluation:\nfaithfulness dropped from 0.878 to 0.676\n\nDiagnostics: gated 0/3, empty sources 0/3, P@3 0.778, asset_repo_id b4f947369301e4e0..., compared_to eval_20260627_180532 (n=3)",
-    "regression_baseline_version": "eval_20260627_180532"
+    "regression_baseline_version": "eval_20260627_180532",
+    "run_id": "eval_20260627_181941::2026-06-27T18:19:41.915686+00:00"
   },
   {
     "version": "eval_20260627_190620",
@@ -199,7 +206,8 @@
       "sentinel_context_count": 0,
       "mean_confidence_score": 9.0,
       "retrieval_precision_at_3": 0.5555555555555555
-    }
+    },
+    "run_id": "eval_20260627_190620::2026-06-27T19:06:20.094546+00:00"
   },
   {
     "version": "eval_20260627_205956",
@@ -282,7 +290,8 @@
       ]
     },
     "regression_warning": "Regression detected in evaluation:\nfaithfulness dropped from 1.000 to 0.714\nanswer_relevancy dropped from 0.871 to 0.637\n\nDiagnostics: gated 0/3, empty sources 0/3, P@3 0.333, asset_repo_id b4f947369301e4e0..., compared_to eval_20260627_190620 (n=3)",
-    "regression_baseline_version": "eval_20260627_190620"
+    "regression_baseline_version": "eval_20260627_190620",
+    "run_id": "eval_20260627_205956::2026-06-27T20:59:56.875917+00:00"
   },
   {
     "version": "eval_20260628_141141",
@@ -582,7 +591,8 @@
           "rate_limited": false
         }
       ]
-    }
+    },
+    "run_id": "eval_20260628_141141::2026-06-28T14:11:41.693330+00:00"
   },
   {
     "version": "b752c76",
@@ -1069,7 +1079,8 @@
           "message": "State-transition sequence differed across repeated runs"
         }
       ]
-    }
+    },
+    "run_id": "b752c76::2026-07-11T15:01:25.541064+00:00"
   },
   {
     "version": "b752c76",
@@ -1558,7 +1569,8 @@
           "message": "State-transition sequence differed across repeated runs"
         }
       ]
-    }
+    },
+    "run_id": "b752c76::2026-07-11T15:18:24.828867+00:00"
   },
   {
     "version": "b752c76",
@@ -1958,7 +1970,8 @@
           "message": "State-transition sequence differed across repeated runs"
         }
       ]
-    }
+    },
+    "run_id": "b752c76::2026-07-11T15:28:44.092937+00:00"
   },
   {
     "version": "f200e26",
@@ -2239,6 +2252,2961 @@
         }
       ],
       "gated_regressions": [],
+      "state_path_failures": []
+    },
+    "run_id": "f200e26::2026-07-11T15:52:03.026896+00:00"
+  },
+  {
+    "run_id": "7e7abee5b5b4450fa7a937ddedddb8f7",
+    "version": "d1f61a8_20260712_175906",
+    "git_sha": "d1f61a8a70054ddc63556e3b34917d2aa36a1e04",
+    "timestamp": "2026-07-12T17:59:06.846281+00:00",
+    "golden_set_path": "tests\\eval_set.json",
+    "per_question": [
+      {
+        "question": "What is the purpose of the PreparedRequest class in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/models.py"
+        ],
+        "precision_at_3": 0.0,
+        "top_files": [
+          "README.md",
+          "HISTORY.md",
+          "src/requests/adapters.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/models.py"
+        ],
+        "gt_hit": false,
+        "hit": false,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.13604265252296913,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/auth.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/auth.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/auth.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 4,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.5
+        }
+      },
+      {
+        "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/exceptions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/exceptions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/exceptions.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 1,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      }
+    ],
+    "aggregate": {
+      "ragas_scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.13604265252296913,
+        "context_precision": 0.0,
+        "context_recall": 0.5
+      },
+      "mean_confidence_score": 6.666666666666667,
+      "retrieval_precision_at_3": 0.6666666666666666,
+      "state_path_consistency_rate": 1.0,
+      "state_path_consistency_passed": 3,
+      "state_path_consistency_total": 3,
+      "gated_count": 1
+    },
+    "ragas_scores": {
+      "faithfulness": 0.0,
+      "answer_relevancy": 0.13604265252296913,
+      "context_precision": 0.0,
+      "context_recall": 0.5
+    },
+    "mean_confidence_score": 6.666666666666667,
+    "retrieval_precision_at_3": 0.6666666666666666,
+    "state_path_consistency": {
+      "passed": 3,
+      "total": 3,
+      "rate": 1.0,
+      "failures": []
+    },
+    "regression_flags": {
+      "gated_flips": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        }
+      ],
+      "state_path_failures": []
+    },
+    "diagnostics": {
+      "job_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 3,
+      "gated_count": 1,
+      "empty_source_count": 1,
+      "sentinel_context_count": 1,
+      "per_question": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/models.py"
+          ],
+          "precision_at_3": 0.0,
+          "top_files": [
+            "README.md",
+            "HISTORY.md",
+            "src/requests/adapters.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/models.py"
+          ],
+          "gt_hit": false,
+          "hit": false,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.13604265252296913,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/auth.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/auth.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/auth.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 4,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.5
+          }
+        },
+        {
+          "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/exceptions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/exceptions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/exceptions.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 1,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        }
+      ],
+      "gated_regressions": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        }
+      ],
+      "state_path_failures": []
+    }
+  },
+  {
+    "run_id": "badf3b78bc5249faafe7a96b2c1272dc",
+    "version": "d1f61a8_20260712_185131",
+    "git_sha": "d1f61a8a70054ddc63556e3b34917d2aa36a1e04",
+    "timestamp": "2026-07-12T18:51:31.419112+00:00",
+    "golden_set_path": "tests\\eval_set.json",
+    "per_question": [
+      {
+        "question": "What is the purpose of the PreparedRequest class in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/models.py"
+        ],
+        "precision_at_3": 0.3333,
+        "top_files": [
+          "README.md",
+          "src/requests/models.py",
+          "HISTORY.md"
+        ],
+        "ground_truth_files": [
+          "src/requests/models.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 3,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.25,
+          "answer_relevancy": 0.8857095339385674,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/auth.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/auth.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/auth.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 4,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/exceptions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/exceptions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/exceptions.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 1,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "How is SSL certificate verification handled when sending a request?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/adapters.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/adapters.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/adapters.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "What does the Session class do and how does it persist state across requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/sessions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/sessions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/sessions.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.5
+        }
+      },
+      {
+        "question": "How does requests.get() ultimately send an HTTP request?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/api.py",
+          "src/requests/sessions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/api.py",
+          "src/requests/sessions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/api.py",
+          "src/requests/sessions.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 3,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "How does the HTTPAdapter send a prepared request?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/adapters.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/adapters.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/adapters.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 1,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "How are cookies stored and managed across requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/cookies.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/cookies.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/cookies.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 4,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where are utility helper functions like url encoding and header parsing defined?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/utils.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/requests/api.py",
+          "src/requests/utils.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/utils.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "What status code helper structures does requests provide?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/status_codes.py",
+          "requests/status_codes.py"
+        ],
+        "precision_at_3": 0.3333,
+        "top_files": [
+          "src/requests/status_codes.py",
+          "src/requests/models.py",
+          "src/requests/structures.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/status_codes.py",
+          "requests/status_codes.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 10.0,
+        "context_count": 4,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where is the Flask application class defined?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/app.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/flask/app.py",
+          "src/flask/testing.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/app.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.10668826773258298,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "How does Flask manage application and request context?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/ctx.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/flask/cli.py",
+          "src/flask/ctx.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/ctx.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where are Blueprint objects defined in Flask?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/blueprints.py"
+        ],
+        "precision_at_3": 0.0,
+        "top_files": [
+          "src/flask/sansio/blueprints.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/blueprints.py"
+        ],
+        "gt_hit": false,
+        "hit": false,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where is the Flask command-line interface implemented?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/cli.py",
+          "flask/cli.py"
+        ],
+        "precision_at_3": 0.3333,
+        "top_files": [
+          "src/flask/app.py",
+          "src/flask/sessions.py",
+          "src/flask/cli.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/cli.py",
+          "flask/cli.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where are the Request and Response wrapper classes defined?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/wrappers.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/flask/wrappers.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/wrappers.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      }
+    ],
+    "aggregate": {
+      "ragas_scores": {
+        "faithfulness": 0.25,
+        "answer_relevancy": 0.4961989008355752,
+        "context_precision": 0.0,
+        "context_recall": 0.08333333333333333
+      },
+      "mean_confidence_score": 6.0,
+      "retrieval_precision_at_3": 0.7,
+      "state_path_consistency_rate": 1.0,
+      "state_path_consistency_passed": 15,
+      "state_path_consistency_total": 15,
+      "gated_count": 6
+    },
+    "ragas_scores": {
+      "faithfulness": 0.25,
+      "answer_relevancy": 0.4961989008355752,
+      "context_precision": 0.0,
+      "context_recall": 0.08333333333333333
+    },
+    "mean_confidence_score": 6.0,
+    "retrieval_precision_at_3": 0.7,
+    "state_path_consistency": {
+      "passed": 15,
+      "total": 15,
+      "rate": 1.0,
+      "failures": []
+    },
+    "regression_flags": {
+      "gated_flips": [
+        {
+          "question": "Where are utility helper functions like url encoding and header parsing defined?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where is the Flask application class defined?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "How does Flask manage application and request context?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where are Blueprint objects defined in Flask?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where is the Flask command-line interface implemented?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where are the Request and Response wrapper classes defined?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        }
+      ],
+      "state_path_failures": []
+    },
+    "diagnostics": {
+      "job_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 15,
+      "gated_count": 6,
+      "empty_source_count": 6,
+      "sentinel_context_count": 6,
+      "per_question": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/models.py"
+          ],
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "README.md",
+            "src/requests/models.py",
+            "HISTORY.md"
+          ],
+          "ground_truth_files": [
+            "src/requests/models.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 3,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.25,
+            "answer_relevancy": 0.8857095339385674,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/auth.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/auth.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/auth.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 4,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/exceptions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/exceptions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/exceptions.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 1,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "How is SSL certificate verification handled when sending a request?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/adapters.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/adapters.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/adapters.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "What does the Session class do and how does it persist state across requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/sessions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/sessions.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.5
+          }
+        },
+        {
+          "question": "How does requests.get() ultimately send an HTTP request?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 3,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "How does the HTTPAdapter send a prepared request?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/adapters.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/adapters.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/adapters.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 1,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "How are cookies stored and managed across requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/cookies.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/cookies.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/cookies.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 4,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where are utility helper functions like url encoding and header parsing defined?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/utils.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/requests/api.py",
+            "src/requests/utils.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/utils.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "What status code helper structures does requests provide?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/status_codes.py",
+            "requests/status_codes.py"
+          ],
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/requests/status_codes.py",
+            "src/requests/models.py",
+            "src/requests/structures.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/status_codes.py",
+            "requests/status_codes.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 10.0,
+          "context_count": 4,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where is the Flask application class defined?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/app.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/flask/app.py",
+            "src/flask/testing.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/app.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.10668826773258298,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "How does Flask manage application and request context?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/ctx.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/flask/cli.py",
+            "src/flask/ctx.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/ctx.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where are Blueprint objects defined in Flask?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/blueprints.py"
+          ],
+          "precision_at_3": 0.0,
+          "top_files": [
+            "src/flask/sansio/blueprints.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/blueprints.py"
+          ],
+          "gt_hit": false,
+          "hit": false,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where is the Flask command-line interface implemented?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/cli.py",
+            "flask/cli.py"
+          ],
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "src/flask/app.py",
+            "src/flask/sessions.py",
+            "src/flask/cli.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/cli.py",
+            "flask/cli.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where are the Request and Response wrapper classes defined?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/wrappers.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/flask/wrappers.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/wrappers.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        }
+      ],
+      "gated_regressions": [
+        {
+          "question": "Where are utility helper functions like url encoding and header parsing defined?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where is the Flask application class defined?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "How does Flask manage application and request context?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where are Blueprint objects defined in Flask?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where is the Flask command-line interface implemented?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "Where are the Request and Response wrapper classes defined?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        }
+      ],
+      "state_path_failures": []
+    }
+  },
+  {
+    "run_id": "fb9f998d1a9d4b548bfcd59f62333115",
+    "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+    "version": "836e50a_20260713_180547",
+    "git_sha": "836e50a5766a532de84f7f33e543a852718ec72d",
+    "timestamp": "2026-07-13T18:05:47.459000+00:00",
+    "golden_set_path": "tests\\eval_set.json",
+    "per_question": [
+      {
+        "question": "What is the purpose of the PreparedRequest class in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/models.py"
+        ],
+        "precision_at_3": 0.3333,
+        "top_files": [
+          "README.md",
+          "HISTORY.md",
+          "src/requests/models.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/models.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.12327389376671642,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/auth.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/auth.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/auth.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.8,
+        "context_count": 4,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.5824614994932907,
+          "context_precision": 0.0,
+          "context_recall": 0.5
+        }
+      },
+      {
+        "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/exceptions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/exceptions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/exceptions.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.0,
+        "context_count": 1,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      },
+      {
+        "question": "How is SSL certificate verification handled when sending a request?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/adapters.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/adapters.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/adapters.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.5,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.16666666666666666,
+          "answer_relevancy": 0.6513642781092231,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      },
+      {
+        "question": "What does the Session class do and how does it persist state across requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/sessions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/sessions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/sessions.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 7.1,
+        "context_count": 3,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.8724950550575347,
+          "context_precision": 0.0,
+          "context_recall": 0.5
+        }
+      },
+      {
+        "question": "How does requests.get() ultimately send an HTTP request?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/api.py",
+          "src/requests/sessions.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/requests/api.py",
+          "src/requests/sessions.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/api.py",
+          "src/requests/sessions.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.024185333648252455,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "How does the HTTPAdapter send a prepared request?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/adapters.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/requests/adapters.py",
+          "src/requests/models.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/adapters.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.5,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.3333333333333333,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      },
+      {
+        "question": "How are cookies stored and managed across requests?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/cookies.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/requests/sessions.py",
+          "src/requests/cookies.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/cookies.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 8.1,
+        "context_count": 3,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      },
+      {
+        "question": "Where are utility helper functions like url encoding and header parsing defined?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/utils.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/requests/utils.py",
+          "src/requests/api.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/utils.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 5.1,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.4,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      },
+      {
+        "question": "What status code helper structures does requests provide?",
+        "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+        "expected_citations": [
+          "src/requests/status_codes.py",
+          "requests/status_codes.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/requests/status_codes.py",
+          "src/requests/models.py"
+        ],
+        "ground_truth_files": [
+          "src/requests/status_codes.py",
+          "requests/status_codes.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 6.8,
+        "context_count": 3,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.9811548247157562,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where is the Flask application class defined?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/app.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/flask/app.py",
+          "src/flask/testing.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/app.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.5,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "How does Flask manage application and request context?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/ctx.py"
+        ],
+        "precision_at_3": 1.0,
+        "top_files": [
+          "src/flask/ctx.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/ctx.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": true,
+        "confidence_score": 0.0,
+        "context_count": 1,
+        "used_sentinel": true,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": true,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where are Blueprint objects defined in Flask?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/blueprints.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/flask/sansio/blueprints.py",
+          "src/flask/blueprints.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/blueprints.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.8,
+        "context_count": 3,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where is the Flask command-line interface implemented?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/cli.py",
+          "flask/cli.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/flask/cli.py",
+          "src/flask/app.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/cli.py",
+          "flask/cli.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.2,
+        "context_count": 2,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        }
+      },
+      {
+        "question": "Where are the Request and Response wrapper classes defined?",
+        "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+        "expected_citations": [
+          "src/flask/wrappers.py"
+        ],
+        "precision_at_3": 0.5,
+        "top_files": [
+          "src/flask/wrappers.py",
+          "src/flask/app.py"
+        ],
+        "ground_truth_files": [
+          "src/flask/wrappers.py"
+        ],
+        "gt_hit": true,
+        "hit": true,
+        "gated": false,
+        "confidence_score": 9.0,
+        "context_count": 1,
+        "used_sentinel": false,
+        "rate_limited": false,
+        "state_path": [
+          "PLAN",
+          "ACT",
+          "OBSERVE",
+          "DECIDE",
+          "FINALIZE",
+          "VERIFY",
+          "RESPOND"
+        ],
+        "state_path_consistent": true,
+        "expected_gated": false,
+        "gated_regression": false,
+        "ragas_scores": {
+          "faithfulness": 0.0,
+          "answer_relevancy": 0.0,
+          "context_precision": 0.0,
+          "context_recall": 1.0
+        }
+      }
+    ],
+    "aggregate": {
+      "ragas_scores": {
+        "faithfulness": 0.225,
+        "answer_relevancy": 0.5391558141317956,
+        "context_precision": 0.0,
+        "context_recall": 0.7777777777777778
+      },
+      "mean_confidence_score": 6.826666666666667,
+      "retrieval_precision_at_3": 0.6888888888888888,
+      "state_path_consistency_rate": 1.0,
+      "state_path_consistency_passed": 15,
+      "state_path_consistency_total": 15,
+      "gated_count": 3
+    },
+    "ragas_scores": {
+      "faithfulness": 0.225,
+      "answer_relevancy": 0.5391558141317956,
+      "context_precision": 0.0,
+      "context_recall": 0.7777777777777778
+    },
+    "mean_confidence_score": 6.826666666666667,
+    "retrieval_precision_at_3": 0.6888888888888888,
+    "state_path_consistency": {
+      "passed": 15,
+      "total": 15,
+      "rate": 1.0,
+      "failures": []
+    },
+    "regression_flags": {
+      "gated_flips": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "How does requests.get() ultimately send an HTTP request?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "How does Flask manage application and request context?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        }
+      ],
+      "state_path_failures": []
+    },
+    "diagnostics": {
+      "job_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "asset_repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+      "question_count": 15,
+      "gated_count": 3,
+      "empty_source_count": 3,
+      "sentinel_context_count": 3,
+      "per_question": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/models.py"
+          ],
+          "precision_at_3": 0.3333,
+          "top_files": [
+            "README.md",
+            "HISTORY.md",
+            "src/requests/models.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/models.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.12327389376671642,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/auth.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/auth.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/auth.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.8,
+          "context_count": 4,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.5824614994932907,
+            "context_precision": 0.0,
+            "context_recall": 0.5
+          }
+        },
+        {
+          "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/exceptions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/exceptions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/exceptions.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.0,
+          "context_count": 1,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        },
+        {
+          "question": "How is SSL certificate verification handled when sending a request?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/adapters.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/adapters.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/adapters.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.5,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.16666666666666666,
+            "answer_relevancy": 0.6513642781092231,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        },
+        {
+          "question": "What does the Session class do and how does it persist state across requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/sessions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/sessions.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 7.1,
+          "context_count": 3,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.8724950550575347,
+            "context_precision": 0.0,
+            "context_recall": 0.5
+          }
+        },
+        {
+          "question": "How does requests.get() ultimately send an HTTP request?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/api.py",
+            "src/requests/sessions.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.024185333648252455,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "How does the HTTPAdapter send a prepared request?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/adapters.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/requests/adapters.py",
+            "src/requests/models.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/adapters.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.5,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.3333333333333333,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        },
+        {
+          "question": "How are cookies stored and managed across requests?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/cookies.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/requests/sessions.py",
+            "src/requests/cookies.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/cookies.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 8.1,
+          "context_count": 3,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        },
+        {
+          "question": "Where are utility helper functions like url encoding and header parsing defined?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/utils.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/requests/utils.py",
+            "src/requests/api.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/utils.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 5.1,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.4,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        },
+        {
+          "question": "What status code helper structures does requests provide?",
+          "repo_id": "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee",
+          "expected_citations": [
+            "src/requests/status_codes.py",
+            "requests/status_codes.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/requests/status_codes.py",
+            "src/requests/models.py"
+          ],
+          "ground_truth_files": [
+            "src/requests/status_codes.py",
+            "requests/status_codes.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 6.8,
+          "context_count": 3,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.9811548247157562,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where is the Flask application class defined?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/app.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/flask/app.py",
+            "src/flask/testing.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/app.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.5,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "How does Flask manage application and request context?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/ctx.py"
+          ],
+          "precision_at_3": 1.0,
+          "top_files": [
+            "src/flask/ctx.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/ctx.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": true,
+          "confidence_score": 0.0,
+          "context_count": 1,
+          "used_sentinel": true,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": true,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where are Blueprint objects defined in Flask?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/blueprints.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/flask/sansio/blueprints.py",
+            "src/flask/blueprints.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/blueprints.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.8,
+          "context_count": 3,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where is the Flask command-line interface implemented?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/cli.py",
+            "flask/cli.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/flask/cli.py",
+            "src/flask/app.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/cli.py",
+            "flask/cli.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.2,
+          "context_count": 2,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 0.0
+          }
+        },
+        {
+          "question": "Where are the Request and Response wrapper classes defined?",
+          "repo_id": "c95ed10bde764781e10a4288a8774921f25872a0963c3d42dbf6b07f942c7db1",
+          "expected_citations": [
+            "src/flask/wrappers.py"
+          ],
+          "precision_at_3": 0.5,
+          "top_files": [
+            "src/flask/wrappers.py",
+            "src/flask/app.py"
+          ],
+          "ground_truth_files": [
+            "src/flask/wrappers.py"
+          ],
+          "gt_hit": true,
+          "hit": true,
+          "gated": false,
+          "confidence_score": 9.0,
+          "context_count": 1,
+          "used_sentinel": false,
+          "rate_limited": false,
+          "state_path": [
+            "PLAN",
+            "ACT",
+            "OBSERVE",
+            "DECIDE",
+            "FINALIZE",
+            "VERIFY",
+            "RESPOND"
+          ],
+          "state_path_consistent": true,
+          "expected_gated": false,
+          "gated_regression": false,
+          "ragas_scores": {
+            "faithfulness": 0.0,
+            "answer_relevancy": 0.0,
+            "context_precision": 0.0,
+            "context_recall": 1.0
+          }
+        }
+      ],
+      "gated_regressions": [
+        {
+          "question": "What is the purpose of the PreparedRequest class in requests?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "How does requests.get() ultimately send an HTTP request?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        },
+        {
+          "question": "How does Flask manage application and request context?",
+          "type": "gated_flip",
+          "message": "Golden question returned gated=true unexpectedly \u2014 manual review required",
+          "expected_gated": false,
+          "actual_gated": true
+        }
+      ],
       "state_path_failures": []
     }
   }

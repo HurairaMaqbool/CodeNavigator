@@ -3,7 +3,6 @@
 
 """Unit tests for Call Graph / Architecture Explorer backend endpoints."""
 
-import os
 import sys
 import unittest
 from unittest.mock import MagicMock, patch

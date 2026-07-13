@@ -17,7 +17,6 @@ import os
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock
 
 # Bootstrap: mock structlog
@@ -29,9 +28,8 @@ sys.modules["structlog"] = _structlog_mock
 from app.config import settings
 from app.parsing.chunker import CodeChunk
 from app.retrieval.bm25_store import store_bm25
-from app.retrieval.hybrid_search import FusedCandidate, search_code, dedup_by_file
-from app.retrieval.query_expansion import _EXPANSION_CACHE, _normalize_cache_key, expand_query, needs_expansion
-from app.retrieval.reranker import cross_encoder_rerank
+from app.retrieval.hybrid_search import search_code, dedup_by_file
+from app.retrieval.query_expansion import _EXPANSION_CACHE, expand_query, needs_expansion
 from app.retrieval.vector_store import store_chunks
 
 

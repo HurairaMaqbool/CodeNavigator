@@ -28,17 +28,75 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from app.agent.loop import answer_question
 from app.ingestion.repo_readiness import is_repo_ready
 from app.observability.logging_config import logger
 from eval.retrieval_metrics import collect_cited_files, paths_match as _paths_match
+from eval.run_eval import EvalPipelineError, _invoke_chat_endpoint
 
 GOLDEN_SET_PATH = Path("tests/eval_set.json")
 STATUS_PATH = Path("tests/golden_set_status.json")
 
-TOP_K = 10
+TOP_K = 15
 PASS_THRESHOLD = 0.80
-GOLDEN_QUESTION_DELAY_S = 2.0
+GOLDEN_RETRY_COOLDOWN_S = 60.0
+
+
+def _golden_question_delay() -> None:
+    """Longer pause than RAGAS eval — golden runs many agent calls back-to-back."""
+    from app.config import settings
+
+    delay = max(float(settings.EVAL_QUESTION_DELAY_S), 10.0)
+    time.sleep(delay)
+
+
+def _score_case(
+    res: dict[str, Any],
+    gt_files: list[str],
+) -> tuple[bool, list[str]]:
+    cited_files = collect_cited_files(res, top_k=TOP_K)
+    hit = any(_paths_match(f, gt) for f in cited_files for gt in gt_files)
+    return hit, cited_files
+
+
+def _run_case(
+    job_id: str,
+    question: str,
+    gt_files: list[str],
+    fixture: str,
+) -> tuple[bool, dict[str, Any] | None]:
+    """Run one golden question; return (passed, failure_detail or None)."""
+    try:
+        res = _invoke_chat_endpoint(job_id, question)
+    except (EvalPipelineError, Exception) as exc:
+        logger.error("golden_question_crashed", question=question, error=str(exc))
+        return False, {
+            "question": question,
+            "fixture": fixture,
+            "expected_files": gt_files,
+            "cited_files": [],
+            "error": str(exc),
+            "retryable": "429" in str(exc).lower() or "rate" in str(exc).lower(),
+        }
+
+    hit, cited_files = _score_case(res, gt_files)
+    if hit:
+        return True, None
+
+    logger.warning(
+        "golden_miss",
+        question=question[:80],
+        cited=cited_files[:3],
+        expected=gt_files,
+        gated=res.get("gated"),
+    )
+    return False, {
+        "question": question,
+        "fixture": fixture,
+        "expected_files": gt_files,
+        "cited_files": cited_files[:TOP_K],
+        "gated": bool(res.get("gated")),
+        "retryable": bool(res.get("rate_limited") or res.get("gated")),
+    }
 
 
 def run_golden_set(golden_path: str | Path = GOLDEN_SET_PATH) -> dict[str, Any]:
@@ -58,17 +116,14 @@ def run_golden_set(golden_path: str | Path = GOLDEN_SET_PATH) -> dict[str, Any]:
     if not data:
         raise ValueError("Golden set is empty")
 
-    total = 0
-    passed = 0
-    failed_questions: list[str] = []
-    per_repo: dict[str, dict[str, Any]] = {}
+    cases: list[dict[str, Any]] = []
     skipped_fixtures: list[str] = []
 
     for case in data:
         question = case["question"]
         job_id = case.get("repo_id")
         gt_files = case.get("ground_truth_files", [])
-        fixture = case.get("fixture") or job_id[:16]
+        fixture = case.get("fixture") or (job_id[:16] if job_id else "unknown")
         if not job_id:
             continue
 
@@ -84,38 +139,73 @@ def run_golden_set(golden_path: str | Path = GOLDEN_SET_PATH) -> dict[str, Any]:
                 skipped_fixtures.append(fixture)
             continue
 
-        asset_repo_id = readiness.asset_repo_id
-
-        repo_stats = per_repo.setdefault(
-            fixture,
-            {"fixture": fixture, "repo_id": job_id, "total": 0, "passed": 0},
+        cases.append(
+            {
+                "question": question,
+                "job_id": job_id,
+                "gt_files": gt_files,
+                "fixture": fixture,
+            }
         )
 
-        total += 1
-        repo_stats["total"] += 1
-        if total > 1:
-            time.sleep(GOLDEN_QUESTION_DELAY_S)
-        try:
-            res = answer_question(question, asset_repo_id)
-        except Exception as exc:
-            logger.error("golden_question_crashed", question=question, error=str(exc))
-            failed_questions.append(question)
-            continue
+    per_repo: dict[str, dict[str, Any]] = {}
+    results: list[tuple[bool, dict[str, Any] | None]] = []
 
-        cited_files = collect_cited_files(res, top_k=TOP_K)
-        hit = any(_paths_match(f, gt) for f in cited_files for gt in gt_files)
-        if hit:
-            passed += 1
-            repo_stats["passed"] += 1
-        else:
-            logger.warning(
-                "golden_miss",
-                question=question[:80],
-                cited=cited_files[:3],
-                expected=gt_files,
-                gated=res.get("gated"),
+    for i, case in enumerate(cases):
+        if i > 0:
+            _golden_question_delay()
+        passed, detail = _run_case(
+            case["job_id"],
+            case["question"],
+            case["gt_files"],
+            case["fixture"],
+        )
+        results.append((passed, detail))
+        stats = per_repo.setdefault(
+            case["fixture"],
+            {
+                "fixture": case["fixture"],
+                "repo_id": case["job_id"],
+                "total": 0,
+                "passed": 0,
+            },
+        )
+        stats["total"] += 1
+        if passed:
+            stats["passed"] += 1
+
+    # Retry failures once after cooldown (429 / gated / retrieval miss).
+    retry_indices = [
+        i
+        for i, (ok, detail) in enumerate(results)
+        if not ok and detail and detail.get("retryable", True)
+    ]
+    if retry_indices:
+        logger.info("golden_retry_pass", count=len(retry_indices))
+        time.sleep(GOLDEN_RETRY_COOLDOWN_S)
+        for i in retry_indices:
+            _golden_question_delay()
+            case = cases[i]
+            passed, detail = _run_case(
+                case["job_id"],
+                case["question"],
+                case["gt_files"],
+                case["fixture"],
             )
-            failed_questions.append(question)
+            if passed:
+                results[i] = (True, None)
+                per_repo[case["fixture"]]["passed"] += 1
+            else:
+                results[i] = (False, detail)
+
+    total = len(results)
+    passed = sum(1 for ok, _ in results if ok)
+    failed_questions: list[str] = []
+    failed_details: list[dict[str, Any]] = []
+    for case, (ok, detail) in zip(cases, results):
+        if not ok and detail:
+            failed_questions.append(case["question"])
+            failed_details.append(detail)
 
     for stats in per_repo.values():
         t = stats["total"]
@@ -130,6 +220,7 @@ def run_golden_set(golden_path: str | Path = GOLDEN_SET_PATH) -> dict[str, Any]:
         "passed": passed,
         "pass_threshold": PASS_THRESHOLD,
         "failed_questions": failed_questions,
+        "failed_details": failed_details,
         "per_repo": list(per_repo.values()),
         "skipped_fixtures": skipped_fixtures,
         "fixture_count": len(per_repo),

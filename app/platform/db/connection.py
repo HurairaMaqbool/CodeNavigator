@@ -31,7 +31,6 @@ def _get_pool():
     if _pool is None:
         with _pool_lock:
             if _pool is None:
-                import psycopg2
                 from psycopg2.pool import ThreadedConnectionPool
                 # Min 1, max 20 connections in pool
                 _pool = ThreadedConnectionPool(1, 20, settings.DATABASE_URL)

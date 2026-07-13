@@ -102,6 +102,17 @@ def _state_path_ok(report: dict[str, Any]) -> bool:
     return _state_path_rate(report) >= 1.0
 
 
+def _question_count(report: dict[str, Any]) -> int | None:
+    diagnostics = report.get("diagnostics") or {}
+    raw = diagnostics.get("question_count")
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _scalar_metric(report: dict[str, Any], key: str, default: float = 0.0) -> float:
     if key in report:
         return float(report[key])
@@ -165,6 +176,7 @@ def compare(
             "regressions": [],
             "overall_pass": True,
             "first_run_baseline_established": True,
+            "regressions_found": False,
         }
 
     if not isinstance(baseline_report, dict):
@@ -175,6 +187,22 @@ def compare(
             "regressions": [],
             "overall_pass": True,
             "first_run_baseline_established": False,
+            "regressions_found": False,
+        }
+
+    base_n = _question_count(baseline_report)
+    new_n = _question_count(new_report)
+    if base_n is not None and new_n is not None and base_n != new_n:
+        return {
+            "regressions": [],
+            "overall_pass": False,
+            "first_run_baseline_established": False,
+            "incomparable": True,
+            "incomparable_reason": (
+                f"Question count mismatch: baseline={base_n}, candidate={new_n}. "
+                "Compare runs that used the same eval set size only."
+            ),
+            "regressions_found": False,
         }
 
     regressions: list[dict[str, Any]] = []
@@ -250,6 +278,7 @@ def compare(
         "regressions": regressions,
         "overall_pass": len(regressions) == 0,
         "first_run_baseline_established": False,
+        "regressions_found": len(regressions) > 0,
     }
 
 
@@ -286,18 +315,41 @@ def compare_eval_runs(
     ``compare_with_baseline_file`` for first-run baseline semantics.
     """
     records = load_history()
-    baseline = next((r for r in records if r.get("version") == baseline_version), None)
-    candidate = next((r for r in records if r.get("version") == candidate_version), None)
+    baseline = next(
+        (
+            r for r in records
+            if r.get("run_id") == baseline_version or r.get("version") == baseline_version
+        ),
+        None,
+    )
+    candidate = next(
+        (
+            r for r in records
+            if r.get("run_id") == candidate_version or r.get("version") == candidate_version
+        ),
+        None,
+    )
 
     if not baseline:
         raise ValueError(f"Baseline version '{baseline_version}' not found in history.")
     if not candidate:
         raise ValueError(f"Candidate version '{candidate_version}' not found in history.")
 
+    base_sha = baseline.get("git_sha") or baseline.get("index_version")
+    cand_sha = candidate.get("git_sha") or candidate.get("index_version")
     result = compare(baseline, candidate, tolerance)
     result["baseline_version"] = baseline_version
     result["candidate_version"] = candidate_version
-    result["regressions_found"] = not result["overall_pass"]
+    if base_sha and cand_sha and base_sha != cand_sha and base_sha != "unknown" and cand_sha != "unknown":
+        result["index_version_warning"] = (
+            f"Eval runs were produced on different index versions "
+            f"(baseline={str(base_sha)[:12]}, candidate={str(cand_sha)[:12]}). "
+            "Compare metrics only when both runs used the same ingested commit."
+        )
+    if result.get("incomparable"):
+        result["regressions_found"] = False
+    else:
+        result["regressions_found"] = not result["overall_pass"]
     return result
 
 

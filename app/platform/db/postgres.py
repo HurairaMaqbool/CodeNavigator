@@ -44,7 +44,6 @@ def migrate_json_to_pg() -> None:
     if not postgres_enabled():
         return
     import json
-    from pathlib import Path
     from app.paths import data_path
     from app.observability.logging_config import logger
 

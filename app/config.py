@@ -191,13 +191,27 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("MAX_ITERATIONS", "MAX_AGENT_ITERATIONS"),
         description="Hard cap on agent loop iterations (used by loop.py)",
     )
-    AGENT_MAX_SECONDS: int = Field(default=90)
+    AGENT_MAX_SECONDS: int = Field(
+        default=25,
+        ge=10,
+        le=120,
+        description=(
+            "Hard wall-clock budget for POST /chat agent runs (seconds). "
+            "Exceeded → partial answer if available, else 504."
+        ),
+    )
+    AGENT_MAX_CUMULATIVE_RATE_LIMIT_SLEEP_S: float = Field(
+        default=12.0,
+        ge=0.0,
+        le=60.0,
+        description="Max total seconds spent sleeping on Groq 429 across one chat request",
+    )
     RETRIEVAL_FAST_PATH_SCORE: float = Field(
         default=0.25,
         description="Skip DECIDE LLM when best rerank score exceeds this",
     )
     MAX_QUERY_VARIANTS: int = Field(
-        default=2,
+        default=4,
         description="Max hybrid-search variants per ACT pass",
     )
     MAX_TOOL_CALLS: int = Field(default=3)
@@ -206,9 +220,38 @@ class Settings(BaseSettings):
         default=300.0,
         description="TTL for in-process exact-question replay cache (seconds)",
     )
+    GROQ_FINALIZE_MAX_INPUT_TOKENS: int = Field(
+        default=4800,
+        description=(
+            "Max estimated input tokens for FINALIZE (system+user). "
+            "Groq free tier llama-3.1-8b-instant TPM per request is 6000."
+        ),
+    )
+    FINALIZE_CONTEXT_MAX_TOKENS: int = Field(
+        default=2500,
+        description="Retrieval context token budget inside the FINALIZE user prompt",
+    )
     FINALIZE_MAX_TOKENS: int = Field(
-        default=700,
-        description="Max output tokens for FINALIZE Groq call",
+        default=1200,
+        description="Max output tokens for FINALIZE Groq call (structured JSON claims)",
+    )
+    FINALIZE_MAX_CLAIMS: int = Field(
+        default=4,
+        ge=1,
+        le=8,
+        description="Max claims requested in FINALIZE JSON to avoid truncation",
+    )
+    GROQ_LLM_TEMPERATURE: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=2.0,
+        description="LLM sampling temperature — 0 for deterministic factual answers",
+    )
+    ENTITY_RETRIEVAL_MAX_CHUNKS: int = Field(
+        default=12,
+        ge=1,
+        le=30,
+        description="Max entity-level chunks merged for class/function questions",
     )
     DECIDE_MAX_TOKENS: int = Field(
         default=8,
@@ -221,14 +264,14 @@ class Settings(BaseSettings):
         description="top_k passed to hybrid search per query variant",
     )
     RERANK_TOP_N: int = Field(
-        default=8,
+        default=10,
         ge=1,
         le=50,
         description="top_n chunks kept after cross-encoder rerank",
     )
     LLM_RATE_LIMIT_MAX_BACKOFF_S: float = Field(
-        default=60.0,
-        description="Ceiling for Groq 429 retry-after sleep in agent loop",
+        default=12.0,
+        description="Per-429 ceiling for retry-after sleep in agent loop (seconds)",
     )
     GRAPH_CONTEXT_MAX_CHARS: int = Field(
         default=2000,
@@ -279,9 +322,41 @@ class Settings(BaseSettings):
     EVAL_SKIP_AGENT_PROBE: bool = Field(default=True)
     EVAL_VERSION: Optional[str] = Field(default=None)
     EVAL_QUESTION_DELAY_S: float = Field(default=4.0, ge=0.0)
+    EVAL_JOB_MAX_SECONDS: int = Field(
+        default=1800,
+        ge=120,
+        description="Wall-clock cap for async RAGAS/Golden eval background jobs",
+    )
+    EVAL_STATE_PATH_RUNS: int = Field(
+        default=1,
+        ge=1,
+        le=5,
+        description="Repeated agent runs per golden question for state-path consistency",
+    )
+    EVAL_RAGAS_TIMEOUT_S: int = Field(
+        default=300,
+        ge=60,
+        description="Per-metric RAGAS judge timeout (seconds)",
+    )
 
     # ── Graph ────────────────────────────────────────────────────────────────
     MAX_GRAPH_NODES: int = Field(default=10_000)
+    GRAPH_SUBGRAPH_MAX_FANOUT: int = Field(
+        default=15,
+        ge=3,
+        le=50,
+        description="Max direct callers/callees shown per node in call-graph diagrams",
+    )
+    GRAPH_SUBGRAPH_MAX_NODES: int = Field(
+        default=20,
+        ge=5,
+        le=60,
+        description="Max nodes rendered in a single Mermaid diagram",
+    )
+    DIAGRAM_DEFAULT_DIRECTION: str = Field(
+        default="downstream",
+        description="Default call-graph traversal: upstream, downstream, or both",
+    )
     CYCLE_DETECTION_TIMEOUT_S: int = Field(default=10)
 
     # ── Ingestion queue ──────────────────────────────────────────────────────

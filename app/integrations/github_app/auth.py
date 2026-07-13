@@ -11,7 +11,6 @@ GitHub App JWT and installation access tokens.
 from __future__ import annotations
 
 import time
-from typing import Any
 
 import jwt
 import requests

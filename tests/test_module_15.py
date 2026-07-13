@@ -45,7 +45,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.config import settings
-from eval.ragas_providers import get_judge_llm, get_judge_embeddings
+from eval.ragas_providers import get_judge_llm
 from eval.compare_runs import compare_eval_runs
 
 # Restore original modules immediately after imports

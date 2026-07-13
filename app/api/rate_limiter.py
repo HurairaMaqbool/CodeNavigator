@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 

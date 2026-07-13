@@ -26,7 +26,6 @@ a repo to 'synced'.
 """
 from __future__ import annotations
 
-import os
 import pickle
 import re
 import time
@@ -38,7 +37,6 @@ from rank_bm25 import BM25Okapi  # type: ignore[import]
 
 from app.config import settings
 from app.observability.logging_config import logger
-from app.parsing.chunker import CodeChunk
 
 # ---------------------------------------------------------------------------
 # Code-aware Tokenizer

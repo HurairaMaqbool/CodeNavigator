@@ -14,13 +14,9 @@ Real clones are done only where the spec mandates "not mocked".
 from __future__ import annotations
 
 import hashlib
-import io
 import json
-import os
 import sys
 import tempfile
-import threading
-import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -43,8 +39,7 @@ from app.ingestion.clone import (
     IngestionError,
 )
 from app.ingestion.locking import RepoLockManager
-from app.ingestion.metadata_store import MetadataStore, SCHEMA_VERSION, RepoMetadata
-from app import config as config_module
+from app.ingestion.metadata_store import MetadataStore, SCHEMA_VERSION
 
 PASS = "[PASS]"
 FAIL = "[FAIL]"
@@ -138,7 +133,7 @@ def test_ec3_malformed_url():
             clone_repo(bad_url)
             print(f"{FAIL} EC3: Expected InvalidURLError for {bad_url!r}")
             sys.exit(1)
-        except InvalidURLError as e:
+        except InvalidURLError:
             pass
         except Exception as e:
             print(f"{FAIL} EC3: Got {type(e).__name__} instead of InvalidURLError for {bad_url!r}: {e}")

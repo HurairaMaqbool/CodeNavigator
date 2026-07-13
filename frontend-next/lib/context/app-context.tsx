@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -75,13 +76,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [repoId, lastDiagramByRepo],
   );
 
+  const prevRepoRef = useRef<string | null>(readRepoFromStorage());
+
   const setRepoId = useCallback((id: string | null) => {
+    const prev = prevRepoRef.current;
     try {
       if (id) localStorage.setItem(REPO_KEY, id);
       else localStorage.removeItem(REPO_KEY);
     } catch {
       /* ignore */
     }
+    if (id && prev && id !== prev) {
+      setSessionId(newSessionId());
+    }
+    prevRepoRef.current = id;
     window.dispatchEvent(new Event(REPO_CHANGE));
   }, []);
 

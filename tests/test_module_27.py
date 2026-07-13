@@ -4,12 +4,9 @@
 """Module #27 — onboarding path generator tests."""
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import networkx as nx
-import pytest
 
 from app.agent.onboarding_path import (
     MAX_RATIONALE_FILES,

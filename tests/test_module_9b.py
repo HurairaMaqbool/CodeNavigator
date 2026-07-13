@@ -11,7 +11,7 @@ Module 9b Tests: Validation, Guard, Confidence, Gating
 import sys
 import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -34,7 +34,6 @@ def assert_ok(cond: bool, msg: str) -> None:
 def test_step1_deliverables():
     print("\n--- STEP 1: Confirm Deliverables ---")
     from app.agent.confidence import (
-        FILE_PATH_PATTERN, FUNCTION_CALL_PATTERN, 
         extract_file_path_mentions, extract_function_name_mentions,
         validate_and_return, compute_confidence_score
     )

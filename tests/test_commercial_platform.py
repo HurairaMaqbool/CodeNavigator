@@ -6,11 +6,10 @@
 """Commercial platform: billing, SSO, GitHub App."""
 from __future__ import annotations
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.platform.billing.plans import PLANS, get_plan, quota_for_plan
+from app.platform.billing.plans import PLANS, quota_for_plan
 from app.platform.billing.subscriptions import get_subscription, set_subscription
 
 

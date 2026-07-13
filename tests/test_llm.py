@@ -13,7 +13,6 @@ Run with:
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import unittest
@@ -30,7 +29,6 @@ from app.agent.llm_client import (
     GroqAdapter,
     OllamaAdapter,
     ProviderError,
-    RateLimitError,
     _translate_anthropic_tools_to_openai,
     get_llm_client,
 )

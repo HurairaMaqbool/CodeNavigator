@@ -6,10 +6,7 @@ export function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "animate-pulse rounded-lg bg-muted",
-        className,
-      )}
+      className={cn("skeleton-shimmer rounded-lg", className)}
       {...props}
     />
   );
@@ -17,14 +14,14 @@ export function Skeleton({
 
 export function ScreenSkeleton({ cards = 3 }: { cards?: number }) {
   return (
-    <div className="space-y-4" aria-hidden="true">
-      <Skeleton className="h-8 w-48" />
+    <div className="space-y-6" aria-hidden="true">
+      <Skeleton className="h-7 w-52" />
       <div className="grid gap-4 sm:grid-cols-3">
         {Array.from({ length: cards }).map((_, i) => (
-          <Skeleton key={i} className="h-24" />
+          <Skeleton key={i} className="h-28" />
         ))}
       </div>
-      <Skeleton className="h-40" />
+      <Skeleton className="h-44" />
     </div>
   );
 }

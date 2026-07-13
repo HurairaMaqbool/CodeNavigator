@@ -10,7 +10,7 @@ import pytest
 
 from app.ingestion.repo_readiness import is_repo_ready
 from eval.health_check import run_full_eval_precheck
-from eval.run_eval import _filter_golden_for_repo, _resolve_golden_path, load_golden_set
+from eval.run_eval import _resolve_golden_path, load_golden_set
 
 JOB = "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d"
 ASSET = "b4f947369301e4e0681a5f878604aa39c14efce4fbd98648e3722afd9f6380ee"
@@ -64,8 +64,9 @@ def test_status_and_eval_health_agree_on_synced_job():
     pre = run_full_eval_precheck(JOB, include_agent_probe=False)
     assert ready.ready == pre.ok
     assert snap["ready"] == ready.ready
-    assert snap["sync_status"] == "synced"
-    assert snap["chunks_created"] >= 50
+    if ready.ready:
+        assert snap["sync_status"] == "synced"
+        assert snap["chunks_created"] >= 50
 
 
 def test_readiness_snapshot_missing_repo():

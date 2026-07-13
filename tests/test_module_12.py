@@ -9,9 +9,7 @@ tests/test_module_12.py
 Module 12 Tests: FastAPI Backend & API Contracts
 """
 import sys
-import json
 from pathlib import Path
-import tempfile
 from unittest.mock import patch, MagicMock
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -45,7 +43,6 @@ client.headers.update({"X-API-Key": settings.API_KEY})
 # Setup test environment
 # ---------------------------------------------------------------------------
 def setup_mock_repo(tmp_repos, repo_id, status="synced", commit="123", error=None):
-    from app.ingestion.metadata_store import RepoMetadata, metadata_store
     
     # We will just patch metadata_store.get and mock the return value in tests
     pass

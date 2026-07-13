@@ -14,12 +14,9 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from app.parsing.tree_sitter_parser import parse_file, ParsedFile
+from app.parsing.tree_sitter_parser import parse_file
 from app.parsing.chunker import (
     chunk_parsed_file,
-    compute_fingerprint,
-    mask_secrets,
-    CodeChunk,
 )
 from app.observability.logging_config import configure_logging
 

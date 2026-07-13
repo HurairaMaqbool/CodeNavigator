@@ -7,7 +7,6 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 
 from app.api.state_stream import (
     STATE_LABELS,

@@ -1,7 +1,6 @@
 """Module #23 — state-specific prompt builders."""
 from __future__ import annotations
 
-import pytest
 
 from app.agent.prompts import (
     compress_prompt,
@@ -51,7 +50,7 @@ def test_finalize_prompt_citation_format_instruction():
     })
     assert "RESPOND WITH JSON ONLY" in out
     assert "claims" in out
-    assert "EXAMPLE — GOOD" in out
+    assert "FEW-SHOT GUIDANCE" in out or "EXAMPLE — GOOD" in out
     assert "Explain auth" in out
 
 

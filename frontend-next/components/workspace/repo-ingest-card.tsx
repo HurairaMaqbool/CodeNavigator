@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FolderGit2, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, FolderGit2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { ingest } from "@/lib/api";
 import { ApiError } from "@/lib/types";
@@ -20,6 +20,7 @@ export function RepoIngestCard({ onIngestStarted, disabled }: RepoIngestCardProp
   const [branch, setBranch] = useState("main");
   const [urlError, setUrlError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   async function submit(targetUrl?: string, targetRef?: string) {
     const repoUrl = (targetUrl ?? url).trim();
@@ -45,10 +46,11 @@ export function RepoIngestCard({ onIngestStarted, disabled }: RepoIngestCardProp
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+    <div className="card-panel">
       <SectionHeader
-        title="Repository"
-        caption="Paste a public GitHub URL or use Quick start in the sidebar"
+        title="Connect repository"
+        caption="Paste a public GitHub URL to begin indexing"
+        className="mb-4"
       />
       <form
         className="space-y-4"
@@ -58,7 +60,7 @@ export function RepoIngestCard({ onIngestStarted, disabled }: RepoIngestCardProp
         }}
       >
         <div className="space-y-2">
-          <Label htmlFor="repo-url">GitHub URL</Label>
+          <Label htmlFor="repo-url" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">GitHub URL</Label>
           <Input
             id="repo-url"
             placeholder="https://github.com/owner/repo"
@@ -70,30 +72,51 @@ export function RepoIngestCard({ onIngestStarted, disabled }: RepoIngestCardProp
             disabled={disabled || loading}
             aria-invalid={Boolean(urlError)}
             aria-describedby={urlError ? "url-error" : undefined}
+            className="bg-surface/50 border-border hover:border-border-strong focus:border-primary transition-colors"
           />
           {urlError && (
-            <p id="url-error" className="text-sm text-error" role="alert">
+            <p id="url-error" className="text-xs text-error mt-1" role="alert">
               {urlError}
             </p>
           )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="branch">Branch</Label>
-          <Input
-            id="branch"
-            placeholder="main"
-            value={branch}
-            onChange={(e) => setBranch(e.target.value)}
-            disabled={disabled || loading}
-          />
+
+        <div>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none"
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            {showAdvanced ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+            Advanced settings
+          </button>
+          
+          {showAdvanced && (
+            <div className="space-y-2 mt-3 pt-3 border-t border-border/40 page-enter">
+              <Label htmlFor="branch" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Branch / Ref</Label>
+              <Input
+                id="branch"
+                placeholder="main"
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                disabled={disabled || loading}
+                className="bg-surface/50 border-border hover:border-border-strong focus:border-primary transition-colors"
+              />
+            </div>
+          )}
         </div>
-        <Button type="submit" disabled={disabled || loading} className="w-full sm:w-auto">
+
+        <Button type="submit" disabled={disabled || loading} className="w-full sm:w-auto font-semibold active:scale-[0.98]">
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <FolderGit2 className="h-4 w-4" />
           )}
-          Ingest
+          Ingest repository
         </Button>
       </form>
     </div>

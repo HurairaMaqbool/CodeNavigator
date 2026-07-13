@@ -11,6 +11,7 @@ from app.agent.claim_verification import (
     fetch_cited_text,
     verify_claims_batch,
 )
+from app.agent.grounding import normalize_citation, parse_finalize_json
 
 
 def test_retrieval_text_prefers_line_overlap():
@@ -110,3 +111,95 @@ def test_verify_logs_nonzero_cited_text_len():
     assert result["verified_count"] == 1
     assert logged
     assert logged[0]["cited_text_len"] == len(cited)
+
+
+def test_verify_does_not_crash_on_string_citation():
+    """Non-dict citations must not raise verify_system_error (Groq json_object drift)."""
+    claims = [
+        {
+            "claim": "PreparedRequest wraps request data.",
+            "citation": "src/requests/models.py:250-280",
+        }
+    ]
+    with patch("app.agent.claim_verification._structural_ok", return_value=True), patch(
+        "app.agent.claim_verification.fetch_cited_text", return_value="class PreparedRequest"
+    ), patch(
+        "app.agent.claim_verification._verify_embedding_batch", return_value=([0.9], None)
+    ):
+        result = verify_claims_batch(claims, "repo-1")
+    assert result.get("verification_error") is not True
+    assert result["verified_count"] == 1
+
+
+def test_verify_does_not_crash_on_list_citation():
+    claims = [
+        {
+            "claim": "PreparedRequest wraps request data.",
+            "citation": [
+                {
+                    "file_path": "src/requests/models.py",
+                    "start_line": 250,
+                    "end_line": 280,
+                }
+            ],
+        }
+    ]
+    with patch("app.agent.claim_verification._structural_ok", return_value=True), patch(
+        "app.agent.claim_verification.fetch_cited_text", return_value="class PreparedRequest"
+    ), patch(
+        "app.agent.claim_verification._verify_embedding_batch", return_value=([0.9], None)
+    ):
+        result = verify_claims_batch(claims, "repo-1")
+    assert result.get("verification_error") is not True
+    assert result["verified_count"] == 1
+
+
+def test_verify_known_good_finalize_output_isolated():
+    raw = """{
+      "claims": [
+        {
+          "claim": "PreparedRequest wraps request data for sending.",
+          "citation": {"file_path": "src/requests/models.py", "start_line": 250, "end_line": 280}
+        }
+      ]
+    }"""
+    claims = parse_finalize_json(raw)
+    cited = "class PreparedRequest(RequestEncodingMixin):"
+    with patch("app.agent.claim_verification._structural_ok", return_value=True), patch(
+        "app.agent.claim_verification.fetch_cited_text", return_value=cited
+    ), patch(
+        "app.agent.claim_verification._verify_embedding_batch", return_value=([0.88], None)
+    ):
+        result = verify_claims_batch(claims, "repo-1")
+    assert result.get("verification_error") is not True
+    assert result["verified_count"] == 1
+    assert result["results"][0]["method"] == "embedding"
+
+
+def test_normalize_citation_parses_inline_string():
+    cit = normalize_citation("src/requests/models.py:250-280")
+    assert cit == {
+        "file_path": "src/requests/models.py",
+        "start_line": 250,
+        "end_line": 280,
+    }
+
+
+def test_embed_failure_falls_back_to_lexical_not_hard_gate():
+    """Embedding failures degrade to lexical overlap — chat must not hard-gate."""
+    claims = [
+        {
+            "claim": "PreparedRequest wraps request data.",
+            "citation": {"file_path": "src/requests/models.py", "start_line": 250, "end_line": 280},
+        }
+    ]
+    with patch("app.agent.claim_verification._structural_ok", return_value=True), patch(
+        "app.agent.claim_verification.fetch_cited_text", return_value="class PreparedRequest"
+    ), patch(
+        "app.retrieval.embeddings.embed_batch",
+        side_effect=RuntimeError("Cannot copy out of meta tensor"),
+    ):
+        result = verify_claims_batch(claims, "repo-1")
+    assert result.get("verification_error") is not True
+    assert result["verified_count"] >= 1
+    assert result["results"][0]["method"] in ("lexical", "lexical_reroute")

@@ -4,15 +4,12 @@
 """Module #26 — confidence VERIFY guard tests."""
 from __future__ import annotations
 
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from app.agent.confidence import (
     BASE_CONFIDENCE_SCORE,
     GATED_FALLBACK_MESSAGE,
-    PENALTY_FILE_EXISTENCE,
     check_file_existence,
     check_graph_consistency,
     check_line_bounds,
@@ -43,9 +40,9 @@ def test_evaluate_output_contract():
     with patch("app.agent.confidence.parse_citations", return_value=[]):
         out = evaluate("No cites here.", "repo1")
     assert set(out.keys()) == {"answer", "confidence_score", "gated"}
-    assert out["answer"] == "No cites here."
-    assert out["confidence_score"] == BASE_CONFIDENCE_SCORE
-    assert out["gated"] is False
+    assert out["confidence_score"] < BASE_CONFIDENCE_SCORE
+    assert out["gated"] is True
+    assert out["answer"] == GATED_FALLBACK_MESSAGE
 
 
 def test_evaluate_gates_and_replaces_answer():
@@ -80,8 +77,8 @@ def test_evaluate_unparseable_applies_file_penalty_only():
     }
     with patch("app.agent.confidence.parse_citations", return_value=[unparseable]):
         out = evaluate("bad `src/x.py`", "repo1")
-    expected = max(0.0, BASE_CONFIDENCE_SCORE - PENALTY_FILE_EXISTENCE)
-    assert out["confidence_score"] == expected
+    assert out["gated"] is True
+    assert out["confidence_score"] < settings.MIN_CONFIDENCE_SCORE
 
 
 def test_check_file_existence_uses_metadata_store_and_index(tmp_path):

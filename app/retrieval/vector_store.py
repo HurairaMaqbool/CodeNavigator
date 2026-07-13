@@ -27,7 +27,6 @@ similarities.  The caller must pass `force_reindex=True` to wipe and rebuild.
 """
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Any, TYPE_CHECKING
 from dataclasses import dataclass
@@ -39,7 +38,7 @@ from app.chroma_client import persistent_client
 from app.config import settings
 from app.observability.logging_config import logger
 from app.parsing.chunker import CodeChunk
-from app.retrieval.embeddings import embed, embed_batch
+from app.retrieval.embeddings import embed
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -346,7 +345,6 @@ def search_vectors(
     if collection is None:
         return []
 
-    from app.retrieval.embeddings import embed
     query_embedding = embed(query_str)
 
     actual_n_results = min(n_results, collection.count())

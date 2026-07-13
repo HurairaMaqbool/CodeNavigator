@@ -13,7 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import verify_api_key
 from app.integrations.github_app.installations import list_installations
@@ -21,15 +21,22 @@ from app.platform.api_keys import ApiKeyContext
 from app.platform.api_keys import create_api_key, list_keys, revoke_api_key
 from app.platform.audit_log import read_events, record_event
 from app.platform.repo_purge import export_repository_data, purge_repository
-from app.platform.tenant_context import get_tenant
+from app.platform.repo_registry import list_tenant_repositories
 from app.platform.usage_meter import get_usage, increment
 
 router = APIRouter(prefix="/platform", tags=["platform"])
 
 
 class CreateKeyRequest(BaseModel):
-    org_id: str = Field(default="default", min_length=1, max_length=64)
+    model_config = ConfigDict(extra="forbid")
+
     label: str = Field(default="api-key", min_length=1, max_length=128)
+
+
+@router.get("/repos")
+def list_repositories(auth: ApiKeyContext = Depends(verify_api_key)) -> list[dict[str, Any]]:
+    """Org-scoped repository index for GDPR admin and Platform UI."""
+    return list_tenant_repositories(auth.org_id)
 
 
 @router.delete("/repos/{repo_id}")
@@ -71,11 +78,14 @@ def usage_summary(auth: ApiKeyContext = Depends(verify_api_key)) -> dict[str, An
 
 @router.post("/api-keys")
 def create_key(req: CreateKeyRequest, auth: ApiKeyContext = Depends(verify_api_key)) -> dict[str, str]:
-    if req.org_id != auth.org_id:
-        raise HTTPException(status_code=403, detail="Cannot create keys for another organization")
-    secret = create_api_key(req.org_id, req.label)
-    record_event("api_key.created", org_id=req.org_id, actor=auth.label, details={"label": req.label})
-    return {"api_key": secret, "org_id": req.org_id, "label": req.label}
+    secret = create_api_key(auth.org_id, req.label)
+    record_event(
+        "api_key.created",
+        org_id=auth.org_id,
+        actor=auth.label,
+        details={"label": req.label},
+    )
+    return {"api_key": secret, "org_id": auth.org_id, "label": req.label}
 
 
 @router.get("/api-keys")

@@ -6,7 +6,7 @@
 """Phase A commercial hardening tests."""
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -60,7 +60,7 @@ def test_add_repo_to_installation(tmp_path, monkeypatch):
     assert get_installation_for_repo("acme/private-api") == 99
 
 
-def test_create_key_blocks_cross_org(mock_api_key):
+def test_create_key_rejects_client_org_id(mock_api_key):
     from fastapi.testclient import TestClient
 
     from app.main import app
@@ -71,7 +71,7 @@ def test_create_key_blocks_cross_org(mock_api_key):
         json={"org_id": "other-org", "label": "hack"},
         headers={"X-API-Key": "dev-secret-key"},
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 422
 
 
 def test_oidc_unsigned_only_when_allowed(monkeypatch):

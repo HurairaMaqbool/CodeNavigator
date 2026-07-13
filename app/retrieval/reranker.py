@@ -26,7 +26,6 @@ search (e.g. N=20). Running this on hundreds of chunks will destroy latency.
 """
 from __future__ import annotations
 
-import logging
 import re
 import threading
 import time

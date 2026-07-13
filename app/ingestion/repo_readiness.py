@@ -78,13 +78,24 @@ def _pick_authoritative_meta(
 
 
 def repair_alias_pair_on_read(job_id: str, *, store: Any | None = None) -> None:
-    """If job_id is synced but asset alias is stuck, mirror synced state to asset."""
+    """If job_id and asset alias metadata diverge, mirror the synced side to the stale side."""
+    from pathlib import Path
+
+    from app.config import settings
+
     ms = store if store is not None else metadata_store
     asset = ms.get_alias(job_id) or job_id
     if asset == job_id:
-        return
+        repos_root = Path(settings.REPOS_PATH)
+        if repos_root.is_dir():
+            for meta_path in repos_root.glob("*/metadata.json"):
+                rid = meta_path.parent.name
+                if ms.get_alias(rid) == job_id:
+                    asset = rid
+                    break
     job_meta = ms.get(job_id)
-    asset_meta = ms.get(asset)
+    asset_meta = ms.get(asset) if asset != job_id else None
+
     if (
         job_meta
         and Stage.is_synced(job_meta.sync_status)
@@ -100,6 +111,26 @@ def repair_alias_pair_on_read(job_id: str, *, store: Any | None = None) -> None:
             files_parsed=files or getattr(job_meta, "files_parsed", 0) or 0,
             chunks_created=chunks or getattr(job_meta, "chunks_created", 0) or 0,
         )
+        return
+
+    if (
+        asset_meta
+        and Stage.is_synced(asset_meta.sync_status)
+        and job_meta
+        and job_id != asset
+    ):
+        files, chunks = _index_counts(asset_meta, asset, job_id=job_id)
+        live_chunks = chunks or getattr(asset_meta, "chunks_created", 0) or 0
+        stale_chunks = getattr(job_meta, "chunks_created", 0) or 0
+        if live_chunks > 0 and live_chunks != stale_chunks:
+            mirror_sync_to_alias_pair(
+                job_id,
+                asset,
+                commit_hash=asset_meta.commit_hash or job_meta.commit_hash or "",
+                cloned_at=asset_meta.cloned_at or job_meta.cloned_at or "",
+                files_parsed=files or getattr(asset_meta, "files_parsed", 0) or 0,
+                chunks_created=live_chunks,
+            )
 
 
 def verify_sync_consistency(
@@ -133,6 +164,34 @@ def verify_sync_consistency(
         )
         if files > 0 and chunks > 0 and not has_error and counts_match:
             return True, files, chunks
+
+        # Chroma is authoritative — repair stale metadata after re-index on a sibling id.
+        if auto_repair and files > 0 and chunks > 0 and not has_error:
+            repair_files = max(files, meta_files or 0)
+            repair_chunks = max(chunks, meta_chunks or 0)
+            logger.warning(
+                "sync_metadata_auto_repair",
+                repo_id=meta.repo_id,
+                asset_repo_id=asset_repo_id,
+                meta_chunks=meta_chunks,
+                live_chunks=chunks,
+                meta_files=meta_files,
+                live_files=files,
+                repair_files=repair_files,
+                repair_chunks=repair_chunks,
+            )
+            try:
+                metadata_store.mark_synced(
+                    meta.repo_id,
+                    commit_hash=meta.commit_hash or "",
+                    cloned_at=meta.cloned_at or "",
+                    files_parsed=repair_files,
+                    chunks_created=repair_chunks,
+                )
+                return True, repair_files, repair_chunks
+            except Exception as exc:
+                logger.error("sync_metadata_auto_repair_failed", error=str(exc))
+
         logger.critical(
             "sync_consistency_violation",
             repo_id=meta.repo_id,
@@ -208,8 +267,23 @@ def mirror_sync_to_alias_pair(
     files_parsed: int,
     chunks_created: int,
 ) -> None:
-    """Keep job_id and asset_repo_id metadata aligned after successful ingest."""
-    for rid in {job_id, asset_repo_id}:
+    """Keep job_id, asset_repo_id, and any linked alias metadata aligned after ingest."""
+    from pathlib import Path
+
+    from app.config import settings
+
+    ids_to_sync = {job_id, asset_repo_id}
+    repos_root = Path(settings.REPOS_PATH)
+    if repos_root.is_dir():
+        for meta_path in repos_root.glob("*/metadata.json"):
+            rid = meta_path.parent.name
+            alias = metadata_store.get_alias(rid)
+            if alias in ids_to_sync or rid in ids_to_sync:
+                ids_to_sync.add(rid)
+                if alias:
+                    ids_to_sync.add(alias)
+
+    for rid in ids_to_sync:
         try:
             if metadata_store.get(rid) is not None:
                 metadata_store.mark_synced(
@@ -414,4 +488,25 @@ def readiness_snapshot(
         "chunks_created": r.chunks_created,
         "block_message": r.block_message,
         "block_reason": r.block_reason,
+        **_integrity_fields(r.asset_repo_id, r.job_id, r.chunks_created),
+    }
+
+
+def _integrity_fields(
+    asset_repo_id: str,
+    job_id: str,
+    metadata_chunks: int,
+) -> dict[str, Any]:
+    from app.ingestion.index_integrity import check_index_integrity
+
+    report = check_index_integrity(
+        asset_repo_id,
+        job_id=job_id,
+        metadata_chunks=metadata_chunks or None,
+    )
+    return {
+        "index_integrity_ok": report.ok,
+        "chroma_chunk_count": report.chroma_chunks,
+        "metadata_chunks_created": metadata_chunks,
+        "index_mismatch": report.mismatch,
     }

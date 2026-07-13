@@ -10,10 +10,8 @@ Tests for P1 improvements: Redis job store, webhook hardening, config.
 """
 from __future__ import annotations
 
-import json
 import os
 import unittest
-from unittest.mock import MagicMock, patch
 
 os.environ.setdefault("LLM_PROVIDER", "ollama")
 
