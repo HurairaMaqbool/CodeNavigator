@@ -14,6 +14,8 @@ ignore = [
     "F401", # Unused import
     "E701", # Multiple statements on one line (colon)
     "E702", # Multiple statements on one line (semicolon)
+    "F541", # f-string without any placeholders
+    "F811", # Redefinition of unused identifier
 ]
 
 [tool.ruff.lint.per-file-ignores]
