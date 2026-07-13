@@ -127,8 +127,15 @@ def generate_mermaid(
     """
     nodes_data = subgraph.get("nodes", [])
     edges_data = subgraph.get("edges", [])
+    id_to_label = {}
+    for n in nodes_data:
+        path = n.get("path", "")
+        name = n.get("name", n["id"])
+        if path:
+            id_to_label[n["id"]] = f"{path}:{name}"
+        else:
+            id_to_label[n["id"]] = name
     seen_ids: dict[str, str] = {}
-    id_to_label = {n["id"]: n.get("name", n["id"]) for n in nodes_data}
 
     if subgraph.get("not_found") or not nodes_data:
         entry = _resolve_entry_point(subgraph, nodes_data)
@@ -227,14 +234,27 @@ def graph_to_mermaid(
         "requested_depth": requested_depth,
         "clamped": requested_depth != clamped_depth,
         "hidden_count": max(0, len(subgraph.get("nodes", [])) - max_nodes),
+        "truncated_count": subgraph.get("truncated_count", 0),
+        "hidden_neighbors": subgraph.get("hidden_neighbors", []),
+        "direction": direction,
     }
 
 
-def generate_diagram(repo_id: str, name: str, depth: int = 2) -> dict[str, Any]:
+def generate_diagram(
+    repo_id: str,
+    name: str,
+    depth: int = 2,
+    direction: str | None = None,
+) -> dict[str, Any]:
     """Handoff wrapper used by agent tools — subgraph + mermaid metadata."""
+    from app.config import settings
     from app.graph.queries import get_subgraph
 
-    sub = get_subgraph(repo_id, name, depth)
+    traversal = (direction or settings.DIAGRAM_DEFAULT_DIRECTION).strip().lower()
+    if traversal not in ("upstream", "downstream", "both"):
+        traversal = settings.DIAGRAM_DEFAULT_DIRECTION
+
+    sub = get_subgraph(repo_id, name, direction=traversal, max_depth=depth)
     sub = {**sub, "entry_point": name}
     requested = sub.get("requested_depth", depth)
     clamped_depth = 3 if sub.get("clamped") else requested
@@ -242,7 +262,7 @@ def generate_diagram(repo_id: str, name: str, depth: int = 2) -> dict[str, Any]:
         sub,
         requested,
         clamped_depth,
-        max_nodes=25,
+        max_nodes=settings.GRAPH_SUBGRAPH_MAX_NODES,
         repo_id=repo_id,
-        direction="both",
+        direction=traversal,
     )

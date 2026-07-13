@@ -149,15 +149,22 @@ export default function ArchitecturePage() {
 
     // 1. First pass: map node IDs to file paths
     lines.forEach((line) => {
-      // Matches pattern: node_id["Label Text"]
-      const nodeMatch = /^\s*([a-zA-Z0-9_]+)\["([^"]+)"\](.*)$/.exec(line);
-      if (nodeMatch) {
-        const nid = nodeMatch[1];
-        const label = nodeMatch[2];
+      const nodeRegex = /([a-zA-Z0-9_]+)\["([^"]+)"\]/g;
+      let match;
+      while ((match = nodeRegex.exec(line)) !== null) {
+        const nid = match[1];
+        const label = match[2];
         if (nid && label) {
-          // If label contains a colon (like src/requests/sessions.py:Session.send), extract file path
           const parts = label.split(":");
-          const path = parts[0] ? parts[0].trim() : label;
+          let path = label;
+          if (parts.length > 1) {
+            if (parts[0].length === 1 && (parts[1].startsWith("\\") || parts[1].startsWith("/"))) {
+              // Windows absolute path: join drive letter (e.g., D:\path)
+              path = `${parts[0]}:${parts[1]}`.trim();
+            } else {
+              path = parts[0].trim();
+            }
+          }
           nodeLabelMap[nid] = path;
           filesSeen.add(path);
         }
@@ -166,7 +173,7 @@ export default function ArchitecturePage() {
 
     // 2. Second pass: map edges between files
     lines.forEach((line) => {
-      const edgeMatch = /^\s*([a-zA-Z0-9_]+)\s*(?:-->|-.->\|cycle\|)\s*([a-zA-Z0-9_]+)/.exec(line);
+      const edgeMatch = /([a-zA-Z0-9_]+)\s*(?:-->|-.->\|cycle\|)\s*([a-zA-Z0-9_]+)/.exec(line);
       if (edgeMatch) {
         const srcNid = edgeMatch[1];
         const tgtNid = edgeMatch[2];
