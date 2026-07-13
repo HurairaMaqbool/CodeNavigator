@@ -77,6 +77,18 @@ export type DiagramResponse = {
   requested_depth: number;
   clamped: boolean;
   hidden_count?: number;
+  truncated_count?: number;
+  direction?: string;
+  hidden_neighbors?: HiddenNeighbor[];
+};
+
+export type HiddenNeighbor = {
+  parent_id: string;
+  parent_name: string;
+  direction: "caller" | "callee";
+  id: string;
+  name: string;
+  path: string;
 };
 
 export type EvalHealthResponse = {
@@ -108,6 +120,8 @@ export type EvalJobStatus = {
 export type RagasScores = Record<string, number>;
 
 export type EvalRun = {
+  run_id?: string;
+  repo_id?: string;
   version: string;
   timestamp?: string;
   git_sha?: string;
@@ -129,11 +143,16 @@ export type EvalRun = {
 export type PerQuestionDiagnostic = {
   question: string;
   hit?: boolean;
+  gt_hit?: boolean;
   precision_at_3?: number;
   gated?: boolean;
   confidence?: number;
+  confidence_score?: number;
   top_files?: string[];
   expected_files?: string[];
+  ground_truth_files?: string[];
+  state_path_consistent?: boolean;
+  rate_limited?: boolean;
 };
 
 export type CompareResult = {
@@ -150,6 +169,9 @@ export type CompareResult = {
   baseline_version: string;
   candidate_version: string;
   regressions_found: boolean;
+  incomparable?: boolean;
+  incomparable_reason?: string;
+  index_version_warning?: string;
 };
 
 export type GoldenStatus = {
@@ -160,6 +182,17 @@ export type GoldenStatus = {
   passed?: number;
   pass_threshold?: number;
   failed_questions?: string[];
+  failed_details?: Array<{
+    question: string;
+    fixture?: string;
+    expected_files?: string[];
+    cited_files?: string[];
+    gated?: boolean;
+    error?: string;
+  }>;
+  skipped_fixtures?: string[];
+  age_seconds?: number;
+  stale?: boolean;
   per_repo?: Array<{
     fixture: string;
     repo_id: string;
@@ -203,6 +236,51 @@ export type AuditEvent = {
   resource_type: string;
   resource_id: string;
   details: Record<string, unknown>;
+  correlation_id?: string;
+};
+
+export type BillingPlan = {
+  id: string;
+  name: string;
+  price_monthly_usd: number;
+  limits: {
+    chat_per_month: number;
+    ingest_per_month: number;
+    eval_per_month: number;
+  };
+};
+
+export type PlatformRepo = {
+  repo_id: string;
+  asset_repo_id: string;
+  repo_url: string;
+  ref: string;
+  sync_status: string;
+  chunks_created: number;
+  files_parsed: number;
+  commit_hash?: string;
+  chroma_chunks?: number;
+  index_integrity_ok?: boolean;
+};
+
+export type ApiKeySummary = {
+  key_prefix: string;
+  org_id: string;
+  label: string;
+  active: boolean;
+  created_at?: string;
+};
+
+export type CreateApiKeyResponse = {
+  api_key: string;
+  org_id: string;
+  label: string;
+};
+
+export type GitHubInstallation = {
+  installation_id: number;
+  org_id: string;
+  account_login?: string;
 };
 
 export type HealthResponse = {
@@ -221,6 +299,8 @@ export type ChatMessage = {
   trace?: AgentTraceStep[];
   confidence_score?: number;
   elapsed_s?: number;
+  /** When set, the bubble shows a retry action for the failed user question. */
+  retry_question?: string;
 };
 
 export class ApiError extends Error {

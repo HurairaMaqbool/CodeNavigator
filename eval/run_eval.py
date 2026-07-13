@@ -15,7 +15,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
+import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -26,7 +29,7 @@ from app.ingestion.repo_readiness import is_repo_ready
 
 from eval.context_builder import build_ragas_contexts
 from eval.eval_store import append_run, load_runs, update_last_run
-from eval.groq_guard import GroqQuotaError, eval_question_delay, require_groq_quota
+from eval.groq_guard import GroqQuotaError, eval_question_delay, ragas_judge_cooldown, require_groq_quota
 from eval.health_check import (
     EvalPipelineError,
     check_index_health,
@@ -40,7 +43,7 @@ from eval.retrieval_metrics import precision_at_k
 DEFAULT_GOLDEN_SET_PATH = Path("data/golden_set.json")
 FALLBACK_GOLDEN_SET_PATH = Path("tests/eval_set.json")
 
-STATE_PATH_RUNS_DEFAULT = 3
+STATE_PATH_RUNS_DEFAULT = 1  # overridden at runtime from settings.EVAL_STATE_PATH_RUNS
 
 
 class RegressionError(Exception):
@@ -139,34 +142,54 @@ def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
     from app.api.auth import verify_api_key
     from app.main import app
     from app.agent.loop import _EXACT_QUESTION_CACHE
-    _EXACT_QUESTION_CACHE.clear()
 
-    tenant = MagicMock(org_id="default")
-    overrides = dict(app.dependency_overrides)
-    app.dependency_overrides[verify_api_key] = lambda: None
-    try:
-        with (
-            patch("app.platform.usage_meter.check_quota", return_value=True),
-            patch("app.platform.usage_meter.increment"),
-            patch("app.platform.audit_log.record_event"),
-            patch("app.platform.tenant_context.get_tenant", return_value=tenant),
-        ):
-            client = TestClient(app)
-            with patch.object(settings, "SEMANTIC_CACHE_ENABLED", False):
-                resp = client.post(
-                    "/chat",
-                    json={"repo_id": repo_id, "question": question},
-                )
+    max_attempts = max(1, int(settings.GROQ_LLM_RATE_LIMIT_ATTEMPTS))
+    last_error = ""
 
-        if resp.status_code != 200:
+    for attempt in range(max_attempts):
+        _EXACT_QUESTION_CACHE.clear()
+        tenant = MagicMock(org_id="default")
+        overrides = dict(app.dependency_overrides)
+        app.dependency_overrides[verify_api_key] = lambda: None
+        try:
+            with (
+                patch("app.platform.usage_meter.check_quota", return_value=True),
+                patch("app.platform.usage_meter.increment"),
+                patch("app.platform.audit_log.record_event"),
+                patch("app.platform.tenant_context.get_tenant", return_value=tenant),
+            ):
+                client = TestClient(app)
+                with patch.object(settings, "SEMANTIC_CACHE_ENABLED", False):
+                    resp = client.post(
+                        "/chat",
+                        json={"repo_id": repo_id, "question": question},
+                    )
+
+            if resp.status_code == 200:
+                return resp.json()
+
+            body = resp.text[:500]
+            last_error = f"/chat returned HTTP {resp.status_code}: {body}"
+            if resp.status_code == 429 and attempt + 1 < max_attempts:
+                wait_s = 30.0
+                m = re.search(r"wait about (\d+) seconds", body, re.IGNORECASE)
+                if m:
+                    wait_s = float(m.group(1))
+                wait_s = min(wait_s, float(settings.LLM_RATE_LIMIT_MAX_BACKOFF_S))
+                time.sleep(wait_s)
+                continue
             raise EvalPipelineError(
-                f"/chat returned HTTP {resp.status_code}: {resp.text[:500]}",
+                last_error,
                 diagnostics={"repo_id": repo_id, "question": question[:120]},
             )
-        return resp.json()
-    finally:
-        app.dependency_overrides.clear()
-        app.dependency_overrides.update(overrides)
+        finally:
+            app.dependency_overrides.clear()
+            app.dependency_overrides.update(overrides)
+
+    raise EvalPipelineError(
+        last_error or "chat endpoint failed after retries",
+        diagnostics={"repo_id": repo_id, "question": question[:120]},
+    )
 
 
 def state_path_consistency(question: str, repo_id: str, n_runs: int = STATE_PATH_RUNS_DEFAULT) -> bool:
@@ -267,6 +290,42 @@ def _flag_gated_regressions(
     return flags
 
 
+def _load_ragas_deps() -> tuple[Any, ...]:
+    """Import RAGAS stack lazily; patch in tests via this hook."""
+    from datasets import Dataset
+    from ragas import evaluate
+    from ragas.metrics import (
+        faithfulness,
+        answer_relevancy,
+        context_precision,
+        context_recall,
+    )
+    try:
+        from ragas.run_config import RunConfig
+    except Exception:
+        RunConfig = None
+    from eval.ragas_providers import get_judge_llm, get_judge_embeddings
+
+    return (
+        Dataset,
+        evaluate,
+        faithfulness,
+        answer_relevancy,
+        context_precision,
+        context_recall,
+        RunConfig,
+        get_judge_llm,
+        get_judge_embeddings,
+    )
+
+
+def _run_ragas_evaluate(dataset: Any, metrics: list[Any], **kwargs: Any) -> Any:
+    """Thin wrapper so tests can patch RAGAS without importing ragas at collection time."""
+    from ragas import evaluate
+
+    return evaluate(dataset=dataset, metrics=metrics, **kwargs)
+
+
 def run_golden_set(
     golden_path: str | Path | None = None,
     *,
@@ -298,19 +357,17 @@ def run_golden_set(
 
     # Now safe to import heavy dependencies after readiness check passes
     try:
-        from datasets import Dataset
-        from ragas import evaluate
-        from ragas.metrics import (
+        (
+            Dataset,
+            _evaluate,
             faithfulness,
             answer_relevancy,
             context_precision,
             context_recall,
-        )
-        try:
-            from ragas.run_config import RunConfig
-        except Exception:
-            RunConfig = None
-        from eval.ragas_providers import get_judge_llm, get_judge_embeddings
+            RunConfig,
+            get_judge_llm,
+            get_judge_embeddings,
+        ) = _load_ragas_deps()
     except ImportError as e:
         raise ImportError(
             f"RAGAS evaluation requires optional dependencies: {e}. "
@@ -363,7 +420,7 @@ def run_golden_set(
 
         paths: list[list[str]] = []
         res: dict[str, Any] = {}
-        for run_idx in range(STATE_PATH_RUNS_DEFAULT):
+        for run_idx in range(max(1, int(settings.EVAL_STATE_PATH_RUNS))):
             if i > 0 or run_idx > 0:
                 eval_question_delay()
             res = _invoke_chat_endpoint(chat_repo, question)
@@ -404,6 +461,7 @@ def run_golden_set(
             "top_files": top_files,
             "ground_truth_files": gt_files,
             "gt_hit": gt_hit,
+            "hit": gt_hit,
             "gated": bool(res.get("gated")),
             "confidence_score": round(float(res.get("confidence_score") or 0.0), 4),
             "context_count": len(ctx_list),
@@ -440,18 +498,43 @@ def run_golden_set(
     eval_kwargs: dict[str, Any] = {"llm": judge_llm, "embeddings": judge_embeddings}
     if RunConfig is not None:
         eval_kwargs["run_config"] = RunConfig(
-            timeout=300,
-            max_retries=8,
-            max_wait=90,
+            timeout=int(settings.EVAL_RAGAS_TIMEOUT_S),
+            max_retries=4,
+            max_wait=120,
             max_workers=1,
         )
 
     metrics_list = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
-    ragas_result = evaluate(
-        dataset,
-        metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
-        **eval_kwargs,
-    )
+    ragas_judge_cooldown()
+    ragas_result = None
+    last_ragas_err: Exception | None = None
+    for attempt in range(3):
+        try:
+            ragas_result = _run_ragas_evaluate(
+                dataset,
+                metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+                **eval_kwargs,
+            )
+            break
+        except Exception as exc:
+            last_ragas_err = exc
+            err = str(exc).lower()
+            if "429" not in err and "rate" not in err:
+                raise
+            if attempt < 2:
+                wait_s = 90 * (attempt + 1)
+                print(f"RAGAS judge rate-limited — cooling down {wait_s}s before retry…")
+                time.sleep(wait_s)
+                ragas_judge_cooldown()
+    if ragas_result is None:
+        raise EvalPipelineError(
+            f"RAGAS judge failed after retries: {last_ragas_err}",
+            diagnostics={
+                "rate_limited_count": rate_limited_count,
+                "question_count": n,
+                "chat_phase_complete": True,
+            },
+        ) from last_ragas_err
 
     ragas_scores = _extract_ragas_scores(ragas_result, metrics_list)
     row_scores = _per_row_ragas_scores(ragas_result, metrics_list)
@@ -475,8 +558,11 @@ def run_golden_set(
     }
 
     version, git_sha = _git_version()
+    run_id = uuid.uuid4().hex
 
     report: dict[str, Any] = {
+        "run_id": run_id,
+        "repo_id": job_id,
         "version": version,
         "git_sha": git_sha,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -564,7 +650,8 @@ def _git_version() -> tuple[str, str]:
     except Exception:
         return settings.EVAL_VERSION or "unknown", "unknown"
     version = settings.EVAL_VERSION or (
-        git_short if git_short != "unknown"
+        f"{git_short}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        if git_short != "unknown"
         else f"eval_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
     )
     return version, git_sha

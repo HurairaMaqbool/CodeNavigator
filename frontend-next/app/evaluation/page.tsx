@@ -59,7 +59,9 @@ export default function EvaluationPage() {
     setCompareResult,
   } = useEvalRunners(repoId);
 
-  const runs = history.data ?? [];
+  const allRuns = history.data ?? [];
+  const repoSpecificRuns = allRuns.filter((r) => r.repo_id === repoId);
+  const runs = repoSpecificRuns.length > 0 ? repoSpecificRuns : allRuns;
   const [selectedRunKey, setSelectedRunKey] = useState<string | null>(null);
   const [baseline, setBaseline] = useState("");
   const [candidate, setCandidate] = useState("");
@@ -188,8 +190,15 @@ export default function EvaluationPage() {
             Run RAGAS eval
           </Button>
           {effectiveRagasProgress && (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
               {effectiveRagasProgress}
+            </span>
+          )}
+          {history.isFetching && !effectiveRagasProgress && (
+            <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+              Updating history...
             </span>
           )}
           <Button

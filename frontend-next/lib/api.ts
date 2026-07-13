@@ -79,7 +79,7 @@ function fetchWithTimeout(
 ): Promise<Response> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  return fetch(url, { ...init, signal: ctrl.signal }).finally(() =>
+  return fetch(url, { ...init, cache: "no-store", signal: ctrl.signal }).finally(() =>
     clearTimeout(timer),
   );
 }
@@ -90,7 +90,7 @@ async function fetchWithSignal(
   signal: AbortSignal,
 ): Promise<Response> {
   try {
-    return await fetch(url, { ...init, signal });
+    return await fetch(url, { ...init, cache: "no-store", signal });
   } catch (e) {
     if (isAbortError(e)) {
       throw new ApiError(
