@@ -133,8 +133,34 @@ def _extract_state_path(chat_response: dict[str, Any]) -> list[str]:
     return [str(item.get("state", "")) for item in trace if isinstance(item, dict)]
 
 
+# ---------------------------------------------------------------------------
+# Retry constants for 429 handling in eval pipeline
+# ---------------------------------------------------------------------------
+_EVAL_429_MAX_RETRIES: int = 3        # max per-question retries on rate-limit
+_EVAL_429_DEFAULT_WAIT_S: float = 4.0  # wait when provider hint is absent
+_EVAL_429_MAX_WAIT_S: float = 20.0    # hard ceiling per single retry sleep
+
+
+def _extract_retry_wait_s(text: str, *, default: float = _EVAL_429_DEFAULT_WAIT_S) -> float:
+    """Parse provider hint 'wait about N seconds' from error text or response body."""
+    m = re.search(r"wait about ([\d.]+) seconds?", text, re.IGNORECASE)
+    if m:
+        return max(1.0, float(m.group(1)))
+    m = re.search(r"retry.?after[:\s=]+([\d.]+)", text, re.IGNORECASE)
+    if m:
+        return max(1.0, float(m.group(1)))
+    return default
+
+
 def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
-    """Call the real ``POST /chat`` handler via FastAPI TestClient (full router → loop stack)."""
+    """
+    Call the real ``POST /chat`` handler via FastAPI TestClient (full router → loop stack).
+
+    Retry policy (429-specific, all others fail immediately):
+    - HTTP 429 response  → retry with provider-hinted backoff (up to 3 times)
+    - JSON body rate_limited=True with retry_after_s hint → same retry policy
+    - Any other HTTP error or exception → raise EvalPipelineError immediately
+    """
     from unittest.mock import MagicMock, patch
 
     from fastapi.testclient import TestClient
@@ -142,11 +168,13 @@ def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
     from app.api.auth import verify_api_key
     from app.main import app
     from app.agent.loop import _EXACT_QUESTION_CACHE
+    from app.observability.logging_config import logger
 
-    max_attempts = max(1, int(settings.GROQ_LLM_RATE_LIMIT_ATTEMPTS))
+    # Eval pipeline runs in a thread — time.sleep() is safe here (not async context).
+    http_max_attempts = max(1, int(settings.GROQ_LLM_RATE_LIMIT_ATTEMPTS))
     last_error = ""
 
-    for attempt in range(max_attempts):
+    for attempt in range(http_max_attempts):
         _EXACT_QUESTION_CACHE.clear()
         tenant = MagicMock(org_id="default")
         overrides = dict(app.dependency_overrides)
@@ -165,19 +193,50 @@ def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
                         json={"repo_id": repo_id, "question": question},
                     )
 
+            # ── HTTP 200 but agent-layer rate-limited (JSON body rate_limited=True) ──
             if resp.status_code == 200:
-                return resp.json()
+                body_json = resp.json()
+                if body_json.get("rate_limited") and attempt + 1 < http_max_attempts:
+                    # Agent absorbed the 429 internally but exhausted its own budget.
+                    # Give the provider a fresh window before we try again.
+                    hint_s = float(body_json.get("retry_after_s") or _EVAL_429_DEFAULT_WAIT_S)
+                    wait_s = min(hint_s * (2 ** attempt), _EVAL_429_MAX_WAIT_S)
+                    logger.warning(
+                        "eval_question_rate_limited_body",
+                        question=question[:80],
+                        attempt=attempt + 1,
+                        max_attempts=http_max_attempts,
+                        wait_s=round(wait_s, 1),
+                        hint_s=hint_s,
+                    )
+                    print(
+                        f"[eval] Rate-limited (agent body) — retrying in {wait_s:.0f}s "
+                        f"(attempt {attempt + 1}/{http_max_attempts})"
+                    )
+                    time.sleep(wait_s)
+                    continue
+                return body_json
 
-            body = resp.text[:500]
-            last_error = f"/chat returned HTTP {resp.status_code}: {body}"
-            if resp.status_code == 429 and attempt + 1 < max_attempts:
-                wait_s = 30.0
-                m = re.search(r"wait about (\d+) seconds", body, re.IGNORECASE)
-                if m:
-                    wait_s = float(m.group(1))
-                wait_s = min(wait_s, float(settings.LLM_RATE_LIMIT_MAX_BACKOFF_S))
+            # ── HTTP 429 (router-level rate limit, rare but possible) ──────────────
+            body_text = resp.text[:500]
+            last_error = f"/chat returned HTTP {resp.status_code}: {body_text}"
+            if resp.status_code == 429 and attempt + 1 < http_max_attempts:
+                hint_s = _extract_retry_wait_s(body_text)
+                wait_s = min(hint_s * (2 ** attempt), _EVAL_429_MAX_WAIT_S)
+                logger.warning(
+                    "eval_question_http_429",
+                    question=question[:80],
+                    attempt=attempt + 1,
+                    max_attempts=http_max_attempts,
+                    wait_s=round(wait_s, 1),
+                )
+                print(
+                    f"[eval] HTTP 429 — retrying in {wait_s:.0f}s "
+                    f"(attempt {attempt + 1}/{http_max_attempts})"
+                )
                 time.sleep(wait_s)
                 continue
+
             raise EvalPipelineError(
                 last_error,
                 diagnostics={"repo_id": repo_id, "question": question[:120]},
@@ -186,8 +245,16 @@ def _invoke_chat_endpoint(repo_id: str, question: str) -> dict[str, Any]:
             app.dependency_overrides.clear()
             app.dependency_overrides.update(overrides)
 
+    # Exhausted all retry attempts — this is a genuine persistent rate-limit.
+    from app.observability.logging_config import logger as _logger
+    _logger.error(
+        "eval_question_429_exhausted",
+        question=question[:80],
+        max_attempts=http_max_attempts,
+        note="429-error persisted after all retries — genuine rate-limit exhaustion, not a code-bug",
+    )
     raise EvalPipelineError(
-        last_error or "chat endpoint failed after retries",
+        last_error or "chat endpoint failed after retries (429 persistent)",
         diagnostics={"repo_id": repo_id, "question": question[:120]},
     )
 
@@ -409,6 +476,8 @@ def run_golden_set(
 
     print(f"Running golden set ({len(eval_data)} questions) via POST /chat on {asset_repo_id}...")
 
+    from app.observability.logging_config import logger as _eval_logger
+
     for i, case in enumerate(eval_data):
         if i > 0:
             eval_question_delay()
@@ -418,13 +487,51 @@ def run_golden_set(
         _, case_asset = resolve_asset_repo_id(case_repo)
         chat_repo = case_asset or asset_repo_id
 
+        # ── Per-question 429 retry loop ────────────────────────────────────────
+        # _invoke_chat_endpoint already handles HTTP-429 and body rate_limited retries.
+        # This outer loop handles the edge case where even after those retries the
+        # returned response still carries rate_limited=True (persistent quota pressure).
+        # We allow up to _EVAL_429_MAX_RETRIES before treating it as a genuine failure.
+        q_attempts = 0
         paths: list[list[str]] = []
         res: dict[str, Any] = {}
-        for run_idx in range(max(1, int(settings.EVAL_STATE_PATH_RUNS))):
-            if i > 0 or run_idx > 0:
-                eval_question_delay()
-            res = _invoke_chat_endpoint(chat_repo, question)
-            paths.append(_extract_state_path(res))
+        while True:
+            q_attempts += 1
+            paths = []
+            for run_idx in range(max(1, int(settings.EVAL_STATE_PATH_RUNS))):
+                if i > 0 or run_idx > 0 or q_attempts > 1:
+                    eval_question_delay()
+                res = _invoke_chat_endpoint(chat_repo, question)
+                paths.append(_extract_state_path(res))
+
+            # If the final response is still rate_limited AND we have budget, retry.
+            if res.get("rate_limited") and q_attempts < _EVAL_429_MAX_RETRIES:
+                hint_s = float(res.get("retry_after_s") or _EVAL_429_DEFAULT_WAIT_S)
+                wait_s = min(hint_s * (2 ** (q_attempts - 1)), _EVAL_429_MAX_WAIT_S)
+                _eval_logger.warning(
+                    "eval_question_persistent_rate_limit",
+                    question=question[:80],
+                    outer_attempt=q_attempts,
+                    max_outer_attempts=_EVAL_429_MAX_RETRIES,
+                    wait_s=round(wait_s, 1),
+                )
+                print(
+                    f"[eval] Question still rate-limited after inner retries — "
+                    f"outer wait {wait_s:.0f}s (attempt {q_attempts}/{_EVAL_429_MAX_RETRIES})"
+                )
+                time.sleep(wait_s)
+                continue  # outer retry
+
+            # Either succeeded, or exhausted outer retries — exit loop.
+            if res.get("rate_limited"):
+                _eval_logger.error(
+                    "eval_question_429_outer_exhausted",
+                    question=question[:80],
+                    outer_attempts=q_attempts,
+                    note="429-error persisted after all retries — genuine rate-limit exhaustion, not a code-bug",
+                )
+            break
+        # ── End per-question retry loop ────────────────────────────────────────
 
         consistent = all(p == paths[0] for p in paths[1:])
         state_path = paths[0] if paths else []
@@ -437,8 +544,16 @@ def run_golden_set(
             })
 
         ans_text = res.get("answer", "")
-        if res.get("rate_limited") or "rate-limited" in ans_text.lower():
+        # Only count as rate-limited if we genuinely exhausted all retries.
+        still_rate_limited = bool(res.get("rate_limited") or "rate-limited" in ans_text.lower())
+        if still_rate_limited:
             rate_limited_count += 1
+            _eval_logger.warning(
+                "eval_question_counted_rate_limited",
+                question=question[:80],
+                outer_attempts=q_attempts,
+                note="Counted as rate-limited after all retry attempts exhausted",
+            )
 
         ctx_list, used_sentinel = build_ragas_contexts(res)
         if used_sentinel:
@@ -466,7 +581,8 @@ def run_golden_set(
             "confidence_score": round(float(res.get("confidence_score") or 0.0), 4),
             "context_count": len(ctx_list),
             "used_sentinel": used_sentinel,
-            "rate_limited": bool(res.get("rate_limited")),
+            "rate_limited": still_rate_limited,
+            "rate_limit_retries": q_attempts - 1,  # 0 = succeeded first try
             "state_path": state_path,
             "state_path_consistent": consistent,
         }
@@ -480,7 +596,8 @@ def run_golden_set(
     n = len(eval_data)
     if rate_limited_count > 0:
         raise EvalPipelineError(
-            f"Evaluation aborted: Groq quota exhausted ({rate_limited_count}/{n} rate-limited).",
+            f"Evaluation aborted: Groq quota genuinely exhausted after retries "
+            f"({rate_limited_count}/{n} questions rate-limited after {_EVAL_429_MAX_RETRIES} attempts each).",
             diagnostics={"rate_limited_count": rate_limited_count, "question_count": n},
         )
 
