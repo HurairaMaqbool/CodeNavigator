@@ -1,0 +1,33 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm 
+help npmrc` for supported config options.
+At line:1 char:1
++ & "D:\nod js/node.exe" "D:\nod js/node_modules/npm/bin/npm-cli.js" ru ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+> frontend-next@0.1.0 lint
+> eslint
+
+
+D:\github project\codebase-onboarding-agent\frontend-next\lib\context\app-context.tsx
+  46:19  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\github project\codebase-onboarding-agent\frontend-next\lib\context\app-context.tsx:46:19
+  44 |     try {
+  45 |       const stored = localStorage.getItem(REPO_KEY);
+> 46 |       if (stored) setRepoIdState(stored);
+     |                   ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  47 |     } catch {
+  48 |       /* ignore */
+  49 |     }  react-hooks/set-state-in-effect
+
+Γ£û 1 problem (1 error, 0 warnings)
+

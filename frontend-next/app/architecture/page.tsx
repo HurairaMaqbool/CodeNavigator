@@ -6,7 +6,6 @@ import { AlertTriangle, GitBranchPlus, Loader2, Network } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import { PanelErrorBoundary } from "@/components/shared/error-boundary";
-import { SectionHeader } from "@/components/shared/section-header";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -240,14 +239,17 @@ export default function ArchitecturePage() {
 
   return (
     <AppShell onQuickStart={(url, ref) => void handleQuickStart(url, ref)}>
-      <div className="page-enter space-y-8">
-        {/* Section Header */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <SectionHeader
-            title="Architecture Explorer"
-            caption="Explore interactive call-graphs, trace callers/callees, visual circular dependencies, and perform side-by-side version diff comparisons."
-            className="mb-0"
-          />
+      <div className="page-enter space-y-6">
+        {/* ─── Header Row ───────────────────────────── */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Architecture
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Call-graph explorer · callers / callees · cycle detection
+            </p>
+          </div>
           <Button
             variant="secondary"
             size="sm"
@@ -261,130 +263,139 @@ export default function ArchitecturePage() {
           </Button>
         </div>
 
-        {/* Control Controls Panel */}
-        <div className="card-panel grid gap-6 md:grid-cols-4 items-end">
-          <div className="md:col-span-2 space-y-2">
-            <Label htmlFor="search-symbol">Search Symbol</Label>
-            <SymbolSearchBar
-              repoId={repoId}
-              onSelectSymbol={(sym) => {
-                setSelectedSymbol(sym);
-                setInspectedSymbol(null); // Reset detail panel
-              }}
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Direction</Label>
-            <Select
-              value={direction}
-              onValueChange={(v) => setDirection(v as Direction)}
-              disabled={loading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Direction" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="downstream">Callees (downstream)</SelectItem>
-                <SelectItem value="upstream">Callers (upstream)</SelectItem>
-                <SelectItem value="both">Both directions</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Depth: {depth}</Label>
-            <Slider
-              min={1}
-              max={5}
-              step={1}
-              value={[depth]}
-              onValueChange={(v) => setDepth(v[0] ?? 2)}
-              disabled={loading}
-            />
-          </div>
-        </div>
-
-        {/* Feature Toggles */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {/* Granularity Toggle */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1 shadow-sm text-xs">
-              <span className="text-muted-foreground font-semibold px-1.5">Granularity:</span>
-              <button
-                type="button"
-                className={`px-2 py-1 rounded transition-colors ${
-                  granularity === "function"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setGranularity("function")}
-              >
-                Function
-              </button>
-              <button
-                type="button"
-                className={`px-2 py-1 rounded transition-colors ${
-                  granularity === "file"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setGranularity("file")}
-              >
-                File
-              </button>
+        {/* ─── Toolbar ──────────────────────────────── */}
+        <div className="card-panel space-y-4">
+          {/* Row 1: Symbol search + Direction + Depth chip */}
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[200px] space-y-1.5">
+              <Label htmlFor="search-symbol" className="text-xs text-muted-foreground">Symbol</Label>
+              <SymbolSearchBar
+                repoId={repoId}
+                onSelectSymbol={(sym) => {
+                  setSelectedSymbol(sym);
+                  setInspectedSymbol(null);
+                }}
+                disabled={loading}
+              />
             </div>
 
-            {/* Diff Mode Toggle */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1 shadow-sm text-xs">
-              <span className="text-muted-foreground font-semibold px-1.5">Diff Mode:</span>
-              <button
-                type="button"
-                className={`px-2 py-1 rounded transition-colors ${
-                  !diffMode
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setDiffMode(false)}
-              >
-                Off
-              </button>
-              <button
-                type="button"
-                className={`px-2 py-1 rounded transition-colors ${
-                  diffMode
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setDiffMode(true)}
-              >
-                On
-              </button>
-            </div>
-          </div>
-
-          {diffMode && (
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground whitespace-nowrap">Compare Commit:</Label>
+            <div className="w-44 space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Direction</Label>
               <Select
-                value={candidateRepoId}
-                onValueChange={setCandidateRepoId}
+                value={direction}
+                onValueChange={(v) => setDirection(v as Direction)}
+                disabled={loading}
               >
-                <SelectTrigger className="w-[180px] h-8 text-xs">
-                  <SelectValue placeholder="Select Version" />
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Direction" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={repoId}>Same Commit (Baseline)</SelectItem>
-                  {/* Fallback option for testing/demo */}
-                  <SelectItem value="375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d">
-                    Version 2.0 (Candidate)
-                  </SelectItem>
+                  <SelectItem value="downstream">Callees (downstream)</SelectItem>
+                  <SelectItem value="upstream">Callers (upstream)</SelectItem>
+                  <SelectItem value="both">Both directions</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Depth chip */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Depth</Label>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-9 items-center rounded-lg border border-border bg-surface-elevated px-3 font-mono text-sm text-foreground">
+                  {depth}
+                </span>
+                <div className="w-28">
+                  <Slider
+                    min={1}
+                    max={5}
+                    step={1}
+                    value={[depth]}
+                    onValueChange={(v) => setDepth(v[0] ?? 2)}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2: Segmented toggles + filter pills */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/30 pt-3">
+            <div className="flex items-center gap-3">
+              {/* Granularity segmented control */}
+              <div className="inline-flex items-center rounded-lg bg-surface p-1 border border-border/60">
+                {(["function", "file"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setGranularity(g)}
+                    className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-all duration-150 ${
+                      granularity === g
+                        ? "bg-accent text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+
+              {/* Diff Mode segmented control */}
+              <div className="inline-flex items-center rounded-lg bg-surface p-1 border border-border/60">
+                {([false, true] as const).map((mode) => (
+                  <button
+                    key={String(mode)}
+                    type="button"
+                    disabled={loading}
+                    onClick={() => setDiffMode(mode)}
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition-all duration-150 ${
+                      diffMode === mode
+                        ? "bg-accent text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {mode ? "Diff" : "Normal"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Filter:</span>
+              {["Cycles only", "Entry points", "Exports"].map((pill) => (
+                <button
+                  key={pill}
+                  type="button"
+                  className="rounded-full border border-border/60 px-2.5 py-0.5 text-[11px] text-muted-foreground transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:text-primary"
+                >
+                  {pill}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Diff mode: compare commit selector (shown inside toolbar) */}
+          {diffMode && (
+            <div className="border-t border-border/30 pt-3">
+              <div className="flex items-center gap-3">
+                <Label className="text-xs text-muted-foreground whitespace-nowrap">Compare commit:</Label>
+                <Select value={candidateRepoId} onValueChange={setCandidateRepoId}>
+                  <SelectTrigger className="w-56 h-9 text-xs">
+                    <SelectValue placeholder="Select Version" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={repoId}>Same Commit (Baseline)</SelectItem>
+                    <SelectItem value="375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d">
+                      Version 2.0 (Candidate)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           )}
         </div>
+
 
         {/* Graph Explorer Canvas Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
@@ -403,9 +414,8 @@ export default function ArchitecturePage() {
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
                     ) : selectedSymbol === null ? (
-                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                        <Network className="h-10 w-10 mb-3 text-primary animate-pulse" />
-                        <p className="font-semibold text-foreground text-xs mb-1">Select a symbol to begin</p>
+                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground dot-grid relative">
+                        <p className="font-semibold text-foreground text-xs mb-1 font-display">Select a symbol to begin</p>
                       </div>
                     ) : mermaid ? (
                       <DiagramCanvas
@@ -414,9 +424,8 @@ export default function ArchitecturePage() {
                         onNodeClick={handleNodeClick}
                       />
                     ) : (
-                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                        <Network className="h-10 w-10 mb-3 text-muted/60" />
-                        <p className="font-semibold text-foreground">No call graph found</p>
+                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground dot-grid relative">
+                        <p className="font-semibold text-foreground font-display">No call graph found</p>
                       </div>
                     )}
                   </PanelErrorBoundary>
@@ -433,9 +442,8 @@ export default function ArchitecturePage() {
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
                     ) : selectedSymbol === null ? (
-                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                        <Network className="h-10 w-10 mb-3 text-primary animate-pulse" />
-                        <p className="font-semibold text-foreground text-xs mb-1">Select a symbol to begin</p>
+                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground dot-grid relative">
+                        <p className="font-semibold text-foreground text-xs mb-1 font-display">Select a symbol to begin</p>
                       </div>
                     ) : candidateError ? (
                       <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-warning">
@@ -450,9 +458,8 @@ export default function ArchitecturePage() {
                         onNodeClick={handleNodeClick}
                       />
                     ) : (
-                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                        <Network className="h-10 w-10 mb-3 text-muted/60" />
-                        <p className="font-semibold text-foreground">Select candidate commit to compare</p>
+                      <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground dot-grid relative">
+                        <p className="font-semibold text-foreground font-display">Select candidate commit to compare</p>
                       </div>
                     )}
                   </PanelErrorBoundary>
@@ -466,10 +473,20 @@ export default function ArchitecturePage() {
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
                 ) : selectedSymbol === null ? (
-                  <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                    <Network className="h-12 w-12 mb-4 text-primary animate-pulse" />
-                    <p className="font-semibold text-foreground text-base mb-1">Select a symbol to visualize its call graph</p>
-                    <p className="text-xs text-muted-foreground max-w-sm">Use the Go to Symbol search bar above to fuzzy search functions, classes, or methods and explore their relationship dependencies.</p>
+                  <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground dot-grid relative overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-border bg-surface shadow-elev-1 relative z-10">
+                      <svg className="h-10 w-10 text-primary animate-pulse" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" />
+                        <circle cx="10" cy="24" r="4" stroke="currentColor" strokeWidth="1.5" />
+                        <circle cx="30" cy="24" r="4" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M18 11.5L12 20.5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2 2" />
+                        <path d="M22 11.5L28 20.5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2 2" />
+                        <path d="M14 24H26" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
+                    </div>
+                    <p className="font-semibold text-foreground text-base mb-1 relative z-10 font-display">Select a symbol to visualize its call graph</p>
+                    <p className="text-xs text-muted-foreground max-w-sm relative z-10 leading-relaxed">Use the Go to Symbol search bar above to fuzzy search functions, classes, or methods and explore their relationship dependencies.</p>
                   </div>
                 ) : mermaid ? (
                   <DiagramCanvas
@@ -478,9 +495,14 @@ export default function ArchitecturePage() {
                     onNodeClick={handleNodeClick}
                   />
                 ) : (
-                  <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-                    <Network className="h-10 w-10 mb-3 text-muted/60" />
-                    <p className="font-semibold text-foreground">No call graph found</p>
+                  <div className="h-[580px] rounded-lg border border-border bg-surface-raised flex flex-col items-center justify-center p-8 text-center text-muted-foreground dot-grid relative">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-border bg-surface shadow-elev-1">
+                      <svg className="h-10 w-10 text-muted-foreground" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="10" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" />
+                        <line x1="20" y1="10" x2="20" y2="30" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
+                    </div>
+                    <p className="font-semibold text-foreground font-display">No call graph found</p>
                   </div>
                 )}
               </PanelErrorBoundary>

@@ -49,14 +49,17 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "card-surface flex flex-col gap-3 p-6 transition-colors duration-150 hover:border-border-strong",
+        "card-surface group flex flex-col gap-3 p-6 transition-all duration-200 hover:border-border-strong hover:-translate-y-[1px]",
         className,
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="micro-label">{label}</p>
         <span
-          className={cn("h-2 w-2 shrink-0 rounded-full", statusDot[status])}
+          className={cn(
+            "h-2 w-2 shrink-0 rounded-full transition-transform duration-300 group-hover:scale-125",
+            statusDot[status],
+          )}
           aria-hidden
         />
       </div>

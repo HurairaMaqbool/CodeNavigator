@@ -89,13 +89,6 @@ export function DiagramCanvas({
     };
   }, [onNodeClick, markdown]);
 
-  // Zoom / Pan events
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = 1.1;
-    const newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
-    setScale(Math.max(0.2, Math.min(newScale, 5)));
-  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return; // Left click only
@@ -185,14 +178,13 @@ export function DiagramCanvas({
   }
 
   return (
-    <div className="relative w-full h-[580px] rounded-lg border border-border bg-surface-raised overflow-hidden">
+    <div className="relative w-full h-[580px] rounded-lg border border-border bg-surface-raised overflow-hidden dot-grid">
       {/* Canvas Viewport */}
       <div
         ref={viewportRef}
         className={`w-full h-full select-none ${
           isDragging ? "cursor-grabbing" : "cursor-grab"
         }`}
-        onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

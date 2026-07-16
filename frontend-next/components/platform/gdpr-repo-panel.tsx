@@ -142,7 +142,18 @@ export function GdprRepoPanel({ enabled }: { enabled: boolean }) {
                           {row.repo_id.slice(0, 16)}…
                         </p>
                       </td>
-                      <td>{row.sync_status}</td>
+                      <td>
+                        <span className={cn(
+                          "badge",
+                          row.sync_status === "completed" || row.sync_status === "ready"
+                            ? "badge-success"
+                            : row.sync_status === "failed"
+                              ? "badge-error"
+                              : "badge-warning animate-pulse"
+                        )}>
+                          {row.sync_status}
+                        </span>
+                      </td>
                       <td>
                         {row.chroma_chunks != null
                           ? `${row.chroma_chunks} / ${row.chunks_created}`
@@ -150,11 +161,11 @@ export function GdprRepoPanel({ enabled }: { enabled: boolean }) {
                       </td>
                       <td>
                         {row.index_integrity_ok === false ? (
-                          <span className="text-error">Mismatch</span>
+                          <span className="badge badge-error">Mismatch</span>
                         ) : row.index_integrity_ok === true ? (
-                          <span className="text-success">OK</span>
+                          <span className="badge badge-success">OK</span>
                         ) : (
-                          "—"
+                          <span className="badge badge-neutral">—</span>
                         )}
                       </td>
                       <td>

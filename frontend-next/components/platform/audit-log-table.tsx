@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { AuditEvent } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function maskDetails(details: Record<string, any> | undefined): string {
   if (!details || Object.keys(details).length === 0) return "—";
@@ -69,26 +70,48 @@ export function AuditLogTable({ events }: { events: AuditEvent[] }) {
             </tr>
           </thead>
           <tbody>
-            {paginatedEvents.map((row, i) => (
-              <tr key={`${row.timestamp}-${i}`}>
-                <td className="font-mono text-xs whitespace-nowrap">
-                  {row.timestamp ? new Date(row.timestamp).toLocaleString() : "—"}
-                </td>
-                <td>{row.action}</td>
-                <td>{row.actor || "—"}</td>
-                <td className="font-mono text-xs truncate max-w-[150px]">
-                  {row.resource_type
-                    ? `${row.resource_type}/${row.resource_id || ""}`
-                    : "—"}
-                </td>
-                <td className="max-w-xs truncate font-mono text-xs text-muted-foreground">
-                  {maskDetails(row.details)}
-                </td>
-                <td className="font-mono text-xs text-muted-foreground">
-                  {row.correlation_id?.slice(0, 8) ?? "—"}
-                </td>
-              </tr>
-            ))}
+            {paginatedEvents.map((row, i) => {
+              // Choose badge styles for actions
+              const isIngest = row.action.toLowerCase().includes("ingest") || row.action.toLowerCase().includes("clone");
+              const isBilling = row.action.toLowerCase().includes("billing") || row.action.toLowerCase().includes("sub");
+              const isDelete = row.action.toLowerCase().includes("purge") || row.action.toLowerCase().includes("delete");
+              
+              return (
+                <tr key={`${row.timestamp}-${i}`}>
+                  <td className="font-mono text-xs whitespace-nowrap tabular-nums text-muted-foreground">
+                    {row.timestamp ? new Date(row.timestamp).toLocaleString() : "—"}
+                  </td>
+                  <td>
+                    <span className={cn(
+                      "badge",
+                      isIngest ? "badge-info" : isBilling ? "badge-success" : isDelete ? "badge-error" : "badge-neutral"
+                    )}>
+                      {row.action}
+                    </span>
+                  </td>
+                  <td className="font-semibold text-foreground">{row.actor || "—"}</td>
+                  <td className="font-mono text-xs text-muted-foreground">
+                    {row.resource_type ? (
+                      <span className="code-chip">
+                        {row.resource_type}/{row.resource_id?.slice(0, 8) || "—"}
+                      </span>
+                    ) : "—"}
+                  </td>
+                  <td className="max-w-xs truncate font-mono text-xs text-muted-foreground">
+                    <span className="opacity-95" title={JSON.stringify(row.details)}>
+                      {maskDetails(row.details)}
+                    </span>
+                  </td>
+                  <td className="font-mono text-xs text-muted-foreground">
+                    {row.correlation_id ? (
+                      <span className="code-chip text-[10px]">
+                        {row.correlation_id.slice(0, 8)}
+                      </span>
+                    ) : "—"}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -11,7 +11,7 @@ for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000 " ^| findstr LISTENING
 timeout /t 2 /nobreak >nul
 
 echo Starting backend...
-start "Backend" cmd /k "cd /d "%ROOT%" && "%PY%" -m uvicorn app.main:app --host 0.0.0.0 --port 8000"
+start "Backend" cmd /k "cd /d "%ROOT%" && "%PY%" -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
 
 timeout /t 5 /nobreak >nul
 

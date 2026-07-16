@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 type LogoMarkProps = {
   className?: string;
   size?: "sm" | "md" | "lg";
+  animated?: boolean;
 };
 
 const sizes = {
@@ -12,7 +13,7 @@ const sizes = {
 };
 
 /** Minimal geometric mark — no emoji, no generic AI sparkle. */
-export function LogoMark({ className, size = "md" }: LogoMarkProps) {
+export function LogoMark({ className, size = "md", animated = false }: LogoMarkProps) {
   return (
     <svg
       viewBox="0 0 32 32"
@@ -30,12 +31,14 @@ export function LogoMark({ className, size = "md" }: LogoMarkProps) {
         fill="currentColor"
         opacity="0.12"
       />
+      {/* Outer bracket paths: slide in/out slightly if animated */}
       <path
         d="M10 16L7 13M10 16L7 19"
         stroke="currentColor"
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
+        className={cn(animated && "animate-pulse origin-center")}
       />
       <path
         d="M22 16L25 13M22 16L25 19"
@@ -43,14 +46,29 @@ export function LogoMark({ className, size = "md" }: LogoMarkProps) {
         strokeWidth="1.75"
         strokeLinecap="round"
         strokeLinejoin="round"
+        className={cn(animated && "animate-pulse origin-center")}
       />
-      <circle cx="16" cy="16" r="2.25" fill="currentColor" />
+      {/* Central node pulse / spin motif */}
+      <circle 
+        cx="16" 
+        cy="16" 
+        r="2.25" 
+        fill="currentColor" 
+        className={cn(animated && "animate-ping origin-center scale-110")}
+      />
+      <circle 
+        cx="16" 
+        cy="16" 
+        r="2.25" 
+        fill="currentColor" 
+      />
       <path
         d="M13.5 16H18.5"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         opacity="0.6"
+        className={cn(animated && "animate-pulse")}
       />
     </svg>
   );
@@ -59,13 +77,15 @@ export function LogoMark({ className, size = "md" }: LogoMarkProps) {
 export function BrandLockup({
   className,
   showTagline = false,
+  animated = false,
 }: {
   className?: string;
   showTagline?: boolean;
+  animated?: boolean;
 }) {
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark size="md" />
+      <LogoMark size="md" animated={animated} />
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold leading-tight tracking-tight text-foreground">
           CodeNavigator

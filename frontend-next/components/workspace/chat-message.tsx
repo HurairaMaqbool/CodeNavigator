@@ -24,8 +24,8 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
         className={cn(
           "max-w-[90%] px-5 py-4 text-sm leading-relaxed",
           isUser
-            ? "border border-border bg-surface-raised/70 text-foreground rounded-2xl rounded-tr-sm"
-            : "border border-border bg-surface/40 text-foreground rounded-2xl rounded-tl-sm shadow-elev-1",
+            ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-sm shadow-md"
+            : "border border-border bg-surface text-foreground rounded-2xl rounded-tl-sm shadow-elev-1",
         )}
       >
         {message.gated && !isUser && (
@@ -54,10 +54,12 @@ export const ChatMessageBubble = memo(function ChatMessageBubble({
         {!isUser && message.sources && message.sources.length > 0 && (
           <div className="mt-4 border-t border-border/40 pt-3">
             <p className="micro-label mb-2 text-tertiary select-none">Cited files</p>
-            <div className="flex flex-wrap gap-1.5">
-              {message.sources.map((s, i) => (
-                <CitationChip key={`${s.file_path}-${i}`} source={s} />
-              ))}
+            <div className="relative -mx-1">
+              <div className="flex gap-2 overflow-x-auto pb-2 pt-0.5 px-1 scrollbar-none scroll-smooth [mask-image:linear-gradient(to_right,white_85%,transparent)] hover:[mask-image:none] transition-all">
+                {message.sources.map((s, i) => (
+                  <CitationChip key={`${s.file_path}-${i}`} source={s} />
+                ))}
+              </div>
             </div>
           </div>
         )}

@@ -682,44 +682,157 @@ def get_file_snippet_endpoint(
 
     from app.config import settings
     repo_dir = Path(settings.REPOS_PATH) / asset_repo_id
-    full_path = repo_dir / file_path
+
+    # Normalize file_path: strip any leading "/" or "./" so that
+    # Path(repo_dir) / "/src/foo.py" doesn't silently become an absolute path
+    # on Linux (which bypasses the traversal guard and causes 404).
+    normalized_path = file_path.lstrip("/").lstrip("\\")
+    full_path = repo_dir / normalized_path
 
     # Security check: prevent directory traversal
     try:
-        if not full_path.resolve().relative_to(repo_dir.resolve()):
-            raise HTTPException(status_code=403, detail="Forbidden path traversal")
-    except Exception:
+        full_path.resolve().relative_to(repo_dir.resolve())
+    except ValueError:
+        logger.warning(
+            "file_snippet.traversal_blocked",
+            extra={
+                "repo_id": repo_id,
+                "file_path": file_path,
+                "normalized_path": normalized_path,
+                "start_line": start_line,
+                "end_line": end_line,
+            },
+        )
         raise HTTPException(status_code=403, detail="Forbidden path traversal")
 
     if not full_path.exists() or not full_path.is_file():
-        raise HTTPException(status_code=404, detail=f"File {file_path} not found")
+        logger.warning(
+            "file_snippet.file_not_found",
+            extra={
+                "repo_id": repo_id,
+                "file_path": file_path,
+                "normalized_path": normalized_path,
+                "resolved_path": str(full_path),
+                "start_line": start_line,
+                "end_line": end_line,
+                "error_type": "file_not_found",
+            },
+        )
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "message": f"Source file '{normalized_path}' not found in the indexed repository. Try re-ingesting this repo to refresh snippets.",
+                "error_type": "file_not_found",
+                "file_path": normalized_path,
+            },
+        )
 
     try:
         from app.ingestion.file_filter import safe_decode
         text, _ = safe_decode(full_path)
         if not text:
-            return {"code": ""}
+            logger.info(
+                "file_snippet.empty_file",
+                extra={
+                    "repo_id": repo_id,
+                    "file_path": normalized_path,
+                    "start_line": start_line,
+                    "end_line": end_line,
+                },
+            )
+            return {
+                "code": "",
+                "start_line": 1,
+                "end_line": 0,
+                "total_lines": 0,
+                "error_type": "empty_file",
+            }
         lines = text.splitlines()
 
         if start_line is not None and end_line is not None:
+            # Validate line numbers are in bounds before slicing
+            if start_line > len(lines):
+                logger.warning(
+                    "file_snippet.line_out_of_bounds",
+                    extra={
+                        "repo_id": repo_id,
+                        "file_path": normalized_path,
+                        "start_line": start_line,
+                        "end_line": end_line,
+                        "total_lines": len(lines),
+                        "error_type": "line_out_of_bounds",
+                    },
+                )
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "message": f"Line {start_line} is out of bounds — the file only has {len(lines)} lines. The index may be stale. Try re-ingesting this repo.",
+                        "error_type": "line_out_of_bounds",
+                        "file_path": normalized_path,
+                        "start_line": start_line,
+                        "total_lines": len(lines),
+                    },
+                )
+
             # 1-indexed slice, apply context padding of 5 lines
             s_idx = max(0, start_line - 1 - 5)
             e_idx = min(len(lines), end_line + 5)
             snippet = "\n".join(lines[s_idx:e_idx])
+            logger.info(
+                "file_snippet.success",
+                extra={
+                    "repo_id": repo_id,
+                    "file_path": normalized_path,
+                    "start_line": start_line,
+                    "end_line": end_line,
+                    "snippet_lines": e_idx - s_idx,
+                },
+            )
             return {
                 "code": snippet,
                 "start_line": s_idx + 1,
                 "end_line": e_idx,
                 "total_lines": len(lines),
             }
+
+        logger.info(
+            "file_snippet.full_file",
+            extra={
+                "repo_id": repo_id,
+                "file_path": normalized_path,
+                "total_lines": len(lines),
+            },
+        )
         return {
             "code": text,
             "start_line": 1,
             "end_line": len(lines),
             "total_lines": len(lines),
         }
+    except HTTPException:
+        raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        logger.error(
+            "file_snippet.unexpected_error",
+            extra={
+                "repo_id": repo_id,
+                "file_path": normalized_path,
+                "start_line": start_line,
+                "end_line": end_line,
+                "error": str(exc),
+                "error_type": "decode_error",
+            },
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": f"Failed to read source file '{normalized_path}': {exc}",
+                "error_type": "decode_error",
+                "file_path": normalized_path,
+            },
+        )
+
 
 
 @router.get("/diagram/{repo_id}", dependencies=[Depends(verify_api_key)])

@@ -1,19 +1,32 @@
 {
   "status": "pass",
-  "timestamp": "2026-07-13T13:57:46.910701+00:00",
-  "score": 1.0,
+  "timestamp": "2026-07-14T20:16:38.155291+00:00",
+  "score": 0.9333,
   "total": 15,
-  "passed": 15,
+  "passed": 14,
   "pass_threshold": 0.8,
-  "failed_questions": [],
-  "failed_details": [],
+  "failed_questions": [
+    "Where are utility helper functions like url encoding and header parsing defined?"
+  ],
+  "failed_details": [
+    {
+      "question": "Where are utility helper functions like url encoding and header parsing defined?",
+      "fixture": "requests",
+      "expected_files": [
+        "src/requests/utils.py"
+      ],
+      "cited_files": [],
+      "error": "/chat returned HTTP 429: {\"error\":\"The AI provider is temporarily rate-limited. Please wait about 33 seconds and try again.\",\"error_code\":\"HTTP_429\",\"message\":\"The AI provider is temporarily rate-limited. Please wait about 33 seconds and try again.\",\"detail\":\"The AI provider is temporarily rate-limited. Please wait about 33 seconds and try again.\"}",
+      "retryable": true
+    }
+  ],
   "per_repo": [
     {
       "fixture": "requests",
       "repo_id": "375c63667dff3e1e20ef5712cf1c0cb33940a9b49644bb855f1f89fe959d9f4d",
       "total": 10,
-      "passed": 10,
-      "score": 1.0
+      "passed": 9,
+      "score": 0.9
     },
     {
       "fixture": "flask",

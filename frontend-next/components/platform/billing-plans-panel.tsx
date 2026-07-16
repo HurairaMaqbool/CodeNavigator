@@ -15,6 +15,7 @@ import { SectionHeader } from "@/components/shared/section-header";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 export function BillingPlansPanel({
   sub,
@@ -91,47 +92,84 @@ export function BillingPlansPanel({
           {plans.error instanceof ApiError ? plans.error.message : "Failed to load plans"}
         </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {plans.data!.map((plan) => (
-            <div
-              key={plan.id}
-              className={`rounded-lg border p-5 transition-colors duration-150 ${
-                plan.id === sub.plan_id
-                  ? "border-primary bg-primary-tint shadow-elev-1"
-                  : "border-border bg-surface-raised hover:border-border-strong"
-              }`}
-            >
-              <h3 className="font-medium text-foreground">{plan.name}</h3>
-              <p className="text-display mt-2">
-                {plan.price_monthly_usd === 0 ? "Free" : `$${plan.price_monthly_usd}/mo`}
-              </p>
-              <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                <li>Chat: {plan.limits.chat_per_month || "∞"}/mo</li>
-                <li>Ingest: {plan.limits.ingest_per_month || "∞"}/mo</li>
-                <li>Eval: {plan.limits.eval_per_month || "∞"}/mo</li>
-              </ul>
-              {plan.id !== "free" && plan.id !== sub.plan_id && (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="mt-3 w-full"
-                  disabled={!sub.stripe_enabled || checkout.isPending}
-                  onClick={() => checkout.mutate(plan.id as "pro" | "team")}
-                >
-                  {checkout.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      Upgrade <ExternalLink className="ml-1 h-3 w-3" />
-                    </>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {plans.data!.map((plan) => {
+            const isCurrent = plan.id === sub.plan_id;
+            return (
+              <div
+                key={plan.id}
+                className={cn(
+                  "rounded-2xl border p-6 transition-all duration-300 relative overflow-hidden group flex flex-col justify-between h-full",
+                  isCurrent
+                    ? "border-primary bg-primary-tint/20 dark:[box-shadow:var(--shadow-2),var(--glow-primary)] shadow-elev-2"
+                    : "border-border bg-surface-raised hover:border-border-strong hover:shadow-elev-1 hover:-translate-y-[1px]"
+                )}
+              >
+                {/* Visual glow element on current plan */}
+                {isCurrent && (
+                  <div className="absolute right-0 top-0 h-16 w-16 bg-gradient-to-bl from-primary/10 to-transparent pointer-events-none" />
+                )}
+                
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-display text-[15px] font-bold text-foreground">{plan.name}</h3>
+                    {isCurrent && (
+                      <span className="badge badge-success text-[9px] scale-90">Active</span>
+                    )}
+                  </div>
+                  <p className="text-display mt-3 font-display">
+                    {plan.price_monthly_usd === 0 ? "Free" : `$${plan.price_monthly_usd}`}
+                    {plan.price_monthly_usd !== 0 && <span className="text-xs text-muted-foreground font-normal"> / mo</span>}
+                  </p>
+                  
+                  <div className="mt-5 pt-4 border-t border-border/40 space-y-3">
+                    <p className="micro-label text-[10px] text-tertiary select-none">Monthly Limits</p>
+                    <ul className="space-y-2 text-xs font-mono text-muted-foreground">
+                      <li className="flex justify-between">
+                        <span>Chat asks</span>
+                        <span className="font-semibold text-foreground">{plan.limits.chat_per_month || "Unlimited"}</span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>Repositories</span>
+                        <span className="font-semibold text-foreground">{plan.limits.ingest_per_month || "Unlimited"}</span>
+                      </li>
+                      <li className="flex justify-between">
+                        <span>Evaluations</span>
+                        <span className="font-semibold text-foreground">{plan.limits.eval_per_month || "Unlimited"}</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <div>
+                  {plan.id !== "free" && !isCurrent && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="accent"
+                      className="mt-5 w-full flex items-center justify-center font-semibold"
+                      disabled={!sub.stripe_enabled || checkout.isPending}
+                      onClick={() => checkout.mutate(plan.id as "pro" | "team")}
+                    >
+                      {checkout.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          Upgrade plan
+                          <ExternalLink className="ml-1 h-3 w-3" />
+                        </>
+                      )}
+                    </Button>
                   )}
-                </Button>
-              )}
-              {plan.id === sub.plan_id && (
-                <p className="mt-3 text-xs font-medium text-primary">Current plan</p>
-              )}
-            </div>
-          ))}
+                  {isCurrent && (
+                    <div className="mt-5 text-center py-1 bg-primary/10 rounded-lg text-xs font-semibold text-primary font-mono select-none">
+                      Active Plan
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

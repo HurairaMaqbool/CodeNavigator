@@ -5,83 +5,139 @@
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Surfaces */
-  --background: #0b0e14;
-  --surface: #12151c;
-  --surface-raised: #1a1e28;
-  --surface-hover: #1f2430;
-  --card-bg-gradient: linear-gradient(180deg, var(--surface) 0%, rgba(18, 21, 28, 0.8) 100%);
-  --glass-bg: rgba(18, 21, 28, 0.75);
+  /* ── Surfaces — Warm Graphite, not cold blue-black ──────────── */
+  /* "Midnight Studio": deep, sophisticated, breathable depth      */
+  --background: #0f1012;
+  --surface: #161719;
+  --surface-raised: #1c1e22;
+  --surface-hover: #21242a;
+  --sidebar-bg: #0b0c0e;
 
-  /* Borders */
-  --border: #242832;
-  --border-strong: #333947;
+  /* Premium card gradient: subtle depth, feels premium not flat */
+  --card-bg-gradient: linear-gradient(
+    160deg,
+    #1c1e22 0%,
+    rgba(20, 22, 26, 0.95) 100%
+  );
 
-  /* Text */
-  --foreground: #f0f2f5;
-  --body: #c8cdd5;
-  --muted: #1a1e28;
-  --muted-foreground: #9ca3af;
-  --tertiary: #6b7280;
+  /* Sidebar gets a subtle violet-tinted gradient for premium feel */
+  --sidebar-gradient: linear-gradient(
+    180deg,
+    #0f0e15 0%,
+    #0b0c0e 60%,
+    #0a0b0d 100%
+  );
 
-  /* Brand accent — primary actions & focus only */
-  --primary: #6366f1;
-  --primary-hover: #5558e3;
-  --primary-muted: rgb(99 102 241 / 0.12);
+  --glass-bg: rgba(22, 23, 25, 0.82);
+
+  /* ── Borders — warm neutral, not cold blue-gray ──────────────── */
+  --border: #2a2d33;
+  --border-strong: #3e4249;
+
+  /* ── Text — warm whites, comfortable contrast ────────────────── */
+  --foreground: #edeef2;       /* Warm almost-white, not harsh #fff */
+  --body: #b0b5bf;             /* Natural comfortable reading gray */
+  --muted: #1c1e22;
+  --muted-foreground: #7a8291; /* Secondary text — calm, readable */
+  --tertiary: #52565e;         /* Hints, meta, placeholders */
+
+  /* ── Brand Accent — Electric Violet, natural on dark surfaces ── */
+  /* Slightly more violet-leaning than pure indigo — more alive,   */
+  /* feels premium rather than generic "tailwind indigo"           */
+  --primary: #8b7cf8;
+  --primary-hover: #7a6af5;
+  --primary-muted: rgba(139, 124, 248, 0.12);
   --primary-foreground: #ffffff;
-  --primary-tint: rgb(99 102 241 / 0.08);
+  --primary-tint: rgba(139, 124, 248, 0.07);
 
-  /* Semantic — functional only */
-  --success: #34d399;
-  --warning: #fbbf24;
-  --error: #f87171;
-  --info: #60a5fa;
+  /* ── Semantic — Natural, not neon ───────────────────────────── */
+  /* Emerald-jade green — warmer, more natural than teal-green     */
+  --success: #3ecf8e;
+  --success-soft: rgba(62, 207, 142, 0.1);
 
-  --ring-offset: #0b0e14;
+  /* Warm amber — more natural than pure lemon yellow              */
+  --warning: #f59e0b;
+  --warning-soft: rgba(245, 158, 11, 0.1);
 
-  /* Elevation */
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.2);
-  --shadow-2: 0 4px 12px rgb(0 0 0 / 0.3);
-  --shadow-3: 0 8px 32px rgb(0 0 0 / 0.4);
+  /* Coral-red — warm and legible without being harsh              */
+  --error: #f06b6b;
+  --error-soft: rgba(240, 107, 107, 0.1);
 
-  /* Radius */
+  /* Sky blue — cool and calm                                      */
+  --info: #4da8f7;
+  --info-soft: rgba(77, 168, 247, 0.1);
+
+  --ring-offset: #0f1012;
+  --ring: rgba(139, 124, 248, 0.5);        /* Focus ring — violet semi-transparent */
+
+  /* ── Semantic alias tokens for Tailwind ─────────────────────── */
+  --accent: rgba(139, 124, 248, 0.14);     /* Violet tint surface, active nav etc. */
+  --accent-foreground: #b8aeff;            /* Text on accent tint surface */
+  --destructive: #f06b6b;                  /* Alias of --error for Tailwind compat */
+  --destructive-foreground: #ffffff;
+  --surface-elevated: #21242a;             /* Alias for hover surfaces */
+
+  /* ── Elevation — Layered shadows, natural depth ─────────────── */
+  /* Dark mode shadows must be strong enough to separate surfaces  */
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-3: 0 12px 36px rgba(0, 0, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.35);
+
+  /* Glow: subtle violet bloom for primary interactive elements */
+  --glow-primary: 0 0 20px rgba(139, 124, 248, 0.18);
+
+  /* ── Radius ─────────────────────────────────────────────────── */
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  /* Motion */
+  /* ── Motion ─────────────────────────────────────────────────── */
   --duration-fast: 150ms;
   --duration-normal: 220ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .light {
-  --background: #f8f9fb;
+  --background: #fafaf9;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-hover: #f3f4f6;
-  --card-bg-gradient: linear-gradient(180deg, var(--surface) 0%, rgba(243, 244, 246, 0.8) 100%);
+  --surface-hover: #f5f5f4;
+  --sidebar-bg: #f5f5f4;
+  --card-bg-gradient: linear-gradient(180deg, var(--surface) 0%, rgba(245, 245, 244, 0.8) 100%);
   --glass-bg: rgba(255, 255, 255, 0.75);
-  --border: #e5e7eb;
-  --border-strong: #d1d5db;
-  --foreground: #111827;
-  --body: #374151;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --tertiary: #9ca3af;
-  --primary-muted: rgb(99 102 241 / 0.1);
-  --primary-tint: rgb(99 102 241 / 0.06);
-  --ring-offset: #f8f9fb;
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.06);
-  --shadow-2: 0 4px 12px rgb(0 0 0 / 0.08);
-  --shadow-3: 0 8px 32px rgb(0 0 0 / 0.12);
   
-  /* Status light-theme optimized for readability */
+  --border: #e7e5e4;
+  --border-strong: #d6d3d1;
+  
+  --foreground: #1c1917;
+  --body: #57534e;
+  --muted: #f5f5f4;
+  --muted-foreground: #78716c;
+  --tertiary: #a8a29e;
+  
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-muted: #eef2ff;
+  --primary-tint: #f5f3ff;
+  --primary-foreground: #ffffff;
+  
+  --ring-offset: #fafaf9;
+  
+  /* Elevation Shadows */
+  --shadow-1: 0 1px 2px rgba(28, 25, 23, 0.06), 0 1px 3px rgba(28, 25, 23, 0.04);
+  --shadow-2: 0 4px 8px rgba(28, 25, 23, 0.08), 0 2px 4px rgba(28, 25, 23, 0.06);
+  --shadow-3: 0 12px 24px rgba(28, 25, 23, 0.12), 0 4px 8px rgba(28, 25, 23, 0.08);
+  
+  /* Semantic Colors */
   --success: #059669;
+  --success-soft: #ecfdf5;
   --warning: #d97706;
+  --warning-soft: #fffbeb;
   --error: #dc2626;
+  --error-soft: #fef2f2;
   --info: #2563eb;
+  --info-soft: #eff6ff;
 }
 
 @theme inline {
@@ -91,6 +147,7 @@
   --color-surface-elevated: var(--surface);
   --color-surface-raised: var(--surface-raised);
   --color-surface-hover: var(--surface-hover);
+  --color-sidebar-bg: var(--sidebar-bg);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-tertiary: var(--tertiary);
@@ -102,16 +159,29 @@
   --color-primary-tint: var(--primary-tint);
   --color-primary-foreground: var(--primary-foreground);
   --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
   --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
   --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --color-body: var(--body);
+  /* Semantic aliases */
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-ring: var(--ring);
+  --color-surface-elevated: var(--surface-elevated);
   --font-sans: var(--font-inter);
+  --font-display: var(--font-display);
   --font-mono: var(--font-jetbrains);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
+  --shadow-glow-primary: var(--glow-primary);
 }
 
 * {
@@ -136,9 +206,30 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dark-mode ambient atmosphere: subtle violet radial glow from top-center.
+   This single line transforms a flat black bg into a living, premium surface. */
+html:not(.light) body {
+  background-image: radial-gradient(
+    ellipse 80% 50% at 50% -10%,
+    rgba(139, 124, 248, 0.06) 0%,
+    transparent 65%
+  );
+  background-attachment: fixed;
+}
+
+/* Light-mode body: crisp rendering on bright bg */
+.light body {
+  -webkit-font-smoothing: subpixel-antialiased;
+}
+
 ::selection {
-  background: rgb(99 102 241 / 0.35);
+  background: rgba(139, 124, 248, 0.28);
   color: var(--foreground);
+}
+
+.light ::selection {
+  background: #eef2ff;
+  color: #4f46e5;
 }
 
 /* ─── Utilities ─── */
@@ -173,11 +264,11 @@ body {
 @keyframes voice-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 0 rgba(139, 124, 248, 0.45);
   }
   50% {
     transform: scale(1.08);
-    box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+    box-shadow: 0 0 0 10px rgba(139, 124, 248, 0);
   }
 }
 
@@ -210,11 +301,16 @@ body {
   border: 1px solid var(--border);
   background: var(--card-bg-gradient);
   box-shadow: var(--shadow-1);
-  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  transition: 
+    border-color var(--duration-fast) var(--ease-out), 
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .card-surface:hover {
   border-color: var(--border-strong);
+  box-shadow: var(--shadow-2);
+  transform: translateY(-2px) scale(1.005);
 }
 
 .card-panel {
@@ -223,13 +319,80 @@ body {
   background: var(--card-bg-gradient);
   box-shadow: var(--shadow-1);
   padding: 24px;
-  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+  transition: 
+    border-color var(--duration-fast) var(--ease-out), 
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .card-panel:hover {
   border-color: var(--border-strong);
   box-shadow: var(--shadow-2);
+  transform: translateY(-2px) scale(1.005);
 }
+
+/* --- Layout Utilities: Bento Grid & Dot Grid --- */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dot-grid {
+  background-size: 20px 20px;
+  background-image: radial-gradient(circle, var(--border-strong) 1px, transparent 1px);
+}
+
+/* --- Signature Animations & Micro-Delights --- */
+.animate-slide-up {
+  animation: slide-up var(--duration-normal) var(--ease-out) both;
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-cascade {
+  animation: cascade-in 300ms var(--ease-out) both;
+}
+
+@keyframes cascade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.celebration-pulse {
+  animation: success-pulse 1.2s var(--ease-out) forwards;
+}
+
+@keyframes success-pulse {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(62, 207, 142, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(62, 207, 142, 0);
+  }
+}
+
 
 .glass-panel {
   backdrop-filter: blur(16px);
@@ -314,21 +477,64 @@ body {
   outline-offset: 2px;
 }
 
-/* Typography scale — 12 / 14 / 16 / 20 / 28 px */
+/* ─── Typography Scale — 12 / 14 / 16 / 20 / 28 / 40px ─────────── */
+
+/* DISPLAY: Plus Jakarta Sans — used for hero headings and large numbers */
+/* This is CodeNavigator's signature typographic choice — more character  */
+/* than Inter, geometric, modern, immediately recognizable                */
+.font-display {
+  font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+/* Large metric values (chunk-count, scores, percentages) */
+/* tabular-nums = columns stay perfectly aligned when numbers change     */
 .text-display {
+  font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
   font-size: 1.75rem;
-  font-weight: 600;
-  line-height: 1.15;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hero title — used on section headers */
+.text-title {
+  font-family: var(--font-display), var(--font-inter), system-ui, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--foreground);
 }
 
-.text-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  color: var(--foreground);
+/* Tabular numbers utility — for all metric/score displays */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Code/mono chip — distinctive "chip" feel, not generic inline code */
+.code-chip {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 1px 6px 2px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.code-chip:hover {
+  border-color: var(--primary);
+  background: var(--primary-muted);
+  color: var(--primary);
 }
 
 .empty-state-panel {
@@ -344,7 +550,9 @@ body {
 }
 
 .light .empty-state-panel {
-  background: rgb(255 255 255 / 0.6);
+  background: var(--surface);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-1);
 }
 
 .prompt-chip {
@@ -357,7 +565,8 @@ body {
   transition:
     border-color var(--duration-fast) var(--ease-out),
     color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out);
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .prompt-chip:hover:not(:disabled) {
@@ -366,12 +575,109 @@ body {
   background: var(--surface-hover);
 }
 
+.light .prompt-chip:hover:not(:disabled) {
+  box-shadow: var(--shadow-1);
+}
+
 .prompt-chip:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* Subtle scrollbars — desktop polish */
+/* ─── Light-mode elevation overrides ─────────────────────────────── */
+/* Cards use white surface + shadow for depth (not bg color difference) */
+.light .card-surface,
+.light .card-panel,
+.light .card-surface-padded {
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+
+.light .card-panel:hover,
+.light .card-surface:hover {
+  box-shadow: var(--shadow-2);
+}
+
+/* Header: more opaque on light bg, thin warm border */
+.light header.sticky {
+  background: rgba(250, 250, 249, 0.88);
+  border-bottom-color: var(--border);
+}
+
+/* Data table: warm header background */
+.light .data-table thead {
+  background: var(--surface-hover);
+}
+
+/* Skeleton shimmer adapted for light bg */
+.light .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-hover) 25%,
+    var(--border) 50%,
+    var(--surface-hover) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Glass panel on light: stronger backdrop */
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.80);
+  border-color: var(--border);
+}
+
+/* Focus ring: deeper indigo on light bg */
+.light :focus-visible {
+  outline-color: var(--primary);
+}
+
+/* ─── Premium badge/pill pattern ─────────────────────────────────── */
+/* Usage: .badge-success .badge-warning .badge-error .badge-info .badge-neutral */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.badge-success {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: color-mix(in srgb, var(--success) 20%, transparent);
+}
+
+.badge-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 20%, transparent);
+}
+
+.badge-error {
+  background: var(--error-soft);
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 20%, transparent);
+}
+
+.badge-info {
+  background: var(--info-soft);
+  color: var(--info);
+  border-color: color-mix(in srgb, var(--info) 20%, transparent);
+}
+
+.badge-neutral {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+
+/* ─── Subtle scrollbars — desktop polish ─────────────────────────── */
 @media (min-width: 768px) {
   * {
     scrollbar-width: thin;
@@ -393,6 +699,11 @@ body {
   }
 }
 
+/* Light scrollbars: warmer tones */
+.light * {
+  scrollbar-color: var(--border-strong) transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -406,3 +717,168 @@ body {
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Dark Mode Premium Enhancements — Midnight Studio
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar: violet-tinted gradient, distinct from main content ─ */
+html:not(.light) aside {
+  background: var(--sidebar-gradient) !important;
+}
+
+/* ── Primary buttons: subtle glow lift on hover ──────────────── */
+html:not(.light) [class*="bg-primary"]:not([class*="bg-primary-"]):hover,
+html:not(.light) button.btn-primary:hover {
+  box-shadow: var(--shadow-2), var(--glow-primary);
+}
+
+/* ── Focus ring: violet glow for dark mode accessibility ─────── */
+html:not(.light) :focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(139, 124, 248, 0.18);
+}
+
+/* ── Card surfaces: subtle violet border glow on hover ───────── */
+html:not(.light) .card-surface:hover,
+html:not(.light) .card-panel:hover {
+  border-color: rgba(139, 124, 248, 0.22);
+}
+
+/* ── Nav active item: premium left-bar with soft glow ────────── */
+html:not(.light) [class*="bg-primary-tint"] {
+  background: rgba(139, 124, 248, 0.09) !important;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+/* ── Data table: subtle header backdrop ──────────────────────── */
+html:not(.light) .data-table thead {
+  background: rgba(28, 30, 34, 0.8);
+  backdrop-filter: blur(8px);
+}
+
+/* ── Glass panel: optimized for dark mode ────────────────────── */
+html:not(.light) .glass-panel {
+  background: rgba(22, 23, 25, 0.82);
+  border-color: rgba(42, 45, 51, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── Skeleton shimmer: warm dark tones ───────────────────────── */
+html:not(.light) .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #1c1e22 25%,
+    #21242a 50%,
+    #1c1e22 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* ── Scrollbar: refined dark-mode styling ────────────────────── */
+html:not(.light) * {
+  scrollbar-color: #3e4249 transparent;
+}
+
+html:not(.light) *::-webkit-scrollbar-thumb {
+  background: #3e4249;
+  border: 2px solid var(--background);
+  border-radius: 999px;
+}
+
+/* ── Prompt chips: extra depth on dark bg ────────────────────── */
+html:not(.light) .prompt-chip {
+  background: rgba(28, 30, 34, 0.9);
+  border-color: var(--border);
+}
+
+html:not(.light) .prompt-chip:hover:not(:disabled) {
+  border-color: rgba(139, 124, 248, 0.35);
+  color: var(--foreground);
+  background: rgba(139, 124, 248, 0.06);
+}
+
+/* ── Header: true glass on dark, slightly more opaque ───────── */
+html:not(.light) header.sticky {
+  background: rgba(15, 16, 18, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom-color: var(--border);
+}
+
+/* ── Empty state: atmospheric dark backdrop ──────────────────── */
+html:not(.light) .empty-state-panel {
+  background: rgba(22, 23, 25, 0.6);
+  border-style: dashed;
+}
+
+/* ── MonoFont code blocks: slightly tinted bg ────────────────── */
+html:not(.light) pre,
+html:not(.light) code {
+  background: rgba(11, 12, 14, 0.8);
+  border-color: var(--border);
+}
+
+/* ─── Aurora Background Drift ───────────────────────────────────── */
+@keyframes aurora {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(2%, 2%) scale(1.06);
+  }
+}
+
+.animate-aurora {
+  animation: aurora 16s ease-in-out infinite;
+}
+
+.aurora-bg {
+  background-image: 
+    radial-gradient(circle at 50% -20%, rgba(139, 124, 248, 0.16) 0%, transparent 60%),
+    radial-gradient(circle at 90% 30%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 10% 80%, rgba(217, 70, 239, 0.08) 0%, transparent 50%);
+}
+
+/* ─── Grid Background Utility ───────────────────────────────────── */
+.grid-bg {
+  background-size: 48px 48px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+}
+
+/* ─── Text Gradient Utility ───────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #c084fc 50%, #8b7cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── Glow Utility ─────────────────────────────────────────────── */
+.glow-primary {
+  box-shadow: 0 0 32px -8px rgba(139, 124, 248, 0.4);
+}
+
+/* ─── Pulse Ring Animation ─────────────────────────────────────── */
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(139, 124, 248, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(139, 124, 248, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 124, 248, 0);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+
+

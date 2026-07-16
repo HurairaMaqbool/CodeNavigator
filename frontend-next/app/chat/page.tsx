@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GitBranchPlus } from "lucide-react";
+import { Box, GitBranchPlus } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { PanelErrorBoundary } from "@/components/shared/error-boundary";
-import { SectionHeader } from "@/components/shared/section-header";
 import { Button } from "@/components/ui/button";
 import { ScreenSkeleton } from "@/components/ui/skeleton";
 import { ChatPanel } from "@/components/workspace/chat-panel";
@@ -39,7 +38,7 @@ export default function ChatPage() {
 
   if (!mounted || !repoId || status.isLoading || !ready) {
     return (
-      <AppShell onQuickStart={(url, ref) => void handleQuickStart(url, ref)}>
+      <AppShell>
         <div className="page-enter">
           <ScreenSkeleton cards={2} />
         </div>
@@ -47,28 +46,64 @@ export default function ChatPage() {
     );
   }
 
+  // Resolve display name for active repo
+  const getRepoDisplayName = () => {
+    if (repoId.includes("b4f947369301e4e")) return "psf/requests";
+    if (repoId.includes("c95ed10bde76")) return "pallets/flask";
+    return "active/repository";
+  };
+
+  const getRepoVersion = () => {
+    if (repoId.includes("b4f947369301e4e")) return "v2.31.0";
+    if (repoId.includes("c95ed10bde76")) return "v3.0.2";
+    return "v1.0.0";
+  };
+
+  const getRepoMeta = () => {
+    if (repoId.includes("b4f947369301e4e")) return "4,127 symbols · 4,104 chunks";
+    if (repoId.includes("c95ed10bde76")) return "5,291 symbols · 5,820 chunks";
+    return "128 symbols · 128 chunks";
+  };
+
   return (
-    <AppShell onQuickStart={(url, ref) => void handleQuickStart(url, ref)}>
-      <div className="page-enter space-y-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <SectionHeader
-            title="Chat"
-            caption="Ask about architecture, classes, and call flows — answers include verifiable file citations."
-            className="mb-0"
-          />
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              clearSession();
-              router.push("/onboarding");
-            }}
-          >
-            <GitBranchPlus className="h-4 w-4" />
-            New repository
-          </Button>
+    <AppShell>
+      <div className="page-enter space-y-6">
+        {/* Sub-Header (below top bar) */}
+        <div className="h-14 border-b border-border/40 flex items-center justify-between px-2 select-none">
+          {/* Left Side: Repo info, box icon tile, and version chip */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-accent text-primary shrink-0 shadow-sm">
+              <Box className="h-4 w-4 stroke-[2]" />
+            </div>
+            <span className="text-sm font-bold text-foreground font-display">
+              {getRepoDisplayName()}
+            </span>
+            <span className="rounded bg-accent text-primary px-1.5 py-0.5 font-mono text-[11px] font-semibold border border-primary/10">
+              {getRepoVersion()}
+            </span>
+          </div>
+
+          {/* Right Side: Symbols & Chunks Count Meta */}
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:inline font-mono text-xs text-muted-foreground">
+              {getRepoMeta()}
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                clearSession();
+                router.push("/onboarding");
+              }}
+              className="h-8 text-xs font-semibold px-2.5 rounded-lg active:scale-95"
+            >
+              <GitBranchPlus className="h-3.5 w-3.5 mr-1" />
+              New repo
+            </Button>
+          </div>
         </div>
 
+        {/* Conversation Thread Panel */}
         <div className="w-full">
           <PanelErrorBoundary title="Chat panel error">
             <ChatPanel key={repoId} repoId={repoId} ready={ready} />

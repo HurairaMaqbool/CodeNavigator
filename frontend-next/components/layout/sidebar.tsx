@@ -1,136 +1,125 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
-  BarChart3,
-  Link2,
-  MessageSquare,
+  CircleUser,
+  LayoutGrid,
+  LineChart,
+  MessageSquareCode,
   Network,
-  Settings,
-  X,
+  Settings2,
+  Terminal,
 } from "lucide-react";
-import { QUICK_START_REPOS } from "@/lib/constants";
 import { useApp } from "@/lib/context/app-context";
-import { truncateId } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { BrandLockup } from "@/components/brand/logo-mark";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "./theme-toggle";
 
 const NAV = [
-  { href: "/onboarding", label: "Connect", icon: Link2 },
-  { href: "/chat", label: "Chat", icon: MessageSquare },
-  { href: "/evaluation", label: "Evaluation", icon: BarChart3 },
-  { href: "/architecture", label: "Architecture", icon: Network },
-  { href: "/platform", label: "Platform", icon: Settings },
+  { href: "/onboarding", label: "Workspace",    icon: LayoutGrid },
+  { href: "/chat",        label: "Chat",         icon: MessageSquareCode },
+  { href: "/architecture",label: "Architecture", icon: Network },
+  { href: "/evaluation",  label: "Evaluation",   icon: LineChart },
+  { href: "/platform",    label: "Platform",     icon: Settings2 },
 ] as const;
 
 type SidebarProps = {
-  onQuickStart?: (url: string, ref: string) => void;
   onClose?: () => void;
   className?: string;
 };
 
-export function Sidebar({ onQuickStart, onClose, className }: SidebarProps) {
+export function Sidebar({ onClose, className }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { repoId, clearSession } = useApp();
+  const { repoId } = useApp();
 
   return (
     <aside
       className={cn(
-        "flex h-full w-[260px] flex-col border-r border-border bg-surface",
-        className,
+        "flex h-full w-[68px] flex-col items-center border-r border-border/50 py-4 select-none z-40 relative",
+        "bg-sidebar-bg",
+        className
       )}
+      style={{ background: "var(--sidebar-gradient)" }}
     >
-      <div className="flex items-center justify-between border-b border-border px-4 py-4">
-        <BrandLockup />
-        {onClose && (
-          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close menu">
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+      {/* ── Brand Mark ─────────────────────────────────────── */}
+      <Link
+        href="/onboarding"
+        onClick={onClose}
+        aria-label="CodeNavigator home"
+        className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-[#a855f7] to-fuchsia-500 text-white shadow-lg shadow-primary/25 hover:brightness-110 hover:scale-105 transition-all duration-200"
+      >
+        <Terminal className="h-5 w-5 stroke-2" />
+        {/* Tooltip */}
+        <span className="pointer-events-none absolute left-[calc(100%+14px)] z-50 whitespace-nowrap rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+          CodeNavigator
+        </span>
+      </Link>
 
-      <nav className="flex-1 px-3 py-4 space-y-6" aria-label="Main navigation">
-        <div>
-          <p className="micro-label mb-2 px-3">Workspace</p>
-          <ul className="space-y-0.5">
-            {NAV.map(({ href, label, icon: Icon }) => {
-              const active =
-                pathname === href || pathname.startsWith(`${href}/`);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    onClick={onClose}
-                    className={cn(
-                      "relative flex min-h-[38px] items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
-                      active
-                        ? "bg-primary/8 text-primary before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:rounded-r before:bg-primary"
-                        : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
-                    )}
-                  >
-                    <Icon
-                      className={cn(
-                        "h-[18px] w-[18px] shrink-0 stroke-[1.75]",
-                        active ? "text-primary" : "",
-                      )}
-                      aria-hidden
-                    />
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+      {/* ── Nav Rail ───────────────────────────────────────── */}
+      <nav
+        className="flex flex-1 flex-col items-center gap-1.5 mt-8 w-full px-3"
+        aria-label="Main navigation"
+      >
+        {NAV.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || pathname.startsWith(`${href}/`);
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={onClose}
+              aria-label={label}
+              className={cn(
+                "group relative flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                active
+                  ? "bg-accent text-primary"
+                  : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"
+              )}
+            >
+              {/* 2-px active-route accent pill on the left edge */}
+              {active && (
+                <span
+                  className="absolute -left-3 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary"
+                  style={{ boxShadow: "0 0 8px var(--primary)" }}
+                />
+              )}
 
-        <div>
-          <p className="micro-label mb-2 px-3">Quick start</p>
-          <div className="space-y-0.5 px-1">
-            {QUICK_START_REPOS.map((r) => (
-              <button
-                key={r.url}
-                type="button"
-                className="flex w-full min-h-[32px] items-center rounded-md px-2.5 py-1 text-left text-xs font-medium text-muted-foreground hover:bg-surface-hover hover:text-foreground transition-colors duration-150 cursor-pointer"
-                onClick={() => onQuickStart?.(r.url, r.ref)}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-        </div>
+              <Icon className="h-[18px] w-[18px] stroke-[1.75]" />
+
+              {/* Hover tooltip */}
+              <span className="pointer-events-none absolute left-[calc(100%+14px)] z-50 whitespace-nowrap rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+                {label}
+              </span>
+            </Link>
+          );
+        })}
       </nav>
 
-      <div className="space-y-4 border-t border-border p-4">
-        <div className="flex items-center justify-between">
-          <span className="micro-label">Appearance</span>
-          <ThemeToggle compact />
+      {/* ── Bottom Section ─────────────────────────────────── */}
+      <div className="flex flex-col items-center gap-4 mt-auto pb-1">
+        {/* Live status pulse dot */}
+        <div className="group relative flex items-center justify-center cursor-default">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+          </span>
+          <span className="pointer-events-none absolute left-[calc(100%+14px)] z-50 whitespace-nowrap rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-[10px] font-mono text-success opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+            {repoId ? `Active · ${repoId.slice(0, 10)}…` : "System live"}
+          </span>
         </div>
 
-        {repoId && (
-          <div className="rounded-lg border border-border bg-surface-raised p-3">
-            <p className="micro-label mb-1.5">Active repository</p>
-            <p className="truncate font-mono text-xs text-foreground">
-              {truncateId(repoId)}
-            </p>
-          </div>
-        )}
+        {/* Separator */}
+        <div className="h-px w-8 bg-border/60" />
 
-        <Button
-          variant="secondary"
-          size="sm"
-          className="w-full text-muted-foreground hover:text-error hover:border-error/25 hover:bg-error/10 transition-all duration-150"
-          onClick={() => {
-            clearSession();
-            onClose?.();
-            router.push("/onboarding");
-          }}
+        {/* User avatar */}
+        <button
+          type="button"
+          aria-label="Account settings"
+          className="group relative flex h-8 w-8 items-center justify-center rounded-full border border-border/40 bg-surface-raised text-muted-foreground hover:text-foreground hover:border-border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          Clear session
-        </Button>
+          <CircleUser className="h-[18px] w-[18px] stroke-[1.5]" />
+          <span className="pointer-events-none absolute left-[calc(100%+14px)] z-50 whitespace-nowrap rounded-lg border border-border bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+            Account
+          </span>
+        </button>
       </div>
     </aside>
   );

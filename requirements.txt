@@ -8,6 +8,8 @@
 # CPU-only PyTorch — must install before sentence-transformers (no NVIDIA CUDA)
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch==2.6.0+cpu
+transformers==4.46.3
+sentence-transformers==3.4.1
 
 # Pin scipy so pip does not pull latest 35MB+ wheel on slow networks
 scipy==1.13.0

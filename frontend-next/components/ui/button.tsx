@@ -14,16 +14,35 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        /* Primary — filled violet, lifts with shadow + glow on dark */
         default:
-          "rounded-lg bg-primary text-primary-foreground shadow-elev-1 hover:bg-primary-hover hover:shadow-elev-2",
+          "rounded-lg bg-primary text-primary-foreground shadow-elev-1 " +
+          "hover:bg-primary-hover hover:shadow-elev-2 " +
+          "dark:hover:[box-shadow:var(--shadow-2),var(--glow-primary)]",
+
+        /* Secondary — subtle outlined, elevates on hover */
         secondary:
-          "rounded-lg border border-border bg-surface-raised text-foreground hover:bg-surface-hover hover:border-border-strong",
+          "rounded-lg border border-border bg-surface-raised text-foreground " +
+          "hover:bg-surface-hover hover:border-border-strong hover:shadow-elev-1",
+
+        /* Ghost — transparent, clean */
         ghost:
           "rounded-lg text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+
+        /* Destructive — uses soft semantic token for proper light/dark */
         destructive:
-          "rounded-lg bg-error/15 text-error border border-error/25 hover:bg-error/20",
+          "rounded-lg bg-error-soft text-error border border-error/25 " +
+          "hover:border-error/40 hover:bg-error/15",
+
+        /* Outline — bordered transparent */
         outline:
-          "rounded-lg border border-border bg-transparent text-foreground hover:bg-surface-hover hover:border-border-strong",
+          "rounded-lg border border-border bg-transparent text-foreground " +
+          "hover:bg-surface-hover hover:border-border-strong",
+
+        /* Accent ghost — for subtle primary-tinted CTAs */
+        accent:
+          "rounded-lg bg-primary-tint text-primary border border-primary/20 " +
+          "hover:bg-primary-muted hover:border-primary/35",
       },
       size: {
         default: "min-h-[40px] px-4 py-2",

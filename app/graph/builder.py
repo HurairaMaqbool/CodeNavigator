@@ -77,6 +77,8 @@ def build_graph(
         The constructed NetworkX directed graph object.
     """
     log = logger.bind(repo_id=repo_id)
+    from app.ingestion.path_normalize import normalize_repo_path
+
     graph = nx.DiGraph()
 
     files = definitions if definitions is not None else parsed_files
@@ -91,13 +93,15 @@ def build_graph(
     #    We key them by `{normalized_path}:{name}` to ensure uniqueness.
     #    This deterministic file-walk order guarantees consistent truncation if we hit the limit.
     known_nodes: set[str] = set()
+    node_to_class: dict[str, str] = {} # node_id -> class_name (if method)
 
     for p_file in files:
         if node_count >= max_nodes:
             truncated = True
             break
 
-        path = getattr(p_file, 'normalized_path', None) or p_file.file_path.lower()
+        raw_path = getattr(p_file, 'normalized_path', None) or p_file.file_path
+        path = normalize_repo_path(raw_path)
 
         # Top-level functions
         for f in p_file.functions:
@@ -133,6 +137,7 @@ def build_graph(
                     end_line=m.end_line,
                 )
                 known_nodes.add(node_id)
+                node_to_class[node_id] = c.name
                 node_count += 1
 
     if truncated:
@@ -147,12 +152,18 @@ def build_graph(
     name_to_nodes: dict[str, list[str]] = {}
     for node_id in known_nodes:
         # node_id is path:name
-        _, _, name = node_id.rpartition(":")
-        name_to_nodes.setdefault(name, []).append(node_id)
+        _, _, full_name = node_id.rpartition(":")
+        # Map the full name (e.g. Session.send)
+        name_to_nodes.setdefault(full_name, []).append(node_id)
+        # Map the simple name if it's a method (e.g. send)
+        if "." in full_name:
+            simple_name = full_name.split(".")[-1]
+            name_to_nodes.setdefault(simple_name, []).append(node_id)
 
     edge_count = 0
     for p_file in files:
-        path = getattr(p_file, 'normalized_path', None) or p_file.file_path.lower()
+        raw_path = getattr(p_file, 'normalized_path', None) or p_file.file_path
+        path = normalize_repo_path(raw_path)
 
         # Helper to process calls for a given function/method node
         def _process_calls(caller_id: str, calls: list[str]) -> None:
@@ -160,33 +171,53 @@ def build_graph(
             if caller_id not in known_nodes:
                 return
 
+            caller_class = node_to_class.get(caller_id)
+
             for call in calls:
                 targets = name_to_nodes.get(call, [])
                 if not targets:
                     # Called function is outside our parsed codebase
                     continue
 
+                callee_id = None
+                edge_type = "heuristic"
+                resolution = "name_collision_fallback"
+
                 if len(targets) == 1:
                     callee_id = targets[0]
                     edge_type = "static" if callee_id.startswith(f"{path}:") else "semi_static"
                     resolution = "exact_match"
                 else:
-                    local_target = f"{path}:{call}"
-                    if local_target in targets:
-                        callee_id = local_target
-                        edge_type = "static"
-                        resolution = "local_priority"
-                    else:
+                    # Resolve call ambiguity contextually:
+                    # 1. Match local class method first (if caller is in a class)
+                    if caller_class:
+                        local_class_target = f"{path}:{caller_class}.{call}"
+                        if local_class_target in targets:
+                            callee_id = local_class_target
+                            edge_type = "static"
+                            resolution = "local_class_priority"
+
+                    # 2. Match local file target (either function or any class method in same file)
+                    if not callee_id:
+                        local_targets = [t for t in targets if t.startswith(f"{path}:")]
+                        if local_targets:
+                            callee_id = local_targets[0]
+                            edge_type = "static"
+                            resolution = "local_file_priority"
+
+                    # 3. Fallback to first target
+                    if not callee_id:
                         callee_id = targets[0]
                         edge_type = "heuristic"
                         resolution = "name_collision_fallback"
 
-                if callee_id in known_nodes:
+                if callee_id and callee_id in known_nodes:
                     if graph.has_edge(caller_id, callee_id):
                         graph[caller_id][callee_id]["call_count"] += 1
                     else:
                         graph.add_edge(
-                            caller_id, callee_id,
+                            caller_id,
+                            callee_id,
                             call_count=1,
                             type=edge_type,
                             resolution_method=resolution

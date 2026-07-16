@@ -185,15 +185,25 @@ def generate_mermaid(
         entry = _resolve_entry_point(subgraph, nodes_data)
         return _no_connections_diagram(direction, entry, id_to_label, seen_ids)
 
+    cycle_node_ids: list[str] = []
     for node_key in kept_ids:
         if node_key not in declared:
             display = sanitize_node_label(id_to_label.get(node_key, node_key))
             nid = sanitize(node_key, seen_ids)
-            suffix = " :::cycleNode" if node_key in cycle_nodes else ""
-            lines.append(f'    {nid}["{display}"]{suffix}')
+            lines.append(f'    {nid}["{display}"]')
+            if node_key in cycle_nodes:
+                cycle_node_ids.append(nid)
 
-    if cycle_nodes:
+    # Also collect cycle-node IDs for nodes that were declared via edges
+    for node_key in declared:
+        if node_key in cycle_nodes:
+            nid = sanitize(node_key, seen_ids)
+            if nid not in cycle_node_ids:
+                cycle_node_ids.append(nid)
+
+    if cycle_node_ids:
         lines.append("    classDef cycleNode fill:#fff3cd,stroke:#d97706,stroke-width:2px")
+        lines.append(f'    class {",".join(cycle_node_ids)} cycleNode')
 
     if hidden_count > 0:
         lines.append(f'    note["+{hidden_count} more dependencies not shown"]')

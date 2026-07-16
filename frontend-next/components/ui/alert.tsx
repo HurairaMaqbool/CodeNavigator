@@ -1,3 +1,4 @@
+import * as React from "react";
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -11,10 +12,10 @@ const icons: Record<AlertKind, React.ReactNode> = {
 };
 
 const styles: Record<AlertKind, string> = {
-  error: "border-error/30 bg-error/10 text-error",
-  warning: "border-warning/30 bg-warning/10 text-warning",
-  info: "border-info/30 bg-info/10 text-info",
-  success: "border-success/30 bg-success/10 text-success",
+  error: "border-error/30 bg-error-soft text-error",
+  warning: "border-warning/30 bg-warning-soft text-warning",
+  info: "border-info/30 bg-info-soft text-info",
+  success: "border-success/30 bg-success-soft text-success",
 };
 
 export function Alert({

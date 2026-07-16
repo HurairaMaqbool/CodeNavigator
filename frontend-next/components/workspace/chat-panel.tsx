@@ -197,62 +197,97 @@ export function ChatPanel({ repoId, ready }: ChatPanelProps) {
           ))
         )}
         {loading && (
-          <div className="flex items-center gap-2.5 rounded-xl border border-primary/15 bg-primary-tint/30 px-4 py-3 text-xs font-semibold text-primary animate-pulse w-fit">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-            <span>
-              {agentState === "ACT"
-                ? "Searching dense & sparse index..."
-                : agentState === "FINALIZE"
-                  ? "Formulating final response..."
-                  : "Processing query through state loop..."}
-            </span>
+          <div className="flex flex-col gap-2 rounded-2xl border border-primary/25 bg-surface p-4 shadow-elev-2 max-w-sm animate-cascade">
+            <div className="flex items-center gap-2">
+              {/* Custom animated bouncing dots simulating directory search */}
+              <div className="flex items-center gap-1.5 h-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                Agent reasoning
+              </span>
+            </div>
+            
+            <div className="flex items-start gap-2.5 mt-1">
+              <svg className="h-4 w-4 text-primary shrink-0 mt-0.5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-mono text-foreground font-medium truncate">
+                  {agentState === "ACT"
+                    ? "Searching semantic dense index..."
+                    : agentState === "FINALIZE"
+                      ? "Synthesizing retrieved context chunks..."
+                      : "Scanning symbol graph for references..."}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                  status: {agentState || "INITIALIZING"}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
       <form
-        className="relative flex flex-col gap-2 border-t border-border bg-surface-raised/40 p-4 backdrop-blur-md"
+        className="shrink-0 px-6 py-4 border-t border-border/40 bg-background w-full"
         onSubmit={(e) => {
           e.preventDefault();
-          void sendQuestion(question);
+          if (question.trim()) {
+            void sendQuestion(question);
+          }
         }}
       >
-        <div className="relative flex items-center">
-          <Input
-            placeholder={
-              ready ? "Ask about architecture, classes, or flows…" : "Waiting for index to finish…"
-            }
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            disabled={!ready || loading}
-            aria-label="Chat message"
-            className="flex-1 bg-surface/30 border-border hover:border-border-strong focus:border-primary pr-32 transition-colors min-h-[44px] rounded-xl pl-4"
-          />
-          <div className="absolute right-2 flex items-center gap-1.5">
-            <VoiceInputButton
-              onTranscript={(text) => setQuestion(text)}
+        <div className="max-w-5xl mx-auto">
+          <div className="relative rounded-2xl border border-border bg-surface focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-ring transition-all duration-200 shadow-sm">
+            <textarea
+              rows={1}
+              placeholder={
+                ready ? "Ask about architecture, classes, or flows…" : "Waiting for index to finish…"
+              }
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (question.trim()) {
+                    void sendQuestion(question);
+                  }
+                }
+              }}
               disabled={!ready || loading}
+              aria-label="Chat message"
+              className="w-full bg-transparent resize-none px-5 py-4 pr-32 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none min-h-[52px]"
             />
-            {ready && !loading && (
-              <kbd className="hidden h-5 select-none items-center gap-0.5 rounded border border-border bg-surface px-1.5 font-mono text-[10px] font-medium text-tertiary sm:flex">
-                <span>Enter</span>
-              </kbd>
-            )}
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!ready || loading || !question.trim()}
-              aria-label="Send message"
-              className="rounded-lg h-8 px-3 flex items-center gap-1 font-semibold active:scale-[0.98]"
-            >
-              {loading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
-              )}
-              <span>Ask</span>
-            </Button>
+            
+            {/* Right Cluster Controls */}
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 z-10 select-none">
+              <VoiceInputButton
+                onTranscript={(text) => setQuestion(text)}
+                disabled={!ready || loading}
+              />
+              <button
+                type="submit"
+                disabled={!ready || loading || !question.trim()}
+                aria-label="Send message"
+                className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground disabled:opacity-40 disabled:hover:brightness-100 hover:brightness-110 glow-primary active:scale-95 transition-all duration-200 cursor-pointer"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
+
+          <p className="text-[11px] text-muted-foreground mt-2 ml-2 select-none">
+            Enter to send &middot; Shift+Enter for newline
+          </p>
         </div>
       </form>
     </div>

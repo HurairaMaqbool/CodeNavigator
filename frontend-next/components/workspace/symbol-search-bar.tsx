@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import { getSymbols, type SymbolItem } from "@/lib/api";
 import { Input } from "@/components/ui/input";
@@ -20,8 +21,14 @@ export function SymbolSearchBar({
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [mounted, setMounted] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -58,6 +65,31 @@ export function SymbolSearchBar({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Update dropdown coordinates dynamically
+  const updateCoords = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updateCoords();
+      // Listen to scroll events on any parent element (using useCapture = true)
+      window.addEventListener("scroll", updateCoords, true);
+      window.addEventListener("resize", updateCoords);
+    }
+    return () => {
+      window.removeEventListener("scroll", updateCoords, true);
+      window.removeEventListener("resize", updateCoords);
+    };
+  }, [isOpen]);
 
   // Fuzzy match query
   const filtered = query.trim()
@@ -131,8 +163,13 @@ export function SymbolSearchBar({
             setQuery(e.target.value);
             setIsOpen(true);
             setHighlightedIndex(-1);
+            // Re-calculate coordinate positions when input width/height might shift slightly
+            setTimeout(updateCoords, 0);
           }}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            setIsOpen(true);
+            updateCoords();
+          }}
           onKeyDown={handleKeyDown}
           disabled={disabled}
         />
@@ -151,49 +188,66 @@ export function SymbolSearchBar({
         )}
       </div>
 
-      {isOpen && displayList.length > 0 && (
-        <div
-          ref={dropdownRef}
-          className="absolute z-50 left-0 right-0 mt-1.5 max-h-60 overflow-y-auto rounded-lg border border-border bg-surface-raised shadow-lg"
-        >
-          <ul className="py-1 text-sm text-foreground">
-            {displayList.map((item, index) => {
-              const isHighlighted = index === highlightedIndex;
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className={`flex w-full flex-col px-4 py-2 text-left hover:bg-surface-hover transition-colors ${
-                      isHighlighted ? "bg-surface-hover" : ""
-                    }`}
-                    onClick={() => {
-                      onSelectSymbol(item);
-                      setQuery(item.name);
-                      setIsOpen(false);
-                    }}
-                  >
-                    <span className="font-semibold text-foreground">
-                      {item.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {item.path} · {item.type}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+      {/* Render overlay dropdown menu using React Portal to prevent container clipping */}
+      {mounted && isOpen && displayList.length > 0 &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="fixed rounded-lg border border-border bg-surface-raised shadow-xl overflow-hidden"
+            style={{
+              top: `${coords.top + 6}px`,
+              left: `${coords.left}px`,
+              width: `${coords.width}px`,
+              zIndex: 9999,
+            }}
+          >
+            <ul className="max-h-60 overflow-y-auto py-1 text-sm text-foreground">
+              {displayList.map((item, index) => {
+                const isHighlighted = index === highlightedIndex;
+                return (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      className={`flex w-full flex-col px-4 py-2 text-left hover:bg-surface-hover transition-colors ${
+                        isHighlighted ? "bg-surface-hover" : ""
+                      }`}
+                      onClick={() => {
+                        onSelectSymbol(item);
+                        setQuery(item.name);
+                        setIsOpen(false);
+                      }}
+                    >
+                      <span className="font-semibold text-foreground">
+                        {item.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {item.path} · {item.type}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>,
+          document.body
+        )}
 
-      {isOpen && query.trim() && displayList.length === 0 && (
-        <div
-          ref={dropdownRef}
-          className="absolute z-50 left-0 right-0 mt-1.5 rounded-lg border border-border bg-surface-raised px-4 py-3 shadow-lg text-sm text-muted-foreground"
-        >
-          No matching symbols found.
-        </div>
-      )}
+      {mounted && isOpen && query.trim() && displayList.length === 0 &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="fixed rounded-lg border border-border bg-surface-raised px-4 py-3 shadow-xl text-sm text-muted-foreground"
+            style={{
+              top: `${coords.top + 6}px`,
+              left: `${coords.left}px`,
+              width: `${coords.width}px`,
+              zIndex: 9999,
+            }}
+          >
+            No matching symbols found.
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
