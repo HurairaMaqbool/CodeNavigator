@@ -134,6 +134,7 @@ export type EvalRun = {
   supplementary?: Record<string, number>;
   per_question?: PerQuestionDiagnostic[];
   diagnostics?: {
+    job_id?: string;
     question_count?: number;
     gated_count?: number;
     mean_precision_at_3?: number;

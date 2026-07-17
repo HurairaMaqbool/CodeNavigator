@@ -507,8 +507,19 @@ export default function EvaluationPage() {
   } = useEvalRunners(repoId);
 
   const allRuns = history.data ?? [];
-  const repoSpecificRuns = allRuns.filter((r) => r.repo_id === repoId);
+  // Match runs by explicit repo_id OR by diagnostics.job_id (legacy runs written before
+  // repo_id was added to the run record — all pre-836e50a evals only stored job_id).
+  const repoSpecificRuns = repoId
+    ? allRuns.filter(
+        (r) =>
+          r.repo_id === repoId ||
+          (!r.repo_id && r.diagnostics?.job_id === repoId),
+      )
+    : [];
+  // Use repo-filtered list when we have matches; fall back to the full history so the
+  // Compare panel is never accidentally empty when there are plenty of runs to compare.
   const runs = repoSpecificRuns.length > 0 ? repoSpecificRuns : allRuns;
+
 
   const [selectedRunKey, setSelectedRunKey] = useState<string | null>(null);
   const [baseline, setBaseline] = useState("");

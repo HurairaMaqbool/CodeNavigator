@@ -20,7 +20,9 @@ from app.agent.prompts.answer_quality_dataset import (
     render_pre_answer_checklist,
 )
 
-_JSON_SCHEMA = """\
+from app.agent.prompts.loader import load_private_prompt
+
+_FALLBACK_JSON_SCHEMA = """\
 RESPOND WITH JSON ONLY — no markdown fences, no prose outside the JSON object.
 
 Schema:
@@ -44,7 +46,7 @@ Rules for citations:
 - Return at most {max_claims} claims total — prefer fewer, complete claims over many truncated ones.
 """
 
-_HARD_CONSTRAINTS = """\
+_FALLBACK_HARD_CONSTRAINTS = """\
 HARD CONSTRAINTS (violations will be rejected):
 1. Use ONLY the provided code context — never general Python/library background knowledge.
 2. Every factual claim must have citation with real file_path and line numbers from context.
@@ -55,6 +57,18 @@ HARD CONSTRAINTS (violations will be rejected):
    Add at most ONE abstention claim (citation: null) only for a specific sub-part that is truly absent.
 7. Do NOT invent paths, line numbers, or behaviors not supported by the context.
 """
+
+_FALLBACK_WHY_MODE = """\
+WHY-QUESTION MODE:
+- Lead with README/HISTORY or class docstring rationale when present in context.
+- Explain design rationale (maintainability, reuse, complexity) — not only mechanism.
+- Pair one doc/design claim with one implementation claim.
+- If explicit 'why' is undocumented, prefix one claim with 'Inferred from structure:'.
+"""
+
+_JSON_SCHEMA = load_private_prompt("finalize_schema.txt", _FALLBACK_JSON_SCHEMA)
+_HARD_CONSTRAINTS = load_private_prompt("finalize_constraints.txt", _FALLBACK_HARD_CONSTRAINTS)
+_WHY_MODE = load_private_prompt("finalize_why_mode.txt", _FALLBACK_WHY_MODE)
 
 # Compact legacy fallbacks when the JSON dataset is unavailable.
 _LEGACY_FEW_SHOT_GOOD = """\
@@ -71,14 +85,6 @@ Question: How does requests configure urllib3 retry backoff?
 
 _LEGACY_FEW_SHOT_BAD = """\
 EXAMPLE — BAD: generic library overview with decorative README citation — DO NOT DO THIS.
-"""
-
-_WHY_MODE = """\
-WHY-QUESTION MODE:
-- Lead with README/HISTORY or class docstring rationale when present in context.
-- Explain design rationale (maintainability, reuse, complexity) — not only mechanism.
-- Pair one doc/design claim with one implementation claim.
-- If explicit 'why' is undocumented, prefix one claim with 'Inferred from structure:'.
 """
 
 

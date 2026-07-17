@@ -32,12 +32,18 @@ QUERY_CATEGORIES: tuple[str, ...] = (
 _PARROTING_OVERLAP_THRESHOLD = 0.38
 
 
+from app.agent.prompts.loader import load_private_json
+
 @lru_cache(maxsize=1)
 def load_dataset() -> dict[str, Any]:
     """Load and cache the answer-quality dataset JSON."""
-    if not _DATASET_PATH.is_file():
-        return {}
-    return json.loads(_DATASET_PATH.read_text(encoding="utf-8"))
+    fallback = {
+        "dataset_name": "CodeNavigator Public Fallback",
+        "version": "1.0",
+        "query_categories": {},
+        "few_shot_examples": [],
+    }
+    return load_private_json("answer_quality_dataset.json", fallback)
 
 
 def dataset_available() -> bool:

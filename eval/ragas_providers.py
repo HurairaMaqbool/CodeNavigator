@@ -44,7 +44,7 @@ def get_judge_llm() -> LangchainLLMWrapper:
             temperature=0,
             max_tokens=512,
             timeout=float(settings.GROQ_HTTP_TIMEOUT_S),
-            max_retries=0,
+            max_retries=int(settings.GROQ_LLM_RATE_LIMIT_ATTEMPTS),
         )
         return LangchainLLMWrapper(llm)
         

@@ -17,12 +17,32 @@ _JSON_ONLY_INSTRUCTION = (
 )
 
 
+from app.agent.prompts.loader import load_private_prompt
+
+_FALLBACK_DECIDE_PROMPT = """You are the DECIDE step of a codebase onboarding agent.
+Decide whether the retrieved context is sufficient to answer accurately,
+or whether another retrieval pass is required.
+
+RESPOND WITH JSON ONLY. No markdown fences, no explanation, no prose before or after.
+Your entire response must be exactly one JSON object.
+
+Required JSON shape (boolean field must be needs_more, string field must be reason):
+If sufficient: {{"needs_more": false, "reason": "Context covers the asked behavior."}}
+If insufficient: {{"needs_more": true, "reason": "Missing implementation details for the cited module."}}
+
+Iteration: {iteration} of {max_iterations}
+Retrieved chunks in context: {chunk_count}
+
+USER QUESTION:
+{question}
+
+ASSEMBLED CONTEXT (truncated):
+{context}"""
+
+
 def decide_prompt(memory: dict[str, Any]) -> str:
     """
     Build the DECIDE-state user prompt.
-
-    Included: question, assembled retrieval context snippet, iteration, chunk count.
-    Excluded: raw chat history, uncompressed tool JSON blobs, finalize-only instructions.
     """
     question = str(memory.get("question", "")).strip()
     context = str(memory.get("assembled_context", ""))[:3000]
@@ -30,26 +50,11 @@ def decide_prompt(memory: dict[str, Any]) -> str:
     chunk_count = int(memory.get("chunk_count", 0))
     max_iterations = int(memory.get("max_iterations", 3))
 
-    example_yes = {"needs_more": False, "reason": "Context covers the asked behavior."}
-    example_no = {"needs_more": True, "reason": "Missing implementation details for the cited module."}
-
-    return "\n".join([
-        "You are the DECIDE step of a codebase onboarding agent.",
-        "Decide whether the retrieved context is sufficient to answer accurately,",
-        "or whether another retrieval pass is required.",
-        "",
-        _JSON_ONLY_INSTRUCTION,
-        "",
-        "Required JSON shape (boolean field must be needs_more, string field must be reason):",
-        f"If sufficient: {json.dumps(example_yes)}",
-        f"If insufficient: {json.dumps(example_no)}",
-        "",
-        f"Iteration: {iteration} of {max_iterations}",
-        f"Retrieved chunks in context: {chunk_count}",
-        "",
-        "USER QUESTION:",
-        question,
-        "",
-        "ASSEMBLED CONTEXT (truncated):",
-        context or "(empty)",
-    ])
+    template = load_private_prompt("decide_prompt.txt", _FALLBACK_DECIDE_PROMPT)
+    return template.format(
+        iteration=iteration,
+        max_iterations=max_iterations,
+        chunk_count=chunk_count,
+        question=question,
+        context=context or "(empty)",
+    )

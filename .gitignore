@@ -15,6 +15,13 @@ repos/*
 
 eval_results/*
 !eval_results/.gitkeep
+# Private IP directory
+/private/
+
+# Local databases & run history
+tests/eval_history.jsonl
+tests/eval_results.json
+tests/golden_set_status.json
 
 *.log
 

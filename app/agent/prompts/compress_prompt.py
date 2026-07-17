@@ -14,19 +14,22 @@ import json
 from typing import Any
 
 
+from app.agent.prompts.loader import load_private_prompt
+
+_FALLBACK_COMPRESS_PROMPT = """Summarize the following older tool outputs into one dense, fact-rich paragraph.
+Preserve every file path, function name, line number, and relationship mentioned.
+Discard JSON boilerplate and repeated whitespace.
+Do not add information that is not present in the outputs.
+Target length: 120-250 words."""
+
+
 def compress_prompt(old_results: list[Any]) -> str:
     """
     Build a compression prompt for older tool outputs.
-
-    Included: serialized older tool-result payloads only.
-    Excluded: user question, latest tool results, retrieval chunks, decide/finalize text.
     """
+    template = load_private_prompt("compress_prompt.txt", _FALLBACK_COMPRESS_PROMPT)
     lines = [
-        "Summarize the following older tool outputs into one dense, fact-rich paragraph.",
-        "Preserve every file path, function name, line number, and relationship mentioned.",
-        "Discard JSON boilerplate and repeated whitespace.",
-        "Do not add information that is not present in the outputs.",
-        "Target length: 120-250 words.",
+        template,
         "",
     ]
 
@@ -38,6 +41,9 @@ def compress_prompt(old_results: list[Any]) -> str:
                 payload = json.dumps(item, ensure_ascii=False)
             except TypeError:
                 payload = str(item)
+            except NameError:
+                import json
+                payload = json.dumps(item, ensure_ascii=False)
         lines.append(f"--- Tool Output {i} ---")
         lines.append(payload[:4000])
         lines.append("")

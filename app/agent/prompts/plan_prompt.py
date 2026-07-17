@@ -25,48 +25,53 @@ _JSON_ONLY_INSTRUCTION = (
 )
 
 
+from app.agent.prompts.loader import load_private_prompt
+
+_FALLBACK_PLAN_PROMPT = """You are the PLAN step of a codebase onboarding agent.
+Choose exactly ONE tool call to gather evidence for the user question.
+
+RESPOND WITH JSON ONLY. No markdown fences, no explanation, no prose before or after.
+Your entire response must be exactly one JSON object.
+
+Required JSON shape:
+{{
+  "tool_name": "search_code",
+  "arguments": {{
+    "query": "authentication flow",
+    "top_k": 5
+  }}
+}}
+
+Allowed tool_name values: search_code, read_file, get_callers, get_callees, generate_diagram.
+arguments must match that tool's schema (strings and integers only).
+
+Repository: {repo_id}
+Planning iteration: {iteration}
+{prior_tool_line}
+
+Keep arguments concise. Prefer top_k between 3 and 8 for search_code.
+
+USER QUESTION:
+{question}"""
+
+
 def plan_prompt(question: str, memory: dict[str, Any] | None = None) -> str:
     """
     Build the PLAN-state user prompt.
-
-    Included: question, iteration count, brief prior-plan hint (if any).
-    Excluded: full tool-result history, assembled retrieval context, chat transcript.
     """
     mem = memory or {}
     iteration = int(mem.get("iteration", 0))
     prior_tool = mem.get("last_tool_name")
     repo_id = mem.get("repo_id", "")
 
-    example = {
-        "tool_name": "search_code",
-        "arguments": {"query": "authentication flow", "top_k": 5},
-    }
-
-    lines = [
-        "You are the PLAN step of a codebase onboarding agent.",
-        "Choose exactly ONE tool call to gather evidence for the user question.",
-        "",
-        _JSON_ONLY_INSTRUCTION,
-        "",
-        "Required JSON shape:",
-        json.dumps(example, indent=2),
-        "",
-        f"Allowed tool_name values: {', '.join(_ALLOWED_TOOLS)}.",
-        "arguments must match that tool's schema (strings and integers only).",
-        "",
-        f"Repository: {repo_id or 'unknown'}",
-        f"Planning iteration: {iteration}",
-    ]
-
+    prior_tool_line = ""
     if prior_tool:
-        lines.append(f"Previous tool used: {prior_tool} (pick a different tool if more context is needed).")
+        prior_tool_line = f"Previous tool used: {prior_tool} (pick a different tool if more context is needed)."
 
-    lines.extend([
-        "",
-        "Keep arguments concise. Prefer top_k between 3 and 8 for search_code.",
-        "",
-        "USER QUESTION:",
-        question.strip(),
-    ])
-
-    return "\n".join(lines)
+    template = load_private_prompt("plan_prompt.txt", _FALLBACK_PLAN_PROMPT)
+    return template.format(
+        repo_id=repo_id or "unknown",
+        iteration=iteration,
+        prior_tool_line=prior_tool_line,
+        question=question.strip(),
+    )
