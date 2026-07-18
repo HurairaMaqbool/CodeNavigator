@@ -1,27 +1,32 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=220&section=header&text=🧠%20Codebase%20Onboarding%20Agent&fontSize=42&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Agentic%20Graph-Augmented%20RAG%20Pipeline%20for%20Codebase%20Intelligence&descSize=15&descAlignY=58&descColor=a0a0cc" width="100%"/>
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=220&section=header&text=🧠%20CodeNavigator&fontSize=48&fontColor=ffffff&animation=fadeIn&fontAlignY=35&desc=Agentic%20Graph-Augmented%20RAG%20for%20Codebase%20Onboarding&descSize=16&descAlignY=58&descColor=a0a0cc" width="100%"/>
 
 <br/>
 
-[![Stars](https://img.shields.io/github/stars/HurairaMaqbool/HurairaMaqbool?style=for-the-badge&logo=github&color=FFD700&labelColor=0d1117)](https://github.com/HurairaMaqbool/HurairaMaqbool/stargazers)
-[![Forks](https://img.shields.io/github/forks/HurairaMaqbool/HurairaMaqbool?style=for-the-badge&logo=git&color=4ECDC4&labelColor=0d1117)](https://github.com/HurairaMaqbool/HurairaMaqbool/network)
-[![Issues](https://img.shields.io/github/issues/HurairaMaqbool/HurairaMaqbool?style=for-the-badge&logo=gitbook&color=FF6B6B&labelColor=0d1117)](https://github.com/HurairaMaqbool/HurairaMaqbool/issues)
-[![License](https://img.shields.io/badge/License-MIT-8A2BE2?style=for-the-badge&labelColor=0d1117)](LICENSE)
+<b>Ask any question about any codebase. Get a grounded, cited answer in seconds — not hours of grepping.</b>
+
+<br/><br/>
+
+[![License](https://img.shields.io/badge/License-Proprietary-8A2BE2?style=for-the-badge&labelColor=0d1117)](#-license--intellectual-property)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white&labelColor=0d1117)](#-tech-stack)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white&labelColor=0d1117)](#-tech-stack)
+[![Next.js](https://img.shields.io/badge/Next.js-Frontend-000000?style=for-the-badge&logo=next.js&logoColor=white&labelColor=0d1117)](#-tech-stack)
+[![Status](https://img.shields.io/badge/Status-Active%20Development-F55036?style=for-the-badge&labelColor=0d1117)](#-roadmap)
 
 <br/>
 
-![Python](https://img.shields.io/badge/Python%203.12-3776AB?style=flat-square&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=next.js&logoColor=white)
-![ChromaDB](https://img.shields.io/badge/ChromaDB-VectorStore-6E57F7?style=flat-square)
-![NetworkX](https://img.shields.io/badge/NetworkX-GraphEngine-orange?style=flat-square)
-![LangChain](https://img.shields.io/badge/LangChain-Agentic-1C3C3C?style=flat-square)
-![Groq](https://img.shields.io/badge/Groq-LLM-F55036?style=flat-square)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-Vector%20Store-6E57F7?style=flat-square)
+![BM25](https://img.shields.io/badge/BM25-Sparse%20Retrieval-4ECDC4?style=flat-square)
+![NetworkX](https://img.shields.io/badge/NetworkX-Call%20Graph-orange?style=flat-square)
+![TreeSitter](https://img.shields.io/badge/Tree--sitter-AST%20Parsing-44A340?style=flat-square)
+![Groq](https://img.shields.io/badge/Groq-LLM%20Inference-F55036?style=flat-square)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Metadata%20Store-336791?style=flat-square&logo=postgresql&logoColor=white)
+![RAGAS](https://img.shields.io/badge/RAGAS-Evaluation-6E57F7?style=flat-square)
 
 <br/>
 
-<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&pause=1000&color=6E57F7&center=true&vCenter=true&width=650&lines=Ask+any+question+about+your+codebase.;Hybrid+RAG+%2B+Graph+traversal+%2B+Hallucination+gating.;Auto-syncs+on+every+GitHub+push.;Built+for+developers%2C+not+demos." alt="Typing SVG"/>
+<img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=18&pause=1000&color=6E57F7&center=true&vCenter=true&width=680&lines=Hybrid+Retrieval+%2B+AST+Graph+Traversal.;Hallucination-gated%2C+citation-verified+answers.;Deterministic+Agentic+FSM+%E2%80%94+not+a+chatbot+wrapper.;Built+for+real+engineering+teams%2C+not+demos." alt="Typing SVG"/>
 
 <br/><br/>
 
@@ -30,27 +35,19 @@
 ---
 
 <details open>
-<summary><b>📋 Table of Contents</b> — click to expand / collapse</summary>
-
+<summary><b>📋 Table of Contents</b></summary>
 <br/>
 
-| # | Section |
-|---|---------|
-| 1 | [🧠 About the Project](#-about-the-project) |
-| 2 | [✨ Features at a Glance](#-features-at-a-glance) |
-| 3 | [🏗️ High-Level Architecture](#️-high-level-architecture) |
-| 4 | [⚙️ Workflow Breakdowns](#️-workflow-breakdowns) |
-| 5 | [📦 Module Reference](#-module-reference) |
-| 6 | [🔌 API Contracts](#-api-contracts) |
-| 7 | [🛡️ Agentic Gating & Hallucination Guard](#️-agentic-gating--hallucination-guard) |
-| 8 | [🛠️ Tech Stack](#️-tech-stack) |
-| 9 | [📁 Project Structure](#-project-structure) |
-| 10 | [🚀 Setup & Local Execution](#-setup--local-execution) |
-| 11 | [🧪 Testing](#-testing) |
-| 12 | [🛣️ Roadmap](#️-roadmap) |
-| 13 | [🤝 Contributing](#-contributing) |
-| 14 | [📄 License](#-license) |
-| 15 | [👤 Author](#-author) |
+| # | Section | # | Section |
+|---|---------|---|---------|
+| 1 | [About the Project](#-about-the-project) | 9 | [Design System](#-design-system) |
+| 2 | [Features](#-features) | 10 | [Directory Map](#-directory-map) |
+| 3 | [System Architecture](#-system-architecture) | 11 | [Setup & Local Execution](#-setup--local-execution) |
+| 4 | [Agentic FSM Loop](#-the-agentic-fsm-loop) | 12 | [Testing & Evaluation](#-testing--evaluation) |
+| 5 | [Hybrid Retrieval Engine](#-hybrid-retrieval-engine-rrf) | 13 | [Engineering Notes](#-engineering-notes) |
+| 6 | [Hallucination Guard](#-hallucination-guard) | 14 | [Roadmap](#-roadmap) |
+| 7 | [IP-Protected Prompt Loader](#-ip-protected-prompt-loader) | 15 | [License & IP](#-license--intellectual-property) |
+| 8 | [API Reference](#-api-reference) | 16 | [Author](#-author) |
 
 </details>
 
@@ -58,396 +55,226 @@
 
 ## 🧠 About the Project
 
-<img align="right" src="https://user-images.githubusercontent.com/79131292/144742785-d183f50a-52d6-4296-a43a-90a1ee3502d8.png" width="35%"/>
+**Onboarding onto an unfamiliar codebase is slow.** Engineers lose days tracing call chains, reading documentation that's already stale, and pinging senior developers for context that interrupts everyone's flow.
 
-**Onboarding onto a new codebase takes days — sometimes weeks.** Developers waste hours tracing function calls, reading stale docs, and asking colleagues questions that interrupt everyone's flow.
+**CodeNavigator** is an agentic RAG platform that removes that friction. Point it at a repository and it builds a **triple index** — dense embeddings, sparse keyword search, and a structural call graph — then exposes an autonomous FSM-driven agent that answers precise, source-grounded questions about how the code actually works.
 
-The **Codebase Onboarding Agent** eliminates that friction. It ingests any Git repository, builds a triple index (semantic vectors + BM25 keyword + call graph), and exposes an autonomous RAG agent that answers precise, citation-verified questions about the codebase in seconds.
+This isn't a thin LLM wrapper. It's a deterministic agent loop with a hard verification stage: every citation the model produces is checked against the real file system before it's allowed to reach the user.
 
-This is not a chatbot wrapper around an LLM. It is a production-grade agentic pipeline with:
-
-- 🔬 **AST-level chunking** — logic is never split mid-function
-- 🕸️ **Graph-augmented retrieval** — understand *who calls what*
-- 🛡️ **Hallucination gating** — every citation is verified against the index before it reaches the user
-- ⚡ **Semantic answer caching** — repeat questions are served in milliseconds
-- 🔄 **Webhook auto-sync** — the agent updates itself on every GitHub push
-
-<br clear="right"/>
-
-### The core problem
-
-| Old Way | This Agent |
-|---------|-----------|
-| Read docs that may be stale | Answers from the actual, live code |
-| Grep and trace calls manually | Graph traversal finds callers/callees instantly |
-| Ask a senior dev (interrupt their flow) | Ask the agent — it cites the exact file and line |
-| Re-onboard after every big PR | Webhook re-ingests on merge, cache is purged |
+|  | The Old Way | CodeNavigator |
+|---|---|---|
+| 📖 | Read docs that drift out of sync with the code | Answers are generated live from the indexed source |
+| 🔍 | Grep and manually trace function calls | The graph engine resolves callers/callees via NetworkX BFS |
+| 🙋 | Interrupt a senior engineer to ask "where does X happen?" | Ask the agent — it cites the exact file and line range |
+| 🤞 | Trust an LLM's confident-sounding but unverified answer | Every citation is checked against the index; low-confidence answers are gated |
 
 ---
 
-## ✨ Features at a Glance
+## ✨ Features
 
 <div align="center">
 
 | | Feature | Description |
-|-|---------|-------------|
-| 🤖 | **Autonomous Agent Loop** | LLM decides which tools to call — no hardcoded router |
-| 🔍 | **Hybrid Search** | Vector (ChromaDB) + Keyword (BM25) fused via Reciprocal Rank Fusion |
-| 🕸️ | **Call Graph Engine** | NetworkX graph of imports and function calls — traversed via BFS (3-hop limit) |
-| 🛡️ | **Hallucination Guard** | Citation validation gates any response with confidence < 4.0 / 10 |
-| ⚡ | **Semantic Cache** | 95% similarity threshold — identical questions skip the LLM entirely |
-| 📊 | **Mermaid Diagrams** | Auto-generates call-graph diagrams in the Next.js UI |
-| 🔄 | **Webhook Auto-Sync** | HMAC-verified GitHub webhooks trigger re-ingestion on every push |
-| 🌐 | **REST API** | FastAPI backend with X-API-Key auth and sliding-window rate limiting |
-| 📓 | **Ragas Evaluation** | Automated faithfulness, relevancy, and recall scoring via golden set |
+|---|---|---|
+| 🤖 | **Agentic FSM Loop** | A deterministic `PLAN → ACT → OBSERVE → DECIDE → VERIFY → RESPOND` state machine — the LLM decides what to do next, but the loop structure prevents runaway or ungrounded behavior |
+| 🔀 | **Hybrid Retrieval** | ChromaDB dense vectors + BM25 sparse keyword search, fused with Reciprocal Rank Fusion (RRF) |
+| 🕸️ | **AST Relation Graph** | Tree-sitter parses the codebase into a NetworkX graph of classes, methods, and call relationships |
+| 🛡️ | **Hallucination Guard** | Every markdown citation in the final answer is validated — file existence, line-range bounds — and scored before it's released to the user |
+| 📊 | **Mermaid Diagrams** | Call subgraphs are traversed and rendered as Mermaid flowcharts directly in the chat/canvas UI |
+| ⚡ | **Semantic Answer Cache** | Embedding-based cache serves repeated questions instantly within the same commit version |
+| 🔒 | **IP-Protected Prompts** | A dynamic loader reads proprietary prompt templates from a private directory when present, falling back to safe operational defaults otherwise |
+| 📈 | **RAGAS Evaluation** | Automated Faithfulness / Relevancy / Precision / Recall scoring with hardened retry-backoff against LLM provider rate limits |
+| 🌐 | **REST + SSE API** | FastAPI backend with API-key auth, rate limiting, and Server-Sent Events for streaming agent traces and tokens |
 
 </div>
 
 ---
 
-## 🏗️ High-Level Architecture
+## 🏗️ System Architecture
 
-```
-Developer / GitHub Webhook
-         |
-         v
- Next.js App (frontend-next/)
-         | HTTP REST
-         v
- FastAPI Router (app/api/)
-         |
-         |──[Ingestion Pipeline]─────────────────────────────────┐
-         |    1. Git Clone / Fetch  (app/ingestion/clone.py)      |
-         |    2. File Filter        (file_filter.py)              |
-         |    3. Tree-Sitter Parser (app/parsing/)                |
-         |    4. AST Chunker        (chunker.py)                  |
-         |    5a. Vector Store      (ChromaDB)                    |
-         |    5b. BM25 Index        (app/retrieval/)              |
-         |    5c. Call Graph        (NetworkX)                    |
-         |                                                        |
-         └──[Chat Agentic Loop]──────────────────────────────────┘
-              Query ──> Semantic Answer Cache
-                            | (miss)
-                            v
-                    RAG Agent Loop (app/agent/)
-                            |
-                            v
-                    Agent Tools (tools.py)
-                       |            |
-                       v            v
-               Hybrid Search    Graph Queries
-              (RRF + Reranker)  (app/graph/)
-                       \            /
-                        \          /
-                         v        v
-                  Hallucination Guard (confidence.py)
-                            |
-                            v
-                    Cache & Return → API
-```
+CodeNavigator runs a decoupled client/server architecture. The Next.js frontend talks to the FastAPI backend over REST for standard calls and SSE for streaming agent reasoning traces and tokens.
 
----
+```mermaid
+graph TD
+    subgraph Frontend [Next.js Web Client — Port 3000]
+        UI[Workspace UI Shell]
+        Chat[RAG Chat Panel]
+        Canvas[Mermaid Diagram Canvas]
+        Eval[Evaluation Dashboard]
+    end
 
-## ⚙️ Workflow Breakdowns
+    subgraph Backend [FastAPI Server — Port 8000]
+        API[API Gateway / Auth / Router]
+        Agent[Agentic RAG FSM Loop]
+        Retrieval[Hybrid Retrieval Engine]
+        Graph[AST Relation Graph Engine]
+        Ingestion[Repo Ingestion Pipeline]
+    end
 
-### Workflow 1 — Ingestion Pipeline
+    subgraph Storage [Persistence & Indexes]
+        Chroma[ChromaDB Vector Index]
+        BM25[BM25 Sparse Index]
+        NetX[NetworkX Graph File]
+        Postgres[PostgreSQL Metadata]
+        Files[Local Repo Clones]
+    end
 
-```
-User / Webhook
-     |
-     | POST /ingest
-     v
-  API Layer ──── 202 Accepted {job_id}
-     |
-     | [Background Task]
-     v
-  clone_repo()
-     |
-     v
-  filter_repo_files()   ← drops binaries, minified files, images
-     |
-     v
-  parse_file()          ← Tree-Sitter AST extraction
-     |
-     v
-  ┌──────────────────────────────────────┐
-  │  [Parallel Indexing]                 │
-  │  embed → ChromaDB (semantic)         │
-  │  tokenize → BM25 (keyword)           │
-  │  analyze → NetworkX (call graph)     │
-  └──────────────────────────────────────┘
-     |
-     v
-  metadata_store.update(status="synced")
+    UI -->|API Requests| API
+    Chat -->|SSE Stream| API
+    API -->|Orchestrates| Agent
+    Agent -->|Queries| Retrieval
+    Retrieval -->|Dense Embeddings| Chroma
+    Retrieval -->|Sparse Match| BM25
+    Agent -->|AST Code Context| Files
+    API -->|Traverses Call Graph| Graph
+    Graph -->|NetworkX BFS| NetX
+    API -->|Triggers Job| Ingestion
+    Ingestion -->|Writes| Chroma
+    Ingestion -->|Writes| BM25
+    Ingestion -->|Writes| NetX
+    Ingestion -->|Clones| Files
+    API -->|CRUD| Postgres
 ```
 
-**Key steps:**
-
-| Step | What Happens |
-|------|-------------|
-| **Fast Return** | API returns `job_id` immediately — client is never blocked |
-| **Safe Fetch** | Falls back to bundled dummy repo if network is unavailable |
-| **Filtering** | Drops binaries, minified JS, images — saves LLM tokens |
-| **AST Chunking** | Splits at class/function boundaries — context never chopped mid-logic |
-| **Triple Indexing** | Semantic (ChromaDB) + Keyword (BM25) + Relational (NetworkX) simultaneously |
-
----
-
-### Workflow 2 — Agentic Chat (RAG)
+### Ingestion Pipeline
 
 ```
-User Question
-     |
-     v
-  Semantic Cache  ──── [HIT: similarity > 0.95] ──── Return cached answer
-     |
-  [MISS]
-     |
-     v
-  Agent Loop (max 4 iterations)
-     |
-     | think → decide tool → call tool → observe result
-     v
-  ┌─────────────────────────────────────────┐
-  │  search_code   → Hybrid Search (RRF)    │
-  │  read_file     → Raw file contents      │
-  │  get_callers   → Graph BFS upstream     │
-  │  get_callees   → Graph BFS downstream   │
-  │  generate_diagram → Mermaid output      │
-  └─────────────────────────────────────────┘
-     |
-     | [context near limit → compress_older_tool_results()]
-     v
-  Final Answer
-     |
-     v
-  Hallucination Guard
-     |
-     ├── confidence >= 4.0 → cache + return answer
-     └── confidence < 4.0  → return safe fallback, gated=true
+Repo URL Submitted
+       │
+       ▼
+   Clone / Fetch  (app/ingestion/clone.py)
+       │
+       ▼
+   File Filter    (app/ingestion/file_filter.py) — drops binaries, vendor packages, assets
+       │
+       ▼
+   Tree-sitter Parse  (app/parsing/tree_sitter_parser.py) — functions, classes, dependencies
+       │
+       ▼
+  ┌────────────────────────────────────────┐
+  │           Parallel Indexing             │
+  │  → ChromaDB   (dense embeddings)        │
+  │  → BM25 store (sparse keyword index)    │
+  │  → NetworkX   (call graph)              │
+  └────────────────────────────────────────┘
 ```
 
 ---
 
-### Workflow 3 — Webhook Auto-Sync
+## 🔄 The Agentic FSM Loop
+
+The core of CodeNavigator is a **deterministic finite state machine** — not a free-form agent loop — specifically designed to keep the model grounded and bound the number of steps it can take.
 
 ```
-GitHub Push / Merge Event
-     |
-     v
-  POST /webhook
-     |
-     | Verify X-Hub-Signature-256 (HMAC)
-     v
-  Acquire write lock for repo_id
-     |
-     v
-  Re-run full ingestion pipeline (force_reindex=True)
-     |
-     v
-  invalidate_cache(repo_id)   ← purges ALL cached answers for this repo
-     |
-     v
-  metadata_store.update(commit_hash=new_hash)
+[PLAN] ──► [ACT (Search / Read)] ──► [OBSERVE] ──► [DECIDE: Iterate?]
+                                                          │
+                                                          ├──► Yes ──► [PLAN]
+                                                          └──► No  ──► [VERIFY] ──► [RESPOND]
 ```
 
-> **Why this matters:** HMAC-verified webhooks + write-locking + aggressive cache invalidation ensures the agent's answers always reflect the latest merged commit. Stale architectural explanations are never served.
+| State | Responsibility |
+|---|---|
+| **PLAN** | Chooses the next logical step from the user query and conversation history |
+| **ACT** | Invokes one of the agent tools — `search_code`, `view_file_snippet`, `list_calls` |
+| **OBSERVE** | Collects and normalizes raw tool output |
+| **DECIDE** | Decides whether enough context has been gathered (iteration cap enforced) |
+| **VERIFY** | Cross-checks every generated citation against real file/line bounds; sanitizes anything invalid |
+| **RESPOND** | Streams the final, grounded answer back to the client |
+
+This is implemented in [`app/agent/loop.py`](file:///d:/github%20project/codebase-onboarding-agent/app/agent/loop.py), with prompts for each state assembled by dedicated formatters — [`plan_prompt.py`](file:///d:/github%20project/codebase-onboarding-agent/app/agent/prompts/plan_prompt.py), [`decide_prompt.py`](file:///d:/github%20project/codebase-onboarding-agent/app/agent/prompts/decide_prompt.py), [`finalize_prompt.py`](file:///d:/github%20project/codebase-onboarding-agent/app/agent/prompts/finalize_prompt.py), and [`compress_prompt.py`](file:///d:/github%20project/codebase-onboarding-agent/app/agent/prompts/compress_prompt.py) — all backed by the [IP-protected prompt loader](#-ip-protected-prompt-loader).
 
 ---
 
-## 📦 Module Reference
+## 🔀 Hybrid Retrieval Engine (RRF)
 
-<details>
-<summary><b>🌐 API Layer — app/api/ & app/main.py</b></summary>
+Retrieval fuses semantic vector scores from ChromaDB with keyword ranks from BM25 using **Reciprocal Rank Fusion**, implemented in [`app/retrieval/hybrid_search.py`](file:///d:/github%20project/codebase-onboarding-agent/app/retrieval/hybrid_search.py):
 
-<br/>
+```
+RRF_Score(d) = Σ (1 / (k + r_m(d)))   for each retrieval model m in M
+```
 
-| File | Responsibility |
-|------|---------------|
-| `app/main.py` | FastAPI bootstrap — middleware, exception handlers, router mount |
-| `app/config.py` | Pydantic `BaseSettings` — single source of truth for env variables |
-| `app/api/router.py` | REST endpoints: `/ingest`, `/status`, `/chat`, `/diagram` |
-| `app/api/auth.py` | X-API-Key header authentication |
-| `app/api/rate_limiter.py` | Sliding-window memory-based rate limiting on `/chat` |
-
-</details>
-
-<details>
-<summary><b>⚙️ Ingestion Pipeline — app/ingestion/</b></summary>
-
-<br/>
-
-| File | Responsibility |
-|------|---------------|
-| `clone.py` | Git clone with size limits; offline fallback to dummy repo |
-| `file_filter.py` | Allowlist: `.py`, `.js`, `.ts` — drops binaries and minified files |
-| `metadata_store.py` | Persists sync state (`pending / synced / failed`) and commit hashes |
-| `locking.py` | Thread-level locking per `repo_id` — prevents concurrent ingestion collisions |
-
-</details>
-
-<details>
-<summary><b>🔬 Parsing & Chunking — app/parsing/</b></summary>
-
-<br/>
-
-| File | Responsibility |
-|------|---------------|
-| `tree_sitter_parser.py` | AST extraction of classes, functions, and imports via Tree-sitter grammars |
-| `chunker.py` | Splits files at logical (class/function) boundaries — never mid-logic |
-
-</details>
-
-<details>
-<summary><b>🗄️ Retrieval & Storage — app/retrieval/</b></summary>
-
-<br/>
-
-| File | Responsibility |
-|------|---------------|
-| `vector_store.py` | ChromaDB interface — stores and queries chunk embeddings |
-| `bm25_store.py` | Pure-Python BM25 index — catches exact variable/function name matches |
-| `embeddings.py` | SentenceTransformers wrapper for converting text to vectors |
-| `hybrid_search.py` | Reciprocal Rank Fusion (RRF) combining vector + BM25 results |
-| `reranker.py` | Cross-Encoder reranking of top-K hybrid search results |
-| `query_expansion.py` | LLM-generated synonym/keyword expansion before hitting the index |
-
-</details>
-
-<details>
-<summary><b>🕸️ Graph Operations — app/graph/ & app/diagrams/</b></summary>
-
-<br/>
-
-| File | Responsibility |
-|------|---------------|
-| `builder.py` | Builds a NetworkX directed graph of imports and internal function calls |
-| `queries.py` | Timeout-safe BFS traversal for callers/callees (3-hop limit) |
-| `mermaid_generator.py` | Converts a graph subgraph into a Mermaid diagram string for the frontend |
-
-</details>
-
-<details>
-<summary><b>🤖 Agentic Loop — app/agent/</b></summary>
-
-<br/>
-
-| File | Responsibility |
-|------|---------------|
-| `loop.py` | Core execution loop — LLM call → tool intercept → tool run → feed back → repeat |
-| `tools.py` | JSON schema definitions + retry logic for all 5 agent tools |
-| `system_prompt.py` | LLM instructions: persona, rules, and strict markdown citation format |
-| `semantic_cache.py` | 95% similarity threshold cache — same question, same commit → instant return |
-| `context_manager.py` | Monitors token usage; condenses old tool results via secondary LLM |
-| `confidence.py` | **Hallucination Guard** — validates every cited file/line; gates below score 4.0 |
-
-</details>
-
-<details>
-<summary><b>🧪 Evaluation Suite — eval/</b></summary>
-
-<br/>
-
-| File | Responsibility |
-|------|---------------|
-| `run_eval.py` | Ragas automated evaluation: Faithfulness, Answer Relevancy, Context Precision, Context Recall |
-| `compare_runs.py` | Compares new eval runs against previous baselines to detect regressions |
-
-</details>
+- **M** — the set of retrieval models (ChromaDB dense vectors, BM25 sparse index)
+- **r_m(d)** — the 1-indexed rank of document `d` under model `m`
+- **k** — smoothing constant, configured as `60`
+- Documents matching test-file patterns (`/tests/`, `test_*.py`) have their rank penalized so implementation source code is prioritized over test scaffolding
 
 ---
 
-## 🔌 API Contracts
+## 🛡️ Hallucination Guard
 
-All routes require the `X-API-Key` header.
-
-### `POST /ingest`
-
-```json
-// Request
-{ "repo_url": "https://github.com/psf/requests", "ref": "main", "force_reindex": false }
-
-// Response — 202 Accepted
-{ "job_id": "abc-123", "status": "pending" }
-```
-
-### `GET /status/{repo_id}`
-
-```json
-{ "sync_status": "synced", "commit_hash": "a1b2c3d", "error": null, "has_circular_dependencies": false }
-```
-
-### `POST /chat`
-
-```json
-// Request
-{ "repo_id": "psf_requests", "question": "How does session handling work?", "session_id": "opt-123" }
-
-// Response
-{
-  "answer": "Session handling works by...",
-  "sources": [
-    { "file_path": "requests/sessions.py", "function_name": "Session.request", "start_line": 400, "end_line": 450 }
-  ],
-  "confidence_score": 9.5,
-  "gated": false
-}
-```
-
-### `POST /diagram`
-
-```json
-// Request
-{ "repo_id": "psf_requests", "entry_point": "Session.request", "direction": "both" }
-
-// Response
-{ "mermaid_markdown": "graph TD\n..." }
-```
-
-<div align="center">
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| `POST` | `/ingest` | Start background ingestion of a repository |
-| `GET` | `/status/{repo_id}` | Check ingestion / sync status |
-| `POST` | `/chat` | Run the agentic RAG query loop |
-| `POST` | `/diagram` | Generate a Mermaid call-graph diagram |
-
-</div>
-
----
-
-## 🛡️ Agentic Gating & Hallucination Guard
-
-The Hallucination Guard (`confidence.py`) is the most critical safety feature. It parses the final LLM response for markdown citations (e.g. `` `src/auth.py:10-15` ``) and validates every single one against the actual index.
+Every answer the agent produces passes through a deterministic verification stage before it reaches the user — implemented in [`app/agent/confidence.py`](file:///d:/github%20project/codebase-onboarding-agent/app/agent/confidence.py):
 
 ```
 Final LLM Answer
-       |
-       v
-Parse markdown citations (`file:start-end`)
-       |
-       v
+       │
+       ▼
+Parse markdown citations (e.g. `src/auth.py:10-15`)
+       │
+       ▼
 For each citation:
-  - Does file exist in index?        → No → penalize score
-  - Are line numbers within bounds?  → No → penalize score
-       |
-       v
-Compute deterministic confidence score (0–10)
-       |
-       ├── score >= 4.0 → return answer,  gated=false
-       └── score < 4.0  → strip answer,   gated=true, return safe fallback
+  • Does the file exist in the index?          No → penalize score
+  • Are the line numbers within file bounds?   No → penalize score
+       │
+       ▼
+Compute a deterministic confidence score
+       │
+       ├── Passes threshold → return answer, citations intact
+       └── Fails threshold  → strip answer, return a safe fallback
 ```
 
-### Available Agent Tools
+Answers are never released on the strength of the model's own confidence — only on a score computed independently from the actual indexed files.
 
-| Tool | Purpose |
-|------|---------|
-| `search_code` | Hybrid (vector + BM25) search with RRF fusion and Cross-Encoder reranking |
-| `read_file` | Read raw file contents from the indexed repository |
-| `get_callers` | Graph traversal: find functions that call a given function (3-hop limit) |
-| `get_callees` | Graph traversal: find functions called by a given function (3-hop limit) |
-| `generate_diagram` | Produce a Mermaid diagram from a graph subgraph |
+---
+
+## 🔒 IP-Protected Prompt Loader
+
+To keep proprietary system prompts and few-shot answer-quality datasets out of the public repository, [`app/agent/prompts/loader.py`](file:///d:/github%20project/codebase-onboarding-agent/app/agent/prompts/loader.py) implements a fallback pattern:
+
+```
+Loader → checks /private/prompts/
+       → found     → reads and injects the real templates into the agent loop
+       → not found → loads safe, generic fallback strings baked into the code
+```
+
+This lets the public repository run end-to-end with sane defaults while the production system uses the proprietary prompt set locally.
+
+---
+
+## 🔌 API Reference
+
+All requests require an `X-API-Key` header when an API key is configured.
+
+| Method | Endpoint | Description | Request Payload | Response |
+|---|---|---|---|---|
+| `POST` | `/api/ingest` | Starts repository ingestion | `{ "url": "string" }` | `{ "job_id": "string", "status": "processing" }` |
+| `GET` | `/api/ingest/status/{job_id}` | Polls ingestion pipeline progress | — | `{ "status": "ready\|processing\|failed", "files_parsed": 12, ... }` |
+| `POST` | `/api/chat` | Queries the RAG FSM agent | `{ "message": "string", "repo_id": "string" }` | SSE stream — events: `state`, `token`, `done`, `error` |
+| `GET` | `/api/symbols/{repo_id}` | Lists indexed AST symbol definitions | — | `[{ "name": "string", "path": "string", "start_line": 10 }]` |
+| `GET` | `/api/diagram/{repo_id}` | Traverses method calls into a Mermaid diagram | Query: `symbol_name`, `depth` | `{ "mermaid_code": "string" }` |
+| `GET` | `/api/file-snippet/{repo_id}` | Fetches a bounded code snippet | Query: `file_path`, `start_line`, `end_line` | `{ "code": "string", "start_line": 5, "end_line": 25 }` |
+| `POST` | `/api/eval/run` | Triggers a RAGAS evaluation run | Query: `repo_id` | `{ "job_id": "string", "status": "started" }` |
+
+---
+
+## 🎨 Design System
+
+CodeNavigator ships a custom **"Midnight Studio"** dark theme, defined in [`frontend-next/app/globals.css`](file:///d:/github%20project/codebase-onboarding-agent/frontend-next/app/globals.css):
+
+```css
+:root {
+  --background: 240 10% 3.9%;      /* Deep Charcoal */
+  --foreground: 0 0% 98%;          /* Clean White */
+  --card: 240 10% 5.9%;            /* Matte Gray */
+  --border: 240 5.9% 15%;          /* Fine Border Accent */
+
+  --primary: 263.4 70% 50.4%;      /* Royal Violet #8b5cf6 */
+  --primary-foreground: 210 20% 98%;
+
+  --success: 142.1 76.2% 36.3%;    /* Forest Green */
+  --warning: 37.9 90.2% 50.2%;     /* Warning Amber */
+  --destructive: 0 72.2% 50.6%;    /* Alert Red */
+}
+```
 
 ---
 
@@ -456,83 +283,88 @@ Compute deterministic confidence score (0–10)
 <div align="center">
 
 | Layer | Technology | Role |
-|-------|-----------|------|
-| **Runtime** | Python 3.12 | Core language |
-| **Backend** | FastAPI | REST API server, background tasks, auth |
-| **Frontend** | Next.js 16 | Developer-facing chat and diagram UI |
-| **LLM** | Groq (LLaMA 3) | Agent reasoning and answer generation |
-| **Vector Store** | ChromaDB | Semantic embedding storage and search |
-| **Keyword Index** | BM25 (pure Python) | Exact variable/function name matching |
-| **Graph Engine** | NetworkX | Call graph — callers, callees, import chains |
-| **AST Parser** | Tree-sitter | Language-aware code chunking |
-| **Embeddings** | SentenceTransformers | Text-to-vector conversion |
-| **Reranker** | Cross-Encoder | Relevance reranking of hybrid search results |
-| **Evaluation** | Ragas | Automated faithfulness and recall scoring |
-| **Webhooks** | HMAC SHA-256 | Secure GitHub push verification |
+|---|---|---|
+| **Backend** | FastAPI | REST API, SSE streaming, background ingestion jobs |
+| **Frontend** | Next.js | Chat panel, Mermaid diagram canvas, evaluation dashboard |
+| **LLM Inference** | Groq | Agent reasoning and answer generation |
+| **Vector Store** | ChromaDB | Dense embedding storage and semantic search |
+| **Keyword Index** | BM25 (custom) | Exact-match symbol / keyword search |
+| **Graph Engine** | NetworkX | Call graph modeling and BFS traversal |
+| **AST Parser** | Tree-sitter | Language-aware function/class extraction |
+| **Metadata DB** | PostgreSQL | Job, repo, and evaluation metadata |
+| **Evaluation** | RAGAS | Faithfulness, relevancy, precision, recall scoring |
+| **Diagrams** | Mermaid.js | Call-graph visualization |
+| **Payments** | Stripe | Pricing plans and billing meters (`app/platform/billing/`) |
 
 </div>
 
 ---
 
-## 📁 Project Structure
+## 📁 Directory Map
 
 ```
-📦 codebase-onboarding-agent/
+codebase-onboarding-agent/
 │
-├── 📂 app/
-│   ├── 📂 api/
-│   │   ├── 🔐 auth.py                  ← X-API-Key authentication
-│   │   ├── 🚦 rate_limiter.py          ← Sliding-window rate limiting
-│   │   └── 🛣️ router.py               ← /ingest /status /chat /diagram
+├── app/
+│   ├── main.py                         ← FastAPI entry point, middleware, lifecycle
+│   ├── config.py                       ← Pydantic Settings (env-driven config)
 │   │
-│   ├── 📂 agent/
-│   │   ├── 💬 loop.py                  ← Core agentic execution loop
-│   │   ├── 🔧 tools.py                 ← Tool schemas + retry logic
-│   │   ├── 📝 system_prompt.py         ← LLM instruction set
-│   │   ├── ⚡ semantic_cache.py        ← 95% similarity answer cache
-│   │   ├── 📏 context_manager.py       ← Token usage + compression
-│   │   └── 🛡️ confidence.py           ← Hallucination guard + gating
+│   ├── api/
+│   │   ├── router.py                   ← Ingestion / chat / graph / snippet / eval / billing routes
+│   │   ├── auth.py                     ← API key + multi-tenant auth
+│   │   ├── rate_limiter.py             ← Slotted-bucket rate limiting
+│   │   └── state_stream.py             ← SSE generator for agent traces + tokens
 │   │
-│   ├── 📂 ingestion/
-│   │   ├── 📥 clone.py                 ← Git clone + offline fallback
-│   │   ├── 🔍 file_filter.py           ← Allowlist filtering
-│   │   ├── 🗃️ metadata_store.py       ← Sync state + commit hash tracking
-│   │   └── 🔒 locking.py              ← Thread-level repo locks
+│   ├── agent/
+│   │   ├── loop.py                     ← FSM agent loop (PLAN→ACT→OBSERVE→DECIDE→VERIFY→RESPOND)
+│   │   ├── tools.py                    ← search_code / view_file_snippet / list_calls
+│   │   ├── confidence.py               ← Hallucination Guard
+│   │   ├── semantic_cache.py           ← Embedding-based answer cache
+│   │   └── prompts/
+│   │       ├── loader.py               ← IP-protected prompt loader
+│   │       ├── plan_prompt.py
+│   │       ├── decide_prompt.py
+│   │       ├── finalize_prompt.py
+│   │       ├── compress_prompt.py
+│   │       └── answer_quality_dataset.py
 │   │
-│   ├── 📂 parsing/
-│   │   ├── 🌳 tree_sitter_parser.py    ← AST extraction
-│   │   └── ✂️ chunker.py              ← Function/class boundary splitting
+│   ├── retrieval/
+│   │   ├── embeddings.py               ← SentenceTransformers dense embeddings
+│   │   ├── vector_store.py             ← ChromaDB client manager
+│   │   ├── bm25_store.py               ← BM25 sparse index
+│   │   └── hybrid_search.py            ← RRF fusion + test-file demotion
 │   │
-│   ├── 📂 retrieval/
-│   │   ├── 🧮 vector_store.py          ← ChromaDB interface
-│   │   ├── 🔡 bm25_store.py            ← BM25 keyword index
-│   │   ├── 🧬 embeddings.py            ← SentenceTransformers wrapper
-│   │   ├── 🔀 hybrid_search.py         ← RRF fusion
-│   │   ├── 🎯 reranker.py              ← Cross-Encoder reranking
-│   │   └── 💡 query_expansion.py       ← LLM synonym expansion
+│   ├── graph/
+│   │   └── builder.py                  ← NetworkX graph builder (classes, scopes, calls)
 │   │
-│   ├── 📂 graph/
-│   │   ├── 🏗️ builder.py              ← NetworkX graph construction
-│   │   └── 🔎 queries.py              ← BFS traversal (3-hop limit)
+│   ├── diagrams/
+│   │   └── mermaid_generator.py        ← AST subgraph → Mermaid flowchart
 │   │
-│   ├── 📂 diagrams/
-│   │   └── 📊 mermaid_generator.py     ← Graph → Mermaid markdown
+│   ├── ingestion/
+│   │   ├── clone.py                    ← Git URL resolution + auth + cloning
+│   │   └── file_filter.py              ← Source vs. vendor/asset filtering
 │   │
-│   ├── ⚙️ config.py                   ← Pydantic BaseSettings (all env vars)
-│   └── 🚀 main.py                     ← FastAPI bootstrap
+│   ├── parsing/
+│   │   └── tree_sitter_parser.py       ← AST extraction (functions, classes, deps)
+│   │
+│   └── platform/
+│       └── billing/                    ← Stripe payment + subscription management
 │
-├── 📂 frontend-next/
-│   └── 🌐 app/workspace/            ← Next.js chat UI + diagram rendering
+├── frontend-next/
+│   └── app/
+│       ├── layout.tsx                  ← Global shell, fonts, theme providers
+│       ├── globals.css                 ← Midnight Studio theme
+│       ├── onboarding/page.tsx         ← Repo ingestion wizard
+│       ├── chat/page.tsx               ← Agent RAG dialog window
+│       ├── architecture/page.tsx       ← Call-graph canvas + inspector
+│       └── evaluation/page.tsx         ← RAGAS score history + CI checks
 │
-├── 📂 eval/
-│   ├── 🧪 run_eval.py                 ← Ragas evaluation runner
-│   └── 📈 compare_runs.py             ← Regression detection
+├── eval/
+│   ├── run_eval.py                     ← RAGAS evaluation runner (429-hardened)
+│   └── ragas_providers.py              ← ChatGroq judge with retry-backoff
 │
-├── 📂 tests/                          ← Full pytest suite
-├── 🔧 .env.example                    ← Environment variable template
-├── 🚀 run_local.bat                   ← One-command local startup
-├── 📋 requirements.txt                ← All Python dependencies
-└── 📖 README.md
+├── tests/                              ← Full pytest suite
+└── start.bat                           ← One-command local startup
 ```
 
 ---
@@ -542,186 +374,125 @@ Compute deterministic confidence score (0–10)
 ### Prerequisites
 
 ```bash
-python --version   # 3.12 required
-git --version      # any recent version
+python --version   # 3.12+
+node --version     # 18+
 ```
 
-### Step-by-Step Installation
-
-**① Clone the repository**
+### Installation
 
 ```bash
-git clone https://github.com/HurairaMaqbool/HurairaMaqbool.git
+# 1. Clone the repository
+git clone https://github.com/HurairaMaqbool/codebase-onboarding-agent.git
 cd codebase-onboarding-agent
-```
 
-**② Create and activate a virtual environment**
-
-```bash
+# 2. Create and activate a virtual environment
 python -m venv .venv
+.venv\Scripts\activate        # Windows
+source .venv/bin/activate     # macOS / Linux
 
-# Windows
-.venv\Scripts\activate
-
-# macOS / Linux
-source .venv/bin/activate
-```
-
-**③ Install all dependencies**
-
-```bash
+# 3. Install backend dependencies
 pip install -r requirements.txt
-```
 
-**④ Configure environment variables**
+# 4. Install frontend dependencies
+cd frontend-next && npm install && cd ..
 
-```bash
+# 5. Configure environment variables
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` with your keys (`GROQ_API_KEY`, `POSTGRES_URI`, `REPOS_PATH`, model selections, search thresholds — see `app/config.py`).
 
-```env
-GROQ_API_KEY="your_groq_api_key"
-LLM_PROVIDER="groq"
-API_KEY="dev-secret-key"
-WEBHOOK_SECRET="your_github_webhook_secret"
-```
-
-**⑤ Start the system**
+### Run
 
 ```bash
-run_local.bat
-```
+# One command (Windows) — launches backend (8000) + frontend (3000)
+start.bat
 
-Or manually:
-
-```bash
-# Terminal 1 — backend
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# Terminal 2 — Next.js UI
-cd frontend-next && npm install && npm run dev
+# Or manually, in two terminals:
+uvicorn app.main:app --host 0.0.0.0 --port 8000    # Terminal 1
+cd frontend-next && npm run dev                      # Terminal 2
 ```
 
 | Service | URL |
-|---------|-----|
+|---|---|
 | FastAPI Backend | http://localhost:8000 |
-| Next.js Frontend | http://localhost:3000 |
 | API Docs (Swagger) | http://localhost:8000/docs |
+| Next.js Frontend | http://localhost:3000 |
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Evaluation
 
 ```bash
-# Run the full test suite
-pytest tests/
+# Full test suite
+pytest
 
-# Run a specific module
-pytest tests/test_module_12.py -v
+# RAGAS evaluation on the golden set
+python -m eval.run_eval <repo_id>
 
-# Run with coverage report
-pytest tests/ --cov=app --cov-report=html
+# Production frontend build
+cd frontend-next && npm run build
 ```
 
-> **Note:** `tests/test_golden_set.py` performs live API calls against real repositories. It is skipped by default to preserve API quotas — run explicitly when needed.
+RAGAS tracks **Faithfulness**, **Answer Relevancy**, **Context Precision**, and **Context Recall**, with rate-limit-hardened retries: `eval/run_eval.py` parses Groq's own rate-limit hints and backs off exponentially (capped at 20s, up to 5 attempts), while `eval/ragas_providers.py` configures the judge model's own client-level retry handling rather than disabling it.
 
-### Evaluation (Ragas)
+---
 
-```bash
-python eval/run_eval.py        # Run full Ragas eval
-python eval/compare_runs.py    # Compare against previous baseline
-```
+## 📝 Engineering Notes
 
-Metrics tracked: **Faithfulness · Answer Relevancy · Context Precision · Context Recall**
+A running log of non-trivial issues resolved during development — kept here rather than buried in commit history:
+
+| # | Issue | Resolution |
+|---|---|---|
+| 1 | Sidebar vertical scroll breaking on long content | Fixed-positioning container restructure |
+| 2 | Symbol search dropdown clipped under other panels | Applied `relative z-50` stacking wrappers |
+| 3 | RAGAS chart TypeScript compile failures | Added type guards around Recharts label parsing |
+| 4 | Inconsistent leading-slash paths in symbol inspector | Normalized via `.lstrip('/')` |
+| 5 | Rate-limit retry loop never terminating | Raised backoff ceiling and adjusted sleep thresholds |
+| 6 | RAGAS judge hitting provider rate limits | Set `max_retries > 0` on the RAGAS `ChatGroq` client |
+| 7 | Evaluation "compare runs" missing older records | Matched legacy evaluations lacking `repo_id` by job ID instead |
 
 ---
 
 ## 🛣️ Roadmap
 
 ```
- ✅  Phase 1 — Core Pipeline
-     [x] Git ingestion + AST chunking
-     [x] Triple indexing (ChromaDB + BM25 + NetworkX)
-     [x] Hybrid search with RRF + reranker
-     [x] Autonomous agentic loop (5 tools)
+✅  Phase 1 — Core Pipeline
+    [x] Git ingestion + Tree-sitter AST chunking
+    [x] Triple indexing — ChromaDB + BM25 + NetworkX
+    [x] Hybrid search with Reciprocal Rank Fusion
+    [x] Deterministic agentic FSM loop
 
- ✅  Phase 2 — Safety & Reliability
-     [x] Hallucination guard with citation validation
-     [x] Semantic answer cache (95% threshold)
-     [x] Context compression (token overflow protection)
-     [x] HMAC-verified webhook auto-sync
+✅  Phase 2 — Safety & Reliability
+    [x] Hallucination Guard with citation validation
+    [x] Semantic answer cache
+    [x] IP-protected prompt loader with safe fallbacks
+    [x] Rate-limit-hardened RAGAS evaluation
 
- 🔄  Phase 3 — Evaluation & Observability  (in progress)
-     [ ] Ragas golden set scoring
-     [ ] LangSmith tracing integration
-     [ ] Regression detection pipeline
+🔄  Phase 3 — Evaluation & Observability  (in progress)
+    [ ] Expanded RAGAS golden set
+    [ ] Tracing / observability integration
+    [ ] Automated regression detection
 
- 🔮  Phase 4 — Extensions
-     [ ] VS Code extension
-     [ ] Multi-repo cross-codebase queries
-     [ ] Docker containerisation + CI/CD
-     [ ] Fine-tuned reranker on code-specific data
-     [ ] Support for Go, Rust, Java (Tree-sitter grammar expansion)
+🔮  Phase 4 — Extensions
+    [ ] Additional Tree-sitter language grammars
+    [ ] Multi-repo cross-codebase queries
+    [ ] Containerized deployment + CI/CD
 ```
 
 ---
 
-## 🤝 Contributing
+## 📄 License & Intellectual Property
 
-Contributions, ideas, and bug reports are warmly welcomed!
-
-```bash
-# 1. Fork the repository
-
-# 2. Clone your fork
-git clone https://github.com/YOUR-USERNAME/codebase-onboarding-agent.git
-
-# 3. Create a feature branch
-git checkout -b feature/your-feature-name
-
-# 4. Make your changes and commit
-git add .
-git commit -m "feat: describe your change clearly"
-
-# 5. Push and open a Pull Request
-git push origin feature/your-feature-name
-```
-
-**Contribution ideas:**
-- 🐛 Fix edge cases in `tree_sitter_parser.py` for multi-language repos
-- ➕ Add Tree-sitter grammars for Go, Rust, or Java
-- 🧪 Expand the Ragas golden set with new Q&A pairs
-- 🐳 Add Docker + Docker Compose support
-- 📊 Build a LangSmith observability dashboard
-
----
-
-## 📄 Intellectual Property & Licensing
-
-### 🔒 Copyright Notice
 **Copyright © 2026 Huraira Maqbool. All Rights Reserved.**
 
-This repository and all associated files—including but not limited to the Artificial Intelligence (AI) Agent Loop, prompt engineering templates, confidence gating guardrails, system architecture designs, and RAG retrieval algorithms—constitute the proprietary intellectual property of the author, **Huraira Maqbool**.
+This repository — including the agentic FSM loop, prompt engineering templates, confidence-gating logic, retrieval algorithms, and system architecture — is the proprietary work of the author and is published for **learning, demonstration, and portfolio evaluation only**.
 
-### 💼 Terms of Use
-This repository is published exclusively for **learning, demonstration, and professional portfolio evaluation**. 
-- **No Commercial Use:** You may not use this code or logic, in whole or in part, for any commercial activity or profit-generating business.
-- **No Redistribution:** You are not permitted to host, distribute, or republish this codebase or any derivatives.
-- **No Modifications or Reuse:** Direct copying, reuse of the AI prompting structure, or modification of the core retrieval systems without express written consent from the author is strictly prohibited.
+- 🚫 **No commercial use** without express written permission
+- 🚫 **No redistribution** or rehosting of this codebase or derivatives
+- 🚫 **No reuse** of the prompting structure or retrieval systems without consent
 
-For commercial licensing requests, collaboration inquiries, or permission to reuse components of this architecture, please contact:
-📧 **hurairac37@gmail.com**
-
----
-
-## 🛡️ Security & Responsible Usage
-
-- **Educational Context:** This repository is intended to demonstrate architectural patterns and engineering best practices in RAG development.
-- **Data Protection:** Ensure any deployment of this system complies with your organization's local data compliance standards. Do not load unvetted or sensitive internal credentials into public repository forks.
-- **Vulnerability Reporting:** If you discover any security issues or potential vulnerabilities in this codebase, please refer to our [SECURITY.md](SECURITY.md) guidelines for instructions on safe, private disclosure.
-
+For licensing or collaboration inquiries: **hurairac37@gmail.com**
 
 ---
 
@@ -729,38 +500,23 @@ For commercial licensing requests, collaboration inquiries, or permission to reu
 
 <div align="center">
 
-<br/>
-
 <img src="https://github.com/HurairaMaqbool.png" width="110px" style="border-radius:50%; border: 3px solid #6E57F7;"/>
 
-<br/>
-
 ### **Huraira Maqbool**
-*AI Engineer · LangChain · LangGraph · RAG Pipelines · Agentic Systems*
+*AI Engineer · Agentic RAG Systems · LangChain · LangGraph*
 
-<br/>
-
-[![GitHub](https://img.shields.io/badge/GitHub-HurairaMaqbool-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/HurairaMaqbool/HurairaMaqbool)
+[![GitHub](https://img.shields.io/badge/GitHub-HurairaMaqbool-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/HurairaMaqbool)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/huraira-maqbool-b696a5277/)
 [![Email](https://img.shields.io/badge/Email-Contact-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:hurairac37@gmail.com)
 
 <br/>
 
-*If this project saved you hours of onboarding time or taught you something new —
-a ⭐ star on GitHub means a lot and helps other developers find it.*
-
-<br/>
+*If CodeNavigator saved you time understanding a codebase, a ⭐ on GitHub helps other engineers find it.*
 
 </div>
 
----
-
 <div align="center">
-
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:24243e,50:302b63,100:0f0c29&height=120&section=footer" width="100%"/>
 
-<sub>
-Built with 🐍 Python · ⚡ FastAPI · 🧠 LangChain · 🕸️ NetworkX · ❤️ Passion for Developer Tooling
-</sub>
-
+<sub>Built with 🐍 Python · ⚡ FastAPI · 🧠 Agentic RAG · 🕸️ NetworkX</sub>
 </div>
