@@ -40,14 +40,15 @@
 
 | # | Section | # | Section |
 |---|---------|---|---------|
-| 1 | [About the Project](#-about-the-project) | 9 | [Design System](#-design-system) |
-| 2 | [Features](#-features) | 10 | [Directory Map](#-directory-map) |
-| 3 | [System Architecture](#-system-architecture) | 11 | [Setup & Local Execution](#-setup--local-execution) |
-| 4 | [Agentic FSM Loop](#-the-agentic-fsm-loop) | 12 | [Testing & Evaluation](#-testing--evaluation) |
-| 5 | [Hybrid Retrieval Engine](#-hybrid-retrieval-engine-rrf) | 13 | [Engineering Notes](#-engineering-notes) |
-| 6 | [Hallucination Guard](#-hallucination-guard) | 14 | [Roadmap](#-roadmap) |
-| 7 | [IP-Protected Prompt Loader](#-ip-protected-prompt-loader) | 15 | [License & IP](#-license--intellectual-property) |
-| 8 | [API Reference](#-api-reference) | 16 | [Author](#-author) |
+| 1 | [About the Project](#-about-the-project) | 10 | [Design System](#-design-system) |
+| 2 | [Live Evaluation Metrics](#-live-evaluation-metrics) | 11 | [Directory Map](#-directory-map) |
+| 3 | [Features](#-features) | 12 | [Setup & Local Execution](#-setup--local-execution) |
+| 4 | [System Architecture](#-system-architecture) | 13 | [Testing & Evaluation](#-testing--evaluation) |
+| 5 | [Agentic FSM Loop](#-the-agentic-fsm-loop) | 14 | [Engineering Notes](#-engineering-notes) |
+| 6 | [Hybrid Retrieval Engine](#-hybrid-retrieval-engine-rrf) | 15 | [Roadmap](#-roadmap) |
+| 7 | [Hallucination Guard](#-hallucination-guard) | 16 | [License & IP](#-license--intellectual-property) |
+| 8 | [IP-Protected Prompt Loader](#-ip-protected-prompt-loader) | 17 | [Author](#-author) |
+| 9 | [API Reference](#-api-reference) | | |
 
 </details>
 
@@ -67,6 +68,22 @@ This isn't a thin LLM wrapper. It's a deterministic agent loop with a hard verif
 | 🔍 | Grep and manually trace function calls | The graph engine resolves callers/callees via NetworkX BFS |
 | 🙋 | Interrupt a senior engineer to ask "where does X happen?" | Ask the agent — it cites the exact file and line range |
 | 🤞 | Trust an LLM's confident-sounding but unverified answer | Every citation is checked against the index; low-confidence answers are gated |
+
+---
+
+## 📊 Live Evaluation Metrics
+
+CodeNavigator ships with a built-in evaluation dashboard (`frontend-next/app/evaluation/page.tsx`) that tracks every RAGAS run, CI gate, and regression against a golden question set — no self-reported numbers, everything below is pulled directly from that dashboard.
+
+| Metric | Value | Notes |
+|---|---|---|
+| Golden-set regression CI | **93% (14/15 passing)** | `pytest`-driven fixture suite run against real repos (`requests`, `flask`) |
+| Mean Precision@3 | **0.67** | Averaged across the evaluated query set |
+| Gated / fallback answers | **0 / 15** | No answer in the current run fell below the confidence threshold |
+| Indexed chunks | **588** | Current index status: `Ready` |
+| RAGAS faithfulness | **In active tuning** | Below internal target; retrieval and prompt tuning in progress — tracked transparently on every run rather than reported as a finished number |
+
+> **Why show an unfinished metric:** most portfolio RAG projects report a single flattering number and stop there. CodeNavigator's evaluation dashboard tracks faithfulness across every run, including regressions, specifically so the retrieval and prompting can be iterated on with real signal instead of vibes. The dashboard is part of the product, not just a badge.
 
 ---
 
