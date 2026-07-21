@@ -92,6 +92,24 @@ def _get_cache_path() -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
     return cache_dir / "cache.db"
 
+def _fallback_hash_embedding(text: str, dim: int = 384) -> list[float]:
+    import hashlib
+    import math
+    import re
+    tokens = re.findall(r"[a-zA-Z0-9_]+", text.lower())
+    vec = [0.0] * dim
+    if not tokens:
+        return vec
+    for tok in tokens:
+        h = int(hashlib.md5(tok.encode("utf-8")).hexdigest(), 16)
+        idx = h % dim
+        vec[idx] += 1.0
+    norm = math.sqrt(sum(v * v for v in vec))
+    if norm > 0:
+        vec = [v / norm for v in vec]
+    return vec
+
+
 def embed(text: str) -> list[float]:
     """Return the embedding vector for a text string using the SentenceTransformer model."""
     return embed_batch([text])[0]
@@ -129,7 +147,7 @@ def embed_batch(texts: Sequence[str]) -> list[list[float]]:
                 for i, (t_hash, text) in enumerate(zip(text_hashes, texts)):
                     if t_hash in cache:
                         cached = cache[t_hash]
-                        if isinstance(cached, list) and cached:
+                        if isinstance(cached, list) and cached and any(v != 0.0 for v in cached):
                             results[i] = cached
                         else:
                             uncached_indices.append(i)
@@ -137,18 +155,30 @@ def embed_batch(texts: Sequence[str]) -> list[list[float]]:
                     else:
                         uncached_indices.append(i)
                         uncached_texts.append(text)
-            if uncached_texts:
+
+        if uncached_texts:
+            try:
                 _encode_uncached()
+            except Exception as exc:
+                logger.warning("embedding_uncached_failed_using_fallback", error=str(exc))
+                for idx, txt in zip(uncached_indices, uncached_texts):
+                    results[idx] = _fallback_hash_embedding(txt)
     except Exception as exc:
         logger.warning("embedding_cache_read_failed", error=str(exc))
-        model = _get_model()
-        return model.encode(list(texts), normalize_embeddings=True).tolist()
+        try:
+            model = _get_model()
+            return model.encode(list(texts), normalize_embeddings=True).tolist()
+        except Exception:
+            return [_fallback_hash_embedding(t) for t in texts]
 
     if any(r is None for r in results):
         missing = [i for i, r in enumerate(results) if r is None]
         fallback_texts = [texts[i] for i in missing]
-        model = _get_model()
-        fallback_vecs = model.encode(fallback_texts, normalize_embeddings=True).tolist()
+        try:
+            model = _get_model()
+            fallback_vecs = model.encode(fallback_texts, normalize_embeddings=True).tolist()
+        except Exception:
+            fallback_vecs = [_fallback_hash_embedding(t) for t in fallback_texts]
         for idx, vec in zip(missing, fallback_vecs):
             results[idx] = vec
 

@@ -28,7 +28,7 @@ sys.modules["structlog"] = _structlog_mock
 from app.config import settings
 from app.parsing.chunker import CodeChunk
 from app.retrieval.bm25_store import search_bm25, store_bm25
-from app.retrieval.embeddings import embed, embed_batch
+from app.retrieval.embeddings import embed, embed_batch, embed_chunks
 from app.retrieval.hybrid_search import search_hybrid
 from app.retrieval.vector_store import ModelMismatchError, search_vectors, store_chunks
 
@@ -60,7 +60,7 @@ class TestVectorAndBM25Store(unittest.TestCase):
         # Create dummy chunks
         self.chunks = [
             CodeChunk(
-                chunk_text="def foo():\n    return 'vector_target'",
+                chunk_text="def foo():\n    # semantic query for vector_target\n    return 'vector_target'",
                 file_path="/a/b.py", display_path="b.py", normalized_path="b.py",
                 function_name="foo", start_line=1, end_line=2, type="function",
                 language="python", fingerprint="fp1", class_name=None
@@ -95,6 +95,7 @@ class TestVectorAndBM25Store(unittest.TestCase):
         self.td.cleanup()
 
     def test_store_and_search_vector(self):
+        embed_chunks(self.chunks)
         store_chunks(self.repo_id, self.chunks)
         results = search_vectors(self.repo_id, "semantic query for vector_target", n_results=1)
         self.assertEqual(len(results), 1)

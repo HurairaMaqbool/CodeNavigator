@@ -199,16 +199,16 @@ def filter_repo_files(
         if name_lower.endswith(_D_TS_SUFFIX):
             n_unsupported_ext += 1
             continue
-        if name_lower.endswith(EXCLUDED_LOCK_SUFFIX):
+        if name_lower.endswith(EXCLUDED_LOCK_SUFFIX) or name_lower in ("package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "pipfile.lock", "poetry.lock", "cargo.lock"):
             n_unsupported_ext += 1
             continue
 
         suffix = ("." + name_lower.rsplit(".", 1)[-1]) if "." in name_lower else ""
         language = EXTENSION_TO_LANGUAGE.get(suffix)
         if language is None:
-            # Check for exact filenames like Dockerfile, Makefile
-            if name_lower in ("dockerfile", "makefile"):
-                language = "dockerfile" if name_lower == "dockerfile" else "makefile"
+            # Check for exact filenames like Dockerfile
+            if name_lower == "dockerfile":
+                language = "dockerfile"
             else:
                 n_unsupported_ext += 1
                 continue

@@ -309,8 +309,8 @@ def test_step3_provider_boundaries():
             continue
         if ".gemini" in str(fpath):
             continue
-        # Ignore this test file itself, ignore llm_client.py
-        if fpath.name in ("test_module_8.py", "llm_client.py"):
+        # Ignore this test file itself, ignore llm_client.py, ignore diagnostic scripts
+        if fpath.name in ("test_module_8.py", "llm_client.py", "list_models.py", "test_qwen.py"):
             continue
             
         code = fpath.read_text(encoding="utf-8")

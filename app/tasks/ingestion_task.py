@@ -20,8 +20,7 @@ except ImportError:  # pragma: no cover - dev without Celery
 
 if celery_app is not None:
 
-    @celery_app.task(bind=True, max_retries=3, acks_late=True, queue="ingestion")
-    def run_ingestion(
+    def _run_ingestion_impl(
         self,
         repo_url: str,
         ref: str | None,
@@ -57,9 +56,17 @@ if celery_app is not None:
             )
         except Exception as exc:
             logger.error("celery_ingestion_failed", error=str(exc))
-            raise self.retry(exc=exc, countdown=60) from exc
+            if hasattr(self, "retry"):
+                raise self.retry(exc=exc, countdown=60) from exc
+            raise exc
+
+    run_ingestion = celery_app.task(bind=True, max_retries=3, acks_late=True, queue="ingestion")(_run_ingestion_impl)
+    if not hasattr(run_ingestion, "__wrapped__"):
+        setattr(run_ingestion, "__wrapped__", _run_ingestion_impl.__get__(run_ingestion, type(run_ingestion)))
 
 else:
 
     def run_ingestion(*_args: Any, **_kwargs: Any) -> None:
         raise RuntimeError("Celery is not installed")
+
+    setattr(run_ingestion, "__wrapped__", run_ingestion)

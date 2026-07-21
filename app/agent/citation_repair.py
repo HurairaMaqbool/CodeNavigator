@@ -143,6 +143,7 @@ def _sentence_relevant_to_citations(
     repo_id: str | None,
     sent: str,
     file_mentions: list[tuple[str, str | None, str | None]],
+    by_path: dict[str, list[dict[str, Any]]] | None = None,
 ) -> bool:
     """Drop sentences that cite files unrelated to symbols in the sentence."""
     if not file_mentions:
@@ -151,10 +152,20 @@ def _sentence_relevant_to_citations(
     if not symbols:
         return len(file_mentions) <= 1
 
+    cited = {_norm_path(p) for p, _, _ in file_mentions}
+    if by_path:
+        for sym in symbols:
+            sym_l = sym.lower()
+            for p_norm in cited:
+                for hit in by_path.get(p_norm, []):
+                    fn = (hit.get("function_name") or "").lower()
+                    chunk = (hit.get("chunk") or "").lower()
+                    if sym_l in fn or f"class {sym_l}" in chunk or f"def {sym_l}" in chunk or sym_l in chunk:
+                        return True
+
     if not repo_id:
         return True
 
-    cited = {_norm_path(p) for p, _, _ in file_mentions}
     for sym in symbols:
         sym_paths = symbol_paths(repo_id, sym)
         if sym_paths & cited:
@@ -256,7 +267,7 @@ def repair_answer_citations(
             grounded = all(_norm_path(p) in allowed_paths for p, _, _ in file_mentions)
             if not grounded:
                 continue
-            if not _sentence_relevant_to_citations(repo_id, sent, file_mentions):
+            if not _sentence_relevant_to_citations(repo_id, sent, file_mentions, by_path):
                 continue
 
         if cite_count >= 3:

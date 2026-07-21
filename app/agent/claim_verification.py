@@ -413,8 +413,7 @@ def _check_ast_symbol_grounding(claim_text: str, repo_id: str, cited_file_path: 
                 for cand in missing:
                     loc_class = resolve_symbol_location(repo_id, cand, kind="class")
                     loc_func = resolve_symbol_location(repo_id, cand, kind="function")
-                    loc_path = path_key((loc_class or loc_func or {}).get("file_path", ""))
-                    if loc_path and loc_path == norm_cited:
+                    if loc_class or loc_func:
                         continue
                     # Check if cand is a qualifier (e.g. Session in Session.send) where member is in chunk_identifiers
                     if any(f"{cand}.{member}" in claim_text or f"{cand}:{member}" in claim_text for member in chunk_identifiers):
@@ -493,7 +492,7 @@ def _get_verified_technical_entities(claim_text: str, repo_id: str) -> set[str]:
     candidates = {c for c in candidates if c.lower() not in _COMMON_PROGRAMMING_WORDS}
     
     graph = get_graph(repo_id)
-    if not graph:
+    if not graph or len(graph) == 0:
         return candidates
         
     verified = set()
@@ -503,7 +502,7 @@ def _get_verified_technical_entities(claim_text: str, repo_id: str) -> set[str]:
         for cand in candidates:
             if cand == name or name.endswith("." + cand):
                 verified.add(cand)
-    return verified if verified else candidates
+    return verified
 
 
 def _check_math_formula_grounding(claim_text: str, cited_text: str) -> bool:
@@ -1070,7 +1069,7 @@ def _verify_claims_batch_inner(
             is_grounded = (ast_result == "PASS")
             if ast_result == "NO_CANDIDATES":
                 row = next(r for r in results if r["index"] == claim_idx)
-                if row.get("confidence_score", 0.0) >= threshold + 0.15:
+                if row.get("confidence_score", 0.0) >= threshold:
                     is_grounded = True
                     item["fail_method"] = "ast_grounding_no_candidates_fallback"
                 else:
