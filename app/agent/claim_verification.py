@@ -190,16 +190,25 @@ def _lexical_overlap_score(claim: str, cited_text: str) -> float:
     claim_tokens = {
         t for t in re.findall(r"[a-zA-Z_][\w]*", claim.lower()) if len(t) > 2
     }
-    claim_tokens = {t for t in claim_tokens if t not in _COMMON_PROGRAMMING_WORDS}
+    filtered_claim = {t for t in claim_tokens if t not in _COMMON_PROGRAMMING_WORDS}
+    if not filtered_claim:
+        _STOP = {"the", "a", "an", "this", "that", "these", "those", "is", "are", "was", "were", "be", "been", "being",
+                 "have", "has", "had", "do", "does", "did", "doing", "will", "would", "shall", "should", "can", "could",
+                 "may", "might", "must", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by",
+                 "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above",
+                 "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further",
+                 "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few",
+                 "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than",
+                 "too", "very", "just"}
+        filtered_claim = {t for t in claim_tokens if t not in _STOP}
 
     code_tokens = {
         t for t in re.findall(r"[a-zA-Z_][\w]*", cited_text.lower()) if len(t) > 2
     }
-    code_tokens = {t for t in code_tokens if t not in _COMMON_PROGRAMMING_WORDS}
 
-    if not claim_tokens:
+    if not filtered_claim:
         return 0.0
-    return len(claim_tokens & code_tokens) / len(claim_tokens)
+    return len(filtered_claim & code_tokens) / len(filtered_claim)
 
 
 def _line_range_ok(
@@ -394,7 +403,8 @@ def _check_ast_symbol_grounding(claim_text: str, repo_id: str, cited_file_path: 
                 return ids
                 
             chunk_identifiers = get_identifiers(tree.root_node)
-            missing = [cand for cand in candidates if cand not in chunk_identifiers]
+            chunk_identifiers_lower = {i.lower() for i in chunk_identifiers}
+            missing = [cand for cand in candidates if cand.lower() not in chunk_identifiers_lower]
             if missing:
                 from app.agent.symbol_lookup import resolve_symbol_location
                 from app.agent.confidence import path_key
@@ -479,7 +489,7 @@ def _get_verified_technical_entities(claim_text: str, repo_id: str) -> set[str]:
     candidates = set(re.findall(r"`([^`]+)`", claim_text))
     words = set(re.findall(r"\b[A-Z][a-zA-Z0-9_]+\b", claim_text))
     candidates |= {w for w in words if not w.isupper()}
-    candidates |= set(re.findall(r"\b[a-z0-9]+_[a-z0-9_]+\b", claim_text))
+    candidates |= set(re.findall(r"\b_?[a-zA-Z0-9]+_[a-zA-Z0-9_]+\b", claim_text))
     candidates = {c for c in candidates if c.lower() not in _COMMON_PROGRAMMING_WORDS}
     
     graph = get_graph(repo_id)

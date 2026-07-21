@@ -141,7 +141,7 @@ def test_verify_claims_batch_mocked_embedding(eval_cases: list[dict]):
     case = next(c for c in eval_cases if c["id"] == "session_send_mechanism")
     claims = case["claims"]
 
-    with patch("app.agent.claim_verification.fetch_cited_text", return_value="def send(): pass"), patch(
+    with patch("app.agent.claim_verification.fetch_cited_text", return_value="def send(self, request, **kwargs): pass"), patch(
         "app.agent.claim_verification._structural_ok", return_value=True,
     ), patch(
         "app.agent.claim_verification._verify_embedding_batch",
