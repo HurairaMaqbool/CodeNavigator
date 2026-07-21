@@ -46,7 +46,7 @@ def test_labels_are_human_readable():
 
 
 def test_transition_emits_real_states():
-    ctx = AgentContext(repo_id="r", question="q", session_id="sess-t")
+    ctx = AgentContext(repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", question="q", session_id="sess-t")
     reset_session("sess-t")
     _transition(ctx, AgentState.PLAN)
     _transition(ctx, AgentState.RESPOND)

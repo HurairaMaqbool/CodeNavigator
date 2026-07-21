@@ -105,7 +105,7 @@ def test_post_diagram_endpoint_returns_mermaid(mock_api_key):
         resp = client.post(
             "/diagram",
             headers={"X-API-Key": "dev-secret-key"},
-            json={"repo_id": "job-1", "entry_point": "main", "direction": "both"},
+            json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "entry_point": "main", "direction": "both"},
         )
 
     assert resp.status_code == 200

@@ -53,7 +53,7 @@ class TestAPIEndpoints(unittest.TestCase):
     def test_ingest_successful_start(self, mock_alias, mock_pending, mock_lock, mock_delay):
         """POST /ingest returns 202 immediately with a job_id (async pipeline design)."""
         mock_alias.return_value = None  # No pre-existing alias
-        mock_lock.return_value = LockResult(acquired=True, repo_id="repo123")
+        mock_lock.return_value = LockResult(acquired=True, repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         mock_delay.return_value = MagicMock(id="test-task-id")
 
         app.dependency_overrides[verify_api_key] = lambda: None
@@ -71,7 +71,7 @@ class TestAPIEndpoints(unittest.TestCase):
     def test_ingest_already_running_returns_200(self, mock_alias, mock_lock):
         """POST /ingest returns 200 with already_running when lock is not acquired."""
         mock_alias.return_value = None
-        mock_lock.return_value = LockResult(acquired=False, repo_id="repo123")
+        mock_lock.return_value = LockResult(acquired=False, repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 
         app.dependency_overrides[verify_api_key] = lambda: None
         resp = self.client.post("/ingest", json={"repo_url": "https://github.com/foo/bar"})
@@ -85,7 +85,7 @@ class TestAPIEndpoints(unittest.TestCase):
     def test_chat_rejects_unsynced(self, mock_alias, mock_meta_get, mock_run):
         mock_alias.return_value = None  # No alias resolution
         mock_meta_get.return_value = RepoMetadata(
-            repo_id="repo123",
+            repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             repo_url="x",
             ref="main",
             sync_status="pending",
@@ -98,7 +98,7 @@ class TestAPIEndpoints(unittest.TestCase):
             "gated": True,
         }
 
-        resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
+        resp = self.client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "hello?"})
 
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()["gated"])
@@ -110,7 +110,7 @@ class TestAPIEndpoints(unittest.TestCase):
     def test_chat_success(self, mock_alias, mock_answer, mock_meta_get):
         mock_alias.return_value = None
         mock_meta_get.return_value = RepoMetadata(
-            repo_id="repo123",
+            repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             repo_url="x",
             ref="main",
             sync_status="synced",
@@ -126,7 +126,7 @@ class TestAPIEndpoints(unittest.TestCase):
             "cache_hit": True
         }
 
-        resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
+        resp = self.client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "hello?"})
 
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.json()["cache_hit"])
@@ -135,7 +135,7 @@ class TestAPIEndpoints(unittest.TestCase):
     def test_global_exception_handler(self):
         # Force an unexpected error in an endpoint → 500 JSON with "error" key
         with patch("app.api.router.metadata_store.get", side_effect=ValueError("Boom")):
-            resp = self.client.get("/status/repo123")
+            resp = self.client.get("/status/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
             self.assertEqual(resp.status_code, 500)
             self.assertEqual(resp.json()["error"], "An unexpected server error occurred. Please check the logs.")
 
@@ -147,7 +147,7 @@ class TestAPIEndpoints(unittest.TestCase):
         from app.agent.llm_client import RateLimitError
         mock_alias.return_value = None
         mock_meta_get.return_value = RepoMetadata(
-            repo_id="repo123",
+            repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             repo_url="x",
             ref="main",
             sync_status="synced",
@@ -155,7 +155,7 @@ class TestAPIEndpoints(unittest.TestCase):
         )
         mock_answer.side_effect = RateLimitError("Groq API rate limit exceeded.")
 
-        resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
+        resp = self.client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "hello?"})
 
         self.assertEqual(resp.status_code, 429)
         self.assertIn("rate", resp.json()["detail"].lower())
@@ -167,7 +167,7 @@ class TestAPIEndpoints(unittest.TestCase):
         """POST /chat returns 429 (primary path) when the loop returns rate_limited=True dict."""
         mock_alias.return_value = None
         mock_meta_get.return_value = RepoMetadata(
-            repo_id="repo123",
+            repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             repo_url="x",
             ref="main",
             sync_status="synced",
@@ -185,7 +185,7 @@ class TestAPIEndpoints(unittest.TestCase):
             "trace": [],
         }
 
-        resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
+        resp = self.client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "hello?"})
 
         self.assertEqual(resp.status_code, 429)
         detail = resp.json()["detail"].lower()
@@ -199,7 +199,7 @@ class TestAPIEndpoints(unittest.TestCase):
         """POST /chat returns 200 with gated partial answer when timed_out but answer exists."""
         mock_alias.return_value = None
         mock_meta_get.return_value = RepoMetadata(
-            repo_id="repo123",
+            repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             repo_url="x",
             ref="main",
             sync_status="synced",
@@ -216,7 +216,7 @@ class TestAPIEndpoints(unittest.TestCase):
             "trace": [],
         }
 
-        resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
+        resp = self.client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "hello?"})
 
         self.assertEqual(resp.status_code, 200)
         body = resp.json()
@@ -230,7 +230,7 @@ class TestAPIEndpoints(unittest.TestCase):
         """POST /chat returns 504 only when timed_out and no answer was produced."""
         mock_alias.return_value = None
         mock_meta_get.return_value = RepoMetadata(
-            repo_id="repo123",
+            repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             repo_url="x",
             ref="main",
             sync_status="synced",
@@ -247,7 +247,7 @@ class TestAPIEndpoints(unittest.TestCase):
             "trace": [],
         }
 
-        resp = self.client.post("/chat", json={"repo_id": "repo123", "question": "hello?"})
+        resp = self.client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "hello?"})
 
         self.assertEqual(resp.status_code, 504)
         detail = resp.json()["detail"].lower()

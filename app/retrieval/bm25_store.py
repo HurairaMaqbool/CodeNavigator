@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import pickle
 import re
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -73,9 +74,25 @@ def _tokenize(text: str) -> list[str]:
 
 def _index_path_for(repo_id: str) -> Path:
     """Return the absolute path to the BM25 pickle for *repo_id*."""
-    return Path(settings.BM25_INDEX_PATH) / repo_id / "bm25.pkl"
+    safe_id = re.sub(r"[^a-zA-Z0-9_.-]", "", repo_id)
+    return Path(settings.BM25_INDEX_PATH) / safe_id / "bm25.pkl"
 
 _BM25_CACHE: dict[str, tuple[BM25Okapi, list[dict[str, Any]]]] = {}
+
+# ---------------------------------------------------------------------------
+# Per-repo lock striping — prevents cache corruption under concurrent
+# ingestion (write) and search (read) for the same repo_id.
+# ---------------------------------------------------------------------------
+_LOCK_MAP_LOCK: threading.Lock = threading.Lock()
+_REPO_LOCKS: dict[str, threading.Lock] = {}
+
+
+def _get_repo_lock(repo_id: str) -> threading.Lock:
+    """Return the per-repo mutex, creating it if it doesn't exist yet."""
+    with _LOCK_MAP_LOCK:
+        if repo_id not in _REPO_LOCKS:
+            _REPO_LOCKS[repo_id] = threading.Lock()
+        return _REPO_LOCKS[repo_id]
 
 
 # ---------------------------------------------------------------------------
@@ -88,18 +105,25 @@ def build_bm25_index(
 ) -> None:
     """
     Build and persist a BM25 index over *chunks*, always overwriting.
+
+    Thread safety
+    -------------
+    Acquires the per-repo lock before any mutation of the in-memory cache
+    or the on-disk pickle file.  This prevents a concurrent ``load_bm25_index``
+    from reading a half-written pickle or a torn cache entry.
     """
     log = logger.bind(repo_id=repo_id)
     pkl_path = _index_path_for(repo_id)
 
     if not chunks:
         log.warning("no_chunks_for_bm25")
-        if pkl_path.exists():
-            try:
-                pkl_path.unlink()
-            except Exception:
-                pass
-        _BM25_CACHE.pop(repo_id, None)
+        with _get_repo_lock(repo_id):
+            if pkl_path.exists():
+                try:
+                    pkl_path.unlink()
+                except Exception:
+                    pass
+            _BM25_CACHE.pop(repo_id, None)
         return
 
     corpus_tokens: list[list[str]] = []
@@ -121,9 +145,9 @@ def build_bm25_index(
             fingerprint = getattr(chunk, "fingerprint", "")
             if not fingerprint and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
                 fingerprint = chunk.metadata.get("fingerprint", "")
-                
+
             chunk_text = getattr(chunk, "chunk_text", "") or getattr(chunk, "text", "")
-            
+
             file_path = getattr(chunk, "file_path", "")
             if not file_path and hasattr(chunk, "metadata") and isinstance(chunk.metadata, dict):
                 file_path = chunk.metadata.get("file_path", "")
@@ -176,37 +200,48 @@ def build_bm25_index(
         })
 
     log.info("building_bm25_index", n_chunks=len(chunk_ids))
+    # Build BM25 model outside the lock — this is pure CPU work and takes the
+    # bulk of the time; no shared state is touched yet.
     bm25 = BM25Okapi(corpus_tokens)
 
     pkl_path.parent.mkdir(parents=True, exist_ok=True)
-    
     data = (bm25, records)
-    with pkl_path.open("wb") as f:
-        pickle.dump(data, f)
-        
-    _BM25_CACHE[repo_id] = data
+
+    # Acquire the per-repo lock only for the file-write + cache-update.
+    with _get_repo_lock(repo_id):
+        with pkl_path.open("wb") as f:
+            pickle.dump(data, f)
+        _BM25_CACHE[repo_id] = data
+
     log.info("bm25_index_built", path=str(pkl_path))
 
 
 def load_bm25_index(repo_id: str) -> tuple[BM25Okapi, list[dict[str, Any]]] | None:
     """
     Load the BM25 index and records from disk if it exists, caching it in memory.
+
+    Thread safety
+    -------------
+    Holds the per-repo lock for both the cache-check and the disk read so that
+    a concurrent ``build_bm25_index`` cannot replace the pickle between the
+    existence check and the open() call.
     """
-    if repo_id in _BM25_CACHE:
-        return _BM25_CACHE[repo_id]
-        
-    pkl_path = _index_path_for(repo_id)
-    if not pkl_path.exists():
-        return None
-        
-    try:
-        with pkl_path.open("rb") as f:
-            data = pickle.load(f)
+    with _get_repo_lock(repo_id):
+        if repo_id in _BM25_CACHE:
+            return _BM25_CACHE[repo_id]
+
+        pkl_path = _index_path_for(repo_id)
+        if not pkl_path.exists():
+            return None
+
+        try:
+            with pkl_path.open("rb") as f:
+                data = pickle.load(f)
             _BM25_CACHE[repo_id] = data
             return data
-    except Exception as exc:
-        logger.warning("failed_to_load_bm25_index_file", path=str(pkl_path), error=str(exc))
-        return None
+        except Exception as exc:
+            logger.warning("failed_to_load_bm25_index_file", path=str(pkl_path), error=str(exc))
+            return None
 
 
 def store_bm25(
@@ -246,23 +281,29 @@ def upsert_chunks(repo_id: str, chunks: list[Any]) -> None:
 def delete_repo(repo_id: str) -> None:
     """
     Delete the BM25 index for repo_id from disk and cache.
+
+    Thread safety
+    -------------
+    Holds the per-repo lock so that a concurrent search cannot read a
+    partially-deleted cache or a file that is in the process of being removed.
     """
     pkl_path = _index_path_for(repo_id)
-    if pkl_path.exists():
+    with _get_repo_lock(repo_id):
+        if pkl_path.exists():
+            try:
+                pkl_path.unlink()
+                logger.info("bm25_index_deleted", path=str(pkl_path))
+            except Exception as exc:
+                logger.warning("failed_to_delete_bm25_index_file", path=str(pkl_path), error=str(exc))
+
         try:
-            pkl_path.unlink()
-            logger.info("bm25_index_deleted", path=str(pkl_path))
-        except Exception as exc:
-            logger.warning("failed_to_delete_bm25_index_file", path=str(pkl_path), error=str(exc))
+            parent_dir = pkl_path.parent
+            if parent_dir.exists() and not any(parent_dir.iterdir()):
+                parent_dir.rmdir()
+        except Exception:
+            pass
 
-    try:
-        parent_dir = pkl_path.parent
-        if parent_dir.exists() and not any(parent_dir.iterdir()):
-            parent_dir.rmdir()
-    except Exception:
-        pass
-
-    _BM25_CACHE.pop(repo_id, None)
+        _BM25_CACHE.pop(repo_id, None)
 
 
 # ---------------------------------------------------------------------------

@@ -91,7 +91,7 @@ def test_aspect_markers_satisfied_for_retries_and_timeouts():
     q = "How are retries and timeouts handled?"
     assert _aspect_markers_satisfied(q, chunks) is True
     assert _chunks_cover_question_topic(q, chunks) is True
-    ctx = AgentContext(repo_id="r", job_id="r", question=q, chunks=chunks, best_retrieval_score=0.9)
+    ctx = AgentContext(repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", job_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", question=q, chunks=chunks, best_retrieval_score=0.9)
     assert _retrieval_strong_enough(ctx) is True
 
 
@@ -104,8 +104,8 @@ def test_decide_fast_path_skips_llm_when_retrieval_strong():
         _src_hit("src/requests/sessions.py", "request", "extra context", 0.65),
     ]
     ctx = AgentContext(
-        repo_id="r",
-        job_id="r",
+        repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        job_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         question=q,
         chunks=chunks,
         best_retrieval_score=0.9,

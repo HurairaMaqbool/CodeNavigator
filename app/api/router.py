@@ -12,11 +12,20 @@ from __future__ import annotations
 
 import threading
 import uuid
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from dataclasses import dataclass
 import json
+
+def _validate_repo_id(repo_id: str) -> None:
+    if not repo_id or not re.match(r"^(?:[a-fA-F0-9]{64}|public)$", repo_id):
+        raise HTTPException(status_code=400, detail="Invalid repo_id format")
+
+def _validate_eval_job_id(job_id: str) -> None:
+    if not job_id or not re.match(r"^[a-fA-F0-9]{32}$", job_id):
+        raise HTTPException(status_code=400, detail="Invalid job_id format")
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Response, Request, Depends
 from fastapi.responses import StreamingResponse
@@ -397,6 +406,7 @@ def get_public_status_alias():
 
 @router.get("/status/{job_id}", dependencies=[Depends(verify_api_key)])
 def get_ingest_status(job_id: str):
+    _validate_repo_id(job_id)
     if job_id == "public":
         from app.api.status_router import public_status
 
@@ -480,6 +490,7 @@ async def chat_state_stream(request: Request, session_id: str):
 @router.post("/chat", dependencies=[Depends(verify_api_key)])
 @limiter.limit("10/minute")
 def chat(request: Request, req: ChatRequest):
+    _validate_repo_id(req.repo_id)
     from app.ingestion.repo_readiness import evaluate_chat_readiness
 
     meta, asset_repo_id = _resolve_repo_meta(req.repo_id)
@@ -603,6 +614,7 @@ def chat(request: Request, req: ChatRequest):
 @router.post("/diagram", response_model=DiagramResponse, dependencies=[Depends(verify_api_key)])
 @limiter.limit("5/minute")
 def generate_diagram_endpoint(request: Request, req: DiagramRequest):
+    _validate_repo_id(req.repo_id)
     meta, asset_repo_id = _resolve_repo_meta(req.repo_id)
     if not meta:
         raise HTTPException(status_code=404, detail="Unknown repo_id")
@@ -626,6 +638,7 @@ def generate_diagram_endpoint(request: Request, req: DiagramRequest):
 @router.post("/onboarding-path", response_model=OnboardingPathResponse, dependencies=[Depends(verify_api_key)])
 @limiter.limit("5/minute")
 def generate_onboarding_path(request: Request, req: OnboardingPathRequest):
+    _validate_repo_id(req.repo_id)
     meta, asset_repo_id = _resolve_repo_meta(req.repo_id)
     if not meta:
         raise HTTPException(status_code=404, detail="Unknown repo_id")
@@ -643,6 +656,7 @@ def generate_onboarding_path(request: Request, req: OnboardingPathRequest):
 
 @router.get("/symbols/{repo_id}", dependencies=[Depends(verify_api_key)])
 def get_symbols_endpoint(repo_id: str):
+    _validate_repo_id(repo_id)
     meta, asset_repo_id = _resolve_repo_meta(repo_id)
     if not meta:
         raise HTTPException(status_code=404, detail="Unknown repo_id")
@@ -674,6 +688,7 @@ def get_file_snippet_endpoint(
     start_line: int | None = None,
     end_line: int | None = None,
 ):
+    _validate_repo_id(repo_id)
     meta, asset_repo_id = _resolve_repo_meta(repo_id)
     if not meta:
         raise HTTPException(status_code=404, detail="Unknown repo_id")
@@ -842,6 +857,7 @@ def get_function_diagram_query(
     depth: int = 2,
     direction: str | None = None,
 ):
+    _validate_repo_id(repo_id)
     """Backward-compatible route used by tests and older clients (function_name as query param)."""
     return get_function_diagram(repo_id, function_name, depth, direction=direction)
 
@@ -853,6 +869,7 @@ def get_function_diagram(
     depth: int = 2,
     direction: str | None = None,
 ):
+    _validate_repo_id(repo_id)
     from app.debug_trace import debug_log
 
     meta, asset_repo_id = _resolve_repo_meta(repo_id)
@@ -997,6 +1014,8 @@ def run_eval_endpoint(repo_id: str | None = None):
     Returns immediately with a job_id.
     Poll /eval/status/{job_id} to check progress.
     """
+    if repo_id:
+        _validate_repo_id(repo_id)
     from app.platform.tenant_context import get_tenant
     from app.platform.usage_meter import check_quota, increment
     from eval.health_check import run_full_eval_precheck
@@ -1050,6 +1069,7 @@ def eval_health(repo_id: str, probe_agent: bool = False):
     Pre-evaluation health check for a repo (job_id or asset id).
     Set probe_agent=true to also run a live agent answer probe (uses Groq tokens).
     """
+    _validate_repo_id(repo_id)
     from eval.health_check import run_full_eval_precheck
 
     result = run_full_eval_precheck(repo_id, include_agent_probe=probe_agent)
@@ -1062,6 +1082,7 @@ def eval_health(repo_id: str, probe_agent: bool = False):
 
 @router.get("/eval/status/{job_id}", dependencies=[Depends(verify_api_key)])
 def eval_status(job_id: str):
+    _validate_eval_job_id(job_id)
     """
     Poll the status of an async eval job.
     Status values: queued | running | done | error

@@ -21,6 +21,19 @@ EXTENSION_TO_LANGUAGE: dict[str, str] = {
     ".go": "go",
     ".java": "java",
     ".rs": "rust",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".json": "json",
+    ".toml": "toml",
+    ".md": "markdown",
+    ".txt": "text",
+    ".sh": "bash",
+    ".dockerfile": "dockerfile",
+    ".ps1": "powershell",
+    ".bat": "batch",
+    ".ini": "ini",
+    ".cfg": "ini",
+    ".env": "env",
 }
 
 SUPPORTED_EXTENSIONS: frozenset[str] = frozenset(EXTENSION_TO_LANGUAGE.keys())

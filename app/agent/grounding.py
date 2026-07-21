@@ -178,6 +178,7 @@ def normalize_citation(raw: Any) -> dict[str, Any] | None:
         "file_path": path.replace("\\", "/").lstrip("/"),
         "start_line": start_i,
         "end_line": end_i,
+        "repo_id": raw.get("repo_id") if isinstance(raw, dict) else None,
     }
 
 

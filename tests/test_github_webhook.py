@@ -128,7 +128,7 @@ class TestGithubWebhook(unittest.TestCase):
     @patch("app.webhook.github_webhook.trigger_ingest")
     def test_valid_push_triggers_ingest(self, mock_trigger):
         class MockJob:
-            job_id = "repo123"
+            job_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             status = "processing"
             
         mock_trigger.return_value = MockJob()
@@ -149,7 +149,7 @@ class TestGithubWebhook(unittest.TestCase):
         resp = self.client.post("/webhook/github", content=body, headers=headers)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()["status"], "accepted")
-        self.assertEqual(resp.json()["job_id"], "repo123")
+        self.assertEqual(resp.json()["job_id"], "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         
         mock_trigger.assert_called_once()
         args, kwargs = mock_trigger.call_args
@@ -165,9 +165,9 @@ class TestGithubWebhook(unittest.TestCase):
         from app.ingestion.clone import CloneResult
         from pathlib import Path
         mock_alias.return_value = None
-        mock_lock.return_value = LockResult(acquired=False, repo_id="repo123")
+        mock_lock.return_value = LockResult(acquired=False, repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         mock_clone.return_value = CloneResult(
-            repo_id="repo123",
+            repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             clone_path=Path("dummy_path"),
             default_branch="main",
             commit_hash="1234567890abcdef1234567890abcdef12345678",

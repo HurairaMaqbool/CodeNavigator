@@ -150,7 +150,7 @@ def test_ec4_llm_timeout(mock_ans, mock_meta):
     mock_meta.get.return_value = MagicMock(sync_status="synced", commit_hash="123")
     class RetryError(Exception): pass
     mock_ans.side_effect = RetryError("Timeout")
-    res = client.post("/chat", json={"repo_id": "r", "question": "What is this?"})
+    res = client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "What is this?"})
     assert_ok(res.status_code == 504, f"Expected 504, got {res.status_code}")
     print(f"{PASS} EC4: LLM timeout caught cleanly -> 504")
 
@@ -160,21 +160,21 @@ def test_ec5_unknown_function_chat(mock_ans, mock_meta):
     mock_meta.get.return_value = MagicMock(sync_status="synced", commit_hash="123")
     # Simulate answer_question generating text about missing function
     mock_ans.return_value = {"answer": "Function 'foo' not found in graph.", "error": "Function 'foo' not found in graph."}
-    res = client.post("/chat", json={"repo_id": "r", "question": "What is this?"})
+    res = client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "What is this?"})
     assert_ok(res.status_code == 200, f"Expected 200, got {res.status_code}")
     print(f"{PASS} EC5: Unknown function inside /chat naturally surfaces cleanly (not 500)")
 
 @patch("app.api.router.metadata_store")
 def test_ec6_chat_uningested(mock_meta):
     mock_meta.get.return_value = None
-    res = client.post("/chat", json={"repo_id": "r", "question": "What is this?"})
+    res = client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "What is this?"})
     assert_ok(res.status_code == 404, f"Expected 404, got {res.status_code}")
     print(f"{PASS} EC6: /chat on uningested repo -> 404")
 
 @patch("app.api.router.metadata_store")
 def test_ec7_diagram_uningested(mock_meta):
     mock_meta.get.return_value = None
-    res = client.get("/diagram/r?function_name=a")
+    res = client.get("/diagram/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa?function_name=a")
     assert_ok(res.status_code == 404, f"Expected 404, got {res.status_code}")
     print(f"{PASS} EC7: /diagram on uningested repo -> 404")
 
@@ -188,7 +188,7 @@ def test_ec8_chat_pending(mock_meta, mock_run):
         "confidence_score": 0.0,
         "gated": True,
     }
-    res = client.post("/chat", json={"repo_id": "r", "question": "What is this?"})
+    res = client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "What is this?"})
     assert_ok(res.status_code == 200, f"Expected 200, got {res.status_code}")
     assert_ok(res.json().get("gated") is True, "Expected gated chat while pending")
     print(f"{PASS} EC8: /chat pending returns gated progress message -> 200")
@@ -196,7 +196,7 @@ def test_ec8_chat_pending(mock_meta, mock_run):
 @patch("app.api.router.metadata_store")
 def test_ec9_diagram_pending(mock_meta):
     mock_meta.get.return_value = MagicMock(sync_status="pending", commit_hash=None)
-    res = client.get("/diagram/r?function_name=a")
+    res = client.get("/diagram/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa?function_name=a")
     assert_ok(res.status_code == 409, f"Expected 409, got {res.status_code}")
     print(f"{PASS} EC9: /diagram pending -> 409")
 
@@ -242,7 +242,7 @@ def test_ec14_disk_full_prior_state(mock_ans, mock_meta):
     mock_meta.get.return_value = MagicMock(sync_status="failed", commit_hash="old_commit")
     mock_ans.return_value = {"answer": "I can still answer!"}
     
-    res = client.post("/chat", json={"repo_id": "r", "question": "What is this?"})
+    res = client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "What is this?"})
     assert_ok(res.status_code == 200, f"Expected 200, got {res.status_code}")
     print(f"{PASS} EC14: Disk full on re-ingest doesn't block /chat for old commit")
 
@@ -253,13 +253,13 @@ def test_ec15_detect_cycles_null(mock_meta):
     with patch("pathlib.Path.exists", return_value=True), \
          patch("pathlib.Path.read_text", return_value='{"metadata": {"graph_truncated": false}}'), \
          patch("app.graph.queries.detect_cycles", return_value=None):
-        res = client.get("/status/r")
+        res = client.get("/status/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         assert_ok(res.status_code == 200, "status failed")
         assert_ok(res.json()["has_circular_dependencies"] is None, "Expected null when detect_cycles times out")
     print(f"{PASS} EC15: Cycle detection timeout correctly outputs null (not False/omitted)")
 
 def test_ec16_malformed_request():
-    res = client.post("/chat", json={"repo_id": "r"}) # Missing question
+    res = client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}) # Missing question
     assert_ok(res.status_code == 422, f"Expected 422, got {res.status_code}")
     print(f"{PASS} EC16: Malformed request -> 422 standard validation, not 500")
 

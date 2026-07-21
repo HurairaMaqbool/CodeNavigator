@@ -22,6 +22,9 @@ eval_results/*
 tests/eval_history.jsonl
 tests/eval_results.json
 tests/golden_set_status.json
+app.db
+scratch/
+
 
 *.log
 

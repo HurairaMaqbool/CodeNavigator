@@ -28,7 +28,7 @@ class TestArchitectureExplorer(unittest.TestCase):
     @patch("app.graph.queries._get_graph")
     def test_get_symbols_success(self, mock_get_graph, mock_ready, mock_meta):
         """GET /symbols/{repo_id} returns all symbols with start/end line coordinates."""
-        mock_meta.return_value = (MagicMock(), "test_asset_repo_id")
+        mock_meta.return_value = (MagicMock(), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         mock_ready.return_value = None
         
         # Build mock NetworkX graph
@@ -37,7 +37,7 @@ class TestArchitectureExplorer(unittest.TestCase):
         g.add_node("src/models.py:Response", name="Response", path="src/models.py", type="class", start_line=100, end_line=200)
         mock_get_graph.return_value = g
 
-        resp = self.client.get("/symbols/test_repo_id")
+        resp = self.client.get("/symbols/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
         self.assertEqual(len(data), 2)
@@ -57,7 +57,7 @@ class TestArchitectureExplorer(unittest.TestCase):
     @patch("app.ingestion.file_filter.safe_decode")
     def test_get_file_snippet_success(self, mock_decode, mock_resolve, mock_is_file, mock_exists, mock_ready, mock_meta):
         """GET /file-snippet/{repo_id} returns correct lines slice and handles path traversal defense."""
-        mock_meta.return_value = (MagicMock(), "test_asset_repo_id")
+        mock_meta.return_value = (MagicMock(), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         mock_ready.return_value = None
         mock_exists.return_value = True
         mock_is_file.return_value = True
@@ -72,7 +72,7 @@ class TestArchitectureExplorer(unittest.TestCase):
 
         # Query a 1-indexed snippet from lines 10 to 12
         resp = self.client.get(
-            "/file-snippet/test_repo_id",
+            "/file-snippet/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             params={"file_path": "src/sessions.py", "start_line": 10, "end_line": 12}
         )
         self.assertEqual(resp.status_code, 200)
@@ -88,11 +88,11 @@ class TestArchitectureExplorer(unittest.TestCase):
     @patch("app.api.router._require_repo_ready")
     def test_get_file_snippet_path_traversal(self, mock_ready, mock_meta):
         """GET /file-snippet/{repo_id} raises 403 on path traversal attempts."""
-        mock_meta.return_value = (MagicMock(), "test_asset_repo_id")
+        mock_meta.return_value = (MagicMock(), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         mock_ready.return_value = None
         
         resp = self.client.get(
-            "/file-snippet/test_repo_id",
+            "/file-snippet/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             params={"file_path": "../../../etc/passwd"}
         )
         self.assertEqual(resp.status_code, 403)

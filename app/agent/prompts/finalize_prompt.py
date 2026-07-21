@@ -29,7 +29,7 @@ Schema:
 {{
   "claims": [
     {{
-      "claim": "<one atomic factual sentence>",
+      "claim": "<one ATOMIC factual statement>",
       "citation": {{
         "file_path": "<exact path from context>",
         "start_line": <int>,
@@ -40,10 +40,11 @@ Schema:
 }}
 
 Rules for citations:
+- CRITICAL: Output claims as a list of ATOMIC facts — one verifiable statement per citation.
+- NEVER combine multiple concepts (e.g. API Keys, OIDC, SAML) into a single sentence-claim. Decompose them into separate claims!
 - Every factual claim MUST have a citation object with real line numbers from context.
 - Use citation: null ONLY for honest abstention claims (what you found vs. could not confirm).
-- One claim = one fact. Do not bundle multiple facts into one claim.
-- Return at most {max_claims} claims total — prefer fewer, complete claims over many truncated ones.
+- Return at most {max_claims} claims total.
 """
 
 _FALLBACK_HARD_CONSTRAINTS = """\
@@ -53,9 +54,11 @@ HARD CONSTRAINTS (violations will be rejected):
 3. NEVER cite tests/ or test_*.py files for implementation behavior — use src/ only.
 4. Cite the smallest method-level line range from the chunk manifest (not whole-class spans).
 5. Each claim must add NEW information — do not repeat the same fact in different words.
-6. If context does not fully answer the question, prefer grounded claims for what IS present.
+6. OUTPUT ATOMIC CLAIMS ONLY. Never merge multiple facts/concepts into one compound sentence.
+7. If context does not fully answer the question, prefer grounded claims for what IS present.
    Add at most ONE abstention claim (citation: null) only for a specific sub-part that is truly absent.
-7. Do NOT invent paths, line numbers, or behaviors not supported by the context.
+8. Do NOT invent paths, line numbers, or behaviors not supported by the context.
+9. If the user's query asks about features, files, or concepts that are completely absent from the provided context (e.g. asking about 'chat flow' in a codebase that has no chat logic), output a single honest abstention claim stating that the codebase does not contain this information, rather than attempting to adapt unrelated code.
 """
 
 _FALLBACK_WHY_MODE = """\
@@ -72,9 +75,9 @@ _WHY_MODE = load_private_prompt("finalize_why_mode.txt", _FALLBACK_WHY_MODE)
 
 # Compact legacy fallbacks when the JSON dataset is unavailable.
 _LEGACY_FEW_SHOT_GOOD = """\
-EXAMPLE — GOOD:
-Question: How does Session.send prepare the outgoing request?
-{"claims":[{"claim":"Session.send merges environment settings before dispatch.","citation":{"file_path":"src/requests/sessions.py","start_line":573,"end_line":585}}]}
+EXAMPLE — GOOD (Atomic Decomposition):
+Question: How does authentication work? (API Keys, OIDC, SAML)
+{"claims":[{"claim":"The application verifies API keys in the api_auth function.","citation":{"file_path":"src/auth/api.py","start_line":10,"end_line":25}},{"claim":"OIDC sessions are validated via validate_token.","citation":{"file_path":"src/auth/oidc.py","start_line":40,"end_line":55}}]}
 """
 
 _LEGACY_FEW_SHOT_ABSTAIN = """\
@@ -185,7 +188,10 @@ def finalize_system_prompt(question: str = "") -> str:
     return (
         "You are a codebase onboarding assistant. "
         "Respond with a single JSON object matching the claims schema. "
+        "Output claims as a list of ATOMIC facts — one verifiable statement per citation. "
+        "Never combine multiple concepts into a single sentence-claim. "
         "Use ONLY provided context. Never add general programming knowledge. "
+        "If the retrieved context does not contain any code related to the user's question, you MUST return a single claim stating that the codebase does not contain this feature/module, with citation: null. Do not adapt unrelated code."
         "Abstain honestly when context is insufficient. "
         "Never output chain-of-thought steps — only structured claims JSON."
     )

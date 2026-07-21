@@ -9,7 +9,7 @@ from app.agent.loop import AgentContext, _apply_provider_failure
 
 
 def test_rate_limited_message_is_actionable_not_gated_technical():
-    ctx = AgentContext(repo_id="r", job_id="r", question="q")
+    ctx = AgentContext(repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", job_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", question="q")
     msg = _apply_provider_failure(
         ctx,
         RateLimitError("Groq API rate limit exceeded. Retry after 25s"),
@@ -24,7 +24,7 @@ def test_rate_limited_message_is_actionable_not_gated_technical():
 
 
 def test_provider_timeout_message_is_actionable():
-    ctx = AgentContext(repo_id="r", job_id="r", question="q")
+    ctx = AgentContext(repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", job_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", question="q")
     msg = _apply_provider_failure(ctx, TimeoutError("timed out"), phase="decide")
     assert ctx.timed_out is True
     assert "slow" in msg.lower() or "specific" in msg.lower()

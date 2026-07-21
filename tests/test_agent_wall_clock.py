@@ -14,8 +14,8 @@ from app.config import settings
 
 def test_groq_rate_limit_sleep_respects_wall_clock_budget():
     ctx = AgentContext(
-        repo_id="r",
-        job_id="r",
+        repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        job_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         question="q",
         started_monotonic=time.monotonic() - 26.0,
     )
@@ -39,8 +39,8 @@ def test_groq_rate_limit_sleep_respects_wall_clock_budget():
 
 def test_groq_rate_limit_sleep_caps_to_remaining_budget():
     ctx = AgentContext(
-        repo_id="r",
-        job_id="r",
+        repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        job_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         question="q",
         started_monotonic=time.monotonic() - 5.0,
     )

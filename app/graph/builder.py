@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 import networkx as nx  # type: ignore[import]
@@ -43,7 +44,8 @@ from app.parsing.tree_sitter_parser import ParsedFile
 
 def _graph_path_for(repo_id: str) -> Path:
     """Return the absolute path to the graph.json for *repo_id*."""
-    return Path(settings.GRAPH_STORE_PATH) / repo_id / "graph.json"
+    safe_id = re.sub(r"[^a-zA-Z0-9_.-]", "", repo_id)
+    return Path(settings.GRAPH_STORE_PATH) / safe_id / "graph.json"
 
 
 # ---------------------------------------------------------------------------

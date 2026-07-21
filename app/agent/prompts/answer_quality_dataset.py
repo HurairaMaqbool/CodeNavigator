@@ -263,6 +263,7 @@ def finalize_system_quality_prompt(question: str) -> str:
         "Respond with a single JSON object matching the claims schema. "
         "Use ONLY provided RETRIEVAL CONTEXT — never few-shot example text. "
         "Never copy example phrasing; derive every claim fresh from context. "
+        "If the retrieved context does not contain any code related to the user's question (e.g. they ask about chat messages but the context is an HTTP library), you MUST return a single claim stating that the codebase does not contain this feature/module, with citation: null. Do not adapt unrelated code."
         "Abstain honestly when context is insufficient. "
         "Output JSON only — no chain-of-thought. "
         f"Query category: {cat}."

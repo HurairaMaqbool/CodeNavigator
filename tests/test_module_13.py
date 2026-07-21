@@ -163,7 +163,7 @@ def run_tests():
          patch("app.api.router.filter_repo_files") as mock_filter, \
          patch("app.retrieval.vector_store.get_collection") as mock_col, \
          patch("app.api.router.lock_manager.try_acquire") as mock_lock:
-        mock_clone.return_value = MagicMock(repo_id="r", default_branch="main")
+        mock_clone.return_value = MagicMock(repo_id="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", default_branch="main")
         mock_filter.return_value = []
         mock_col.return_value = None
         ingest = client.post("/ingest", json={"repo_url": "u"}).status_code == 200
@@ -174,7 +174,7 @@ def run_tests():
          patch("app.api.router.graph_to_mermaid") as mock_merm:
         mock_meta.return_value = MagicMock(sync_status="synced", commit_hash="123")
         mock_ans.return_value = {}
-        chat = client.post("/chat", json={"repo_id": "r", "question": "q"}).status_code == 200
+        chat = client.post("/chat", json={"repo_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "question": "q"}).status_code == 200
         mock_merm.return_value = {}
         diagram = client.get("/diagram/r?function_name=a").status_code == 200
 

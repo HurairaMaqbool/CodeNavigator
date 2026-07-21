@@ -106,7 +106,7 @@ class Settings(BaseSettings):
     )
 
     # ── Security ─────────────────────────────────────────────────────────────
-    API_KEY: str = Field(default="dev-secret-key", description="API Key for endpoints")
+    API_KEY: str = Field(default="dev_api_key_change_in_production", description="API Key for endpoints")
     ALLOWED_ORIGINS: list[str] = Field(
         default=["http://localhost:3000"],
         description="Allowed CORS origins"
@@ -192,19 +192,15 @@ class Settings(BaseSettings):
         description="Hard cap on agent loop iterations (used by loop.py)",
     )
     AGENT_MAX_SECONDS: int = Field(
-        default=25,
-        ge=10,
-        le=120,
+        default=10000,
         description=(
             "Hard wall-clock budget for POST /chat agent runs (seconds). "
-            "Exceeded → partial answer if available, else 504."
+            "Exceeded +' partial answer if available, else 504."
         ),
     )
     AGENT_MAX_CUMULATIVE_RATE_LIMIT_SLEEP_S: float = Field(
-        default=12.0,
-        ge=0.0,
-        le=60.0,
-        description="Max total seconds spent sleeping on Groq 429 across one chat request",
+        default=10000.0,
+        description="Maximum total time the agent will sleep for LLM rate limits in a single session",
     )
     RETRIEVAL_FAST_PATH_SCORE: float = Field(
         default=0.25,

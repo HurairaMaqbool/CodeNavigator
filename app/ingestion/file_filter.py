@@ -54,7 +54,7 @@ MAX_REPLACEMENT_CHAR_RATIO: float = settings.MAX_REPLACEMENT_CHAR_RATIO
 EXCLUDED_DIRS: frozenset[str] = frozenset({
     ".git", "node_modules", "__pycache__", ".venv", "venv",
     "vendor", "dist", "build", ".tox", ".mypy_cache", ".pytest_cache",
-    "target", "out",
+    "target", "out", "data", ".next", "repos",
 })
 
 # ---------------------------------------------------------------------------
@@ -206,8 +206,12 @@ def filter_repo_files(
         suffix = ("." + name_lower.rsplit(".", 1)[-1]) if "." in name_lower else ""
         language = EXTENSION_TO_LANGUAGE.get(suffix)
         if language is None:
-            n_unsupported_ext += 1
-            continue
+            # Check for exact filenames like Dockerfile, Makefile
+            if name_lower in ("dockerfile", "makefile"):
+                language = "dockerfile" if name_lower == "dockerfile" else "makefile"
+            else:
+                n_unsupported_ext += 1
+                continue
 
         try:
             size_bytes = abs_path.stat().st_size

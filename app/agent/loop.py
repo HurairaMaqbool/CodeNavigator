@@ -1410,6 +1410,7 @@ def _handle_verify(ctx: AgentContext) -> AgentState:
                 ctx.repo_id,
                 retrieval_hits=ctx.chunks,
                 allowed_paths=allowed_paths,
+                question=ctx.question,
             )
             if verification.get("verification_error"):
                 logger.error(
