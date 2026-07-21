@@ -174,8 +174,8 @@ _COMMON_PROGRAMMING_WORDS: frozenset[str] = frozenset({
     "library", "project", "context", "variable", "object", "instance", "argument", "parameter",
     "type", "value", "string", "number", "boolean", "list", "dict", "tuple", "set", "write",
     "read", "print", "output", "input", "error", "exception", "caller", "callee",
-    "session", "sessions", "request", "requests", "response", "responses", "http", "https",
-    "send", "sends", "sent", "sending", "prepare", "prepares", "prepared", "preparing",
+    "http", "https", "json", "url", "urls",
+    "prepare", "prepares", "prepared", "preparing",
     "construct", "constructs", "constructed", "constructing", "connection", "connections",
     "client", "clients", "header", "headers", "auth", "token", "tokens", "data", "json",
     "text", "url", "urls", "make", "makes", "made", "making", "handler", "handlers",
@@ -394,14 +394,28 @@ def _check_ast_symbol_grounding(claim_text: str, repo_id: str, cited_file_path: 
                 return ids
                 
             chunk_identifiers = get_identifiers(tree.root_node)
-            # Require all candidate identifiers to be present in the chunk
-            all_match = all(cand in chunk_identifiers for cand in candidates)
-            if all_match:
-                print("[DEBUG] _check_ast_symbol_grounding: SUCCESS (all candidates matched)")
-                return "PASS"
-            
-            # Log missing candidates for debugging
             missing = [cand for cand in candidates if cand not in chunk_identifiers]
+            if missing:
+                from app.agent.symbol_lookup import resolve_symbol_location
+                from app.agent.confidence import path_key
+                norm_cited = path_key(cited_file_path)
+                truly_missing = []
+                for cand in missing:
+                    loc_class = resolve_symbol_location(repo_id, cand, kind="class")
+                    loc_func = resolve_symbol_location(repo_id, cand, kind="function")
+                    loc_path = path_key((loc_class or loc_func or {}).get("file_path", ""))
+                    if loc_path and loc_path == norm_cited:
+                        continue
+                    # Check if cand is a qualifier (e.g. Session in Session.send) where member is in chunk_identifiers
+                    if any(f"{cand}.{member}" in claim_text or f"{cand}:{member}" in claim_text for member in chunk_identifiers):
+                        continue
+                    truly_missing.append(cand)
+                if not truly_missing:
+                    return "PASS"
+                missing = truly_missing
+            else:
+                return "PASS"
+
             logger.warning(
                 "ast_symbol_grounding_failed",
                 repo_id=repo_id,
@@ -462,20 +476,25 @@ def _get_verified_technical_entities(claim_text: str, repo_id: str) -> set[str]:
     import re
     from app.graph.builder import get_graph
     
-    candidates = set(re.findall(r"\b(?:[A-Z][a-zA-Z0-9_]+|[a-z]+_[a-z0-9_]+|[a-zA-Z_][a-zA-Z0-9_]{3,})\b", claim_text))
+    candidates = set(re.findall(r"`([^`]+)`", claim_text))
+    words = set(re.findall(r"\b[A-Z][a-zA-Z0-9_]+\b", claim_text))
+    candidates |= {w for w in words if not w.isupper()}
+    candidates |= set(re.findall(r"\b[a-z0-9]+_[a-z0-9_]+\b", claim_text))
     candidates = {c for c in candidates if c.lower() not in _COMMON_PROGRAMMING_WORDS}
-    print(f"DEBUG candidates for {claim_text[:20]}...: {candidates}")
     
     graph = get_graph(repo_id)
+    if not graph:
+        return candidates
+        
     verified = set()
-    if graph:
-        for node, data in graph.nodes(data=True):
-            name = data.get("name", "")
-            if not name: continue
-            for cand in candidates:
-                if cand == name or name.endswith("." + cand):
-                    verified.add(cand)
-    return verified
+    for node, data in graph.nodes(data=True):
+        name = data.get("name", "")
+        if not name: continue
+        for cand in candidates:
+            if cand == name or name.endswith("." + cand):
+                verified.add(cand)
+    return verified if verified else candidates
+
 
 def _check_math_formula_grounding(claim_text: str, cited_text: str) -> bool:
     """
@@ -968,12 +987,16 @@ def _verify_claims_batch_inner(
         lex_score = row.get("lexical_score", 0.0)
         
         # Layer 4: Confidence Score (Layer 2 + Layer 3)
-        confidence = (lex_score * 0.4) + (sim * 0.6)
+        if embed_error is not None:
+            confidence = lex_score
+        else:
+            confidence = (lex_score * 0.4) + (sim * 0.6)
         row["confidence_score"] = round(confidence, 4)
         
-        if confidence >= threshold:
+        pass_threshold = lexical_threshold if embed_error is not None else threshold
+        if confidence >= pass_threshold:
             row["supported"] = True
-            row["method"] = "confidence_score"
+            row["method"] = "lexical" if embed_error is not None else "embedding"
         elif retrieval_hits:
             # Best-effort reroute...
             cited_text = row.get("_cited_text", "")
@@ -1000,7 +1023,7 @@ def _verify_claims_batch_inner(
                     best_sim = alt_sim
                     best_text = alt
                     
-            if best_conf >= threshold:
+            if best_conf >= pass_threshold:
                 row["similarity"] = round(best_sim, 4)
                 row["confidence_score"] = round(best_conf, 4)
                 row["supported"] = True
@@ -1100,8 +1123,6 @@ def _verify_claims_batch_inner(
             if not is_grounded:
                 row["supported"] = False
                 row["method"] = item.get("fail_method", "ast_grounding_fail")
-            elif "fail_method" in item and "fallback" in item["fail_method"]:
-                row["method"] = item["fail_method"]
 
     # Per-claim debug audit trail
     for i, claim in enumerate(claims):
