@@ -79,6 +79,53 @@ def _topical_keyword_boost(query: str, metadata: dict, chunk: str) -> float:
     return boost
 
 
+def _generalized_implementation_boost(query: str, metadata: dict, chunk: str) -> float:
+    """
+    Generalized heuristic to prefer specific 'implementation' files over broader 'orchestrator/caller' files.
+    Fixes the retrieval-ranking defect where cross-encoders favor callers because they conceptually
+    describe the feature, while implementation files contain mechanics.
+    """
+    q_lower = query.lower()
+    path = (
+        metadata.get("display_path")
+        or metadata.get("normalized_path")
+        or metadata.get("file_path")
+        or ""
+    ).lower().replace("\\", "/")
+
+    boost = 0.0
+
+    if not path:
+        return 0.0
+
+    stem = path.split("/")[-1].replace(".py", "")
+    if stem not in ("init", "main", "utils", "base", "core"):
+        # Boost if filename stem shares a root with the query (e.g., lock <-> locking, vector <-> vector_store)
+        stem_words = [w for w in re.split(r'[^a-z]+', stem) if len(w) > 2]
+        q_words = [w for w in re.split(r'[^a-z]+', q_lower) if len(w) > 2]
+        for sw in stem_words:
+            if any(sw.startswith(qw) or qw.startswith(sw) or (len(qw) >= 4 and sw[:4] == qw[:4]) for qw in q_words):
+                boost += 0.25
+                break
+
+    chunk_lower = chunk.lower()
+    # Penalize cross-referencing / delegating chunks (markers of orchestrators/callers)
+    if "upstream by" in chunk_lower or "delegates to" in chunk_lower or "does not implement" in chunk_lower:
+        boost -= 0.30
+
+    # Slight penalty to broad orchestrator/cache/helper names if the query isn't explicitly about them
+    if "router" in stem and "router" not in q_lower:
+        boost -= 0.15
+    if "store" in stem and "store" not in q_lower and "database" not in q_lower and "cache" not in q_lower:
+        boost -= 0.15
+    if "cache" in stem and "cache" not in q_lower:
+        boost -= 0.15
+    if stem in ("tools", "tool", "utils", "helpers") and "tools.py" not in q_lower and "tool.py" not in q_lower:
+        boost -= 0.15
+
+    return boost
+
+
 from app.retrieval.source_priority import source_path_penalty
 
 
@@ -95,17 +142,24 @@ def _source_path_boost(metadata: dict, query: str = "") -> float:
 def _rerank_with_path_boost(
     query_text: str,
     results: list[dict[str, Any]],
-    top_n: int,
+    top_n: int = 5,
 ) -> list[dict[str, Any]]:
-    """Fallback when cross-encoder unavailable — RRF score + query/path alignment."""
+    """Fallback when cross-encoder unavailable — RRF score + query/path alignment + heuristic boosts."""
     out: list[dict[str, Any]] = []
     for r in results:
         meta = r.get("chunk_metadata") or {}
         path = meta.get("display_path") or meta.get("file_path") or ""
-        score = float(r.get("score", 0.0)) + _source_path_boost(meta, query_text)
+        chunk = r.get("chunk", "")
+        score = (
+            float(r.get("score", 0.0))
+            + _source_path_boost(meta, query_text)
+            + source_path_penalty(path, query_text)
+            + _definition_boost(query_text, meta, chunk)
+            + _generalized_implementation_boost(query_text, meta, chunk)
+        )
         out.append(
             {
-                "chunk": r["chunk"],
+                "chunk": chunk,
                 "chunk_metadata": meta,
                 "score": score,
             }
@@ -257,7 +311,8 @@ def cross_encoder_rerank(
                 score
                 + _source_path_boost(c.metadata, query)
                 + _definition_boost(query, c.metadata, c.document)
-                + _topical_keyword_boost(query, c.metadata, c.document),
+                + _topical_keyword_boost(query, c.metadata, c.document)
+                + _generalized_implementation_boost(query, c.metadata, c.document),
             ),
         )
         
@@ -377,7 +432,7 @@ def rerank(
             1.0,
             max(0.0, score + source_path_penalty(
                 meta.get("display_path") or meta.get("file_path") or "", query_text
-            ) + _definition_boost(query_text, meta, r["chunk"]) + _topical_keyword_boost(query_text, meta, r["chunk"])),
+            ) + _definition_boost(query_text, meta, r["chunk"]) + _generalized_implementation_boost(query_text, meta, r["chunk"])),
         )
 
         fused_results.append({

@@ -45,7 +45,7 @@ export function Sidebar({ onClose, className }: SidebarProps) {
         href="/onboarding"
         onClick={onClose}
         aria-label="CodeNavigator home"
-        className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-[#a855f7] to-fuchsia-500 text-white shadow-lg shadow-primary/25 hover:brightness-110 hover:scale-105 transition-all duration-200"
+        className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--primary)] via-[var(--primary)] to-[var(--primary)] text-white shadow-lg shadow-primary/25 hover:brightness-110 hover:scale-105 transition-all duration-200"
       >
         <Terminal className="h-5 w-5 stroke-2" />
         {/* Tooltip */}

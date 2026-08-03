@@ -90,7 +90,7 @@ def on_startup() -> None:
     logger.info("embedding_model_warmed")
 
     if settings.ENABLE_RERANKER:
-        from app.retrieval.reranker import get_model as _get_reranker
+        from app.retrieval.reranker import _get_model as _get_reranker
 
         _get_reranker()
         logger.info("reranker_model_warmed")
@@ -349,10 +349,11 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             response: Response = await call_next(request)
         except Exception as exc:
             logger.exception("unhandled_exception_in_middleware", error=str(exc))
+            is_prod = settings.ENVIRONMENT.lower() == "production"
             detail = (
-                str(exc)
-                if settings.ENVIRONMENT.lower() != "production"
-                else "Internal server error"
+                "Internal server error. Please quote the request_id when reporting."
+                if is_prod
+                else str(exc)
             )
             response = JSONResponse(
                 status_code=500,
@@ -423,7 +424,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
     Spec requirements
     -----------------
-    * Never leak a stack trace to the client response.
+    * Never leak a stack trace or raw internal exception to the client response in production.
     * Log the full trace server-side, bound to the current request_id.
     * Return a single {error, error_code, message} JSON envelope so the
       API surface is consistent regardless of exception type.
@@ -434,13 +435,20 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     ctx = structlog.contextvars.get_contextvars()
     req_id = ctx.get("request_id", "unknown")
 
+    is_prod = settings.ENVIRONMENT.lower() == "production"
+    detail = (
+        "Internal server error. Please quote the request_id when reporting."
+        if is_prod
+        else str(exc)
+    )
+
     return JSONResponse(
         status_code=500,
         content={
             "error": "An unexpected server error occurred. Please check the logs.",
             "error_code": "INTERNAL_ERROR",
             "message": "An unexpected error occurred. Please quote the request_id when reporting.",
-            "detail": str(exc),
+            "detail": detail,
             "request_id": req_id,
         },
     )

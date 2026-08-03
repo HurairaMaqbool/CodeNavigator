@@ -30,6 +30,32 @@ function downloadJson(filename: string, data: unknown) {
   URL.revokeObjectURL(url);
 }
 
+function formatRepoChunkCount(row: {
+  chroma_chunks?: number | null;
+  chunks_created?: number | null;
+  sync_status?: string | null;
+}): string {
+  const chroma = row.chroma_chunks ?? null;
+  const created = row.chunks_created ?? null;
+  const statusLower = (row.sync_status ?? "").toLowerCase();
+  const isIndexing =
+    statusLower === "indexing" ||
+    statusLower === "processing" ||
+    statusLower === "cloning" ||
+    statusLower === "parsing";
+
+  if (chroma != null && created != null) {
+    return `${chroma} / ${created}`;
+  }
+  if (chroma != null) {
+    return `${chroma} / ${isIndexing ? "calculating…" : "—"}`;
+  }
+  if (created != null) {
+    return String(created);
+  }
+  return isIndexing ? "calculating…" : "—";
+}
+
 export function GdprRepoPanel({ enabled }: { enabled: boolean }) {
   const qc = useQueryClient();
   const { repoId: activeRepoId, clearSession } = useApp();
@@ -155,9 +181,7 @@ export function GdprRepoPanel({ enabled }: { enabled: boolean }) {
                         </span>
                       </td>
                       <td>
-                        {row.chroma_chunks != null
-                          ? `${row.chroma_chunks} / ${row.chunks_created}`
-                          : row.chunks_created}
+                        {formatRepoChunkCount(row)}
                       </td>
                       <td>
                         {row.index_integrity_ok === false ? (

@@ -27,20 +27,26 @@ _CITATION_INLINE_RE = re.compile(
 # Canonical structured claim shape after normalization:
 # {"claim": str, "citation": {"file_path": str, "start_line": int, "end_line": int} | None}
 
+_ABSTENTION_NEGATION_RE = re.compile(
+    r"\b(?:does|do|did|is|are|was|were|has|have|had|cannot|can|could|would|should|will|\b)\s*not\b.{0,40}?\b(?:contain|contains|contained|have|has|had|mention|mentions|mentioned|provide|provides|provided|specify|specifies|specified|describe|describes|described|include|includes|included|cover|covers|covered|state|states|stated|explicit|explicitly|found|available|present)\b",
+    re.IGNORECASE,
+)
+
 _ABSTENTION_MARKERS = (
     "insufficient",
     "could not confirm",
     "cannot confirm",
     "not enough evidence",
     "not fully answer",
-    "does not include",
-    "do not include",
     "could not find",
     "cannot find",
     "not in the provided",
     "not in the context",
     "available chunks",
     "from the available",
+    "unclear from",
+    "no information",
+    "no relevant",
 )
 
 
@@ -210,8 +216,8 @@ def _normalize_citation(raw: Any) -> dict[str, Any] | None:
 def is_abstention_claim(claim: dict[str, Any]) -> bool:
     """True when the claim explicitly acknowledges missing/insufficient context."""
     text = str(claim.get("claim") or "").lower()
-    if normalize_citation(claim.get("citation")) is not None:
-        return False
+    if _ABSTENTION_NEGATION_RE.search(text):
+        return True
     return any(marker in text for marker in _ABSTENTION_MARKERS)
 
 

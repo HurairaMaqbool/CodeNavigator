@@ -148,7 +148,7 @@ export function PerQuestionDiagnostics({
         <div className="space-y-2">
           <div className="table-wrap max-h-[500px] overflow-y-auto relative rounded-lg border border-border/40">
             <table className="data-table w-full border-collapse">
-              <thead className="sticky top-0 bg-surface-raised z-20 shadow-[0_1px_0_0_rgba(255,255,255,0.1)]">
+              <thead className="sticky top-0 bg-surface-raised z-20 border-b border-border">
                 <tr>
                   <th className="w-8">#</th>
                   <th className="cursor-pointer select-none" onClick={() => handleSort("hit")}>

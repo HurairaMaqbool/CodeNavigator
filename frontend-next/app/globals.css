@@ -4,87 +4,80 @@
    CodeNavigator Design System — dark-first, Linear/Raycast-grade
    ═══════════════════════════════════════════════════════════════ */
 
-:root {
-  /* ── Surfaces — Warm Graphite, not cold blue-black ──────────── */
-  /* "Midnight Studio": deep, sophisticated, breathable depth      */
-  --background: #0f1012;
-  --surface: #161719;
-  --surface-raised: #1c1e22;
-  --surface-hover: #21242a;
-  --sidebar-bg: #0b0c0e;
+/* ═══════════════════════════════════════════════════════════════
+   CodeNavigator Design System — Warm Architectural Neutral (Stone & Moss)
+   ═══════════════════════════════════════════════════════════════ */
 
-  /* Premium card gradient: subtle depth, feels premium not flat */
+:root {
+  /* ── Dark Mode Surfaces — Warm Espresso / Dark Charcoal ──────── */
+  --background: #171614;       /* Warm espresso charcoal base */
+  --surface: #211f1c;          /* Card surface */
+  --surface-raised: #2b2824;   /* Elevated cards / modals */
+  --surface-hover: #36322d;    /* Interactive hover states */
+  --sidebar-bg: #12110f;       /* Deep sidebar */
+
   --card-bg-gradient: linear-gradient(
     160deg,
-    #1c1e22 0%,
-    rgba(20, 22, 26, 0.95) 100%
+    #211f1c 0%,
+    rgba(27, 25, 23, 0.95) 100%
   );
 
-  /* Sidebar gets a subtle violet-tinted gradient for premium feel */
   --sidebar-gradient: linear-gradient(
     180deg,
-    #0f0e15 0%,
-    #0b0c0e 60%,
-    #0a0b0d 100%
+    #1b1917 0%,
+    #12110f 60%,
+    #0d0c0b 100%
   );
 
-  --glass-bg: rgba(22, 23, 25, 0.82);
+  --glass-bg: rgba(33, 31, 28, 0.85);
 
-  /* ── Borders — warm neutral, not cold blue-gray ──────────────── */
-  --border: #2a2d33;
-  --border-strong: #3e4249;
+  /* ── Dark Mode Borders — Warm neutral ────────────────────────── */
+  --border: #3a3630;
+  --border-strong: #524c44;
 
-  /* ── Text — warm whites, comfortable contrast ────────────────── */
-  --foreground: #edeef2;       /* Warm almost-white, not harsh #fff */
-  --body: #b0b5bf;             /* Natural comfortable reading gray */
-  --muted: #1c1e22;
-  --muted-foreground: #7a8291; /* Secondary text — calm, readable */
-  --tertiary: #52565e;         /* Hints, meta, placeholders */
+  /* ── Dark Mode Text — Warm off-white & stone grays ────────────── */
+  --foreground: #f2efe9;       /* Warm off-white headings (13.5:1 contrast) */
+  --body: #c5c0b6;             /* Warm stone reading text (8.2:1 contrast) */
+  --muted: #2b2824;
+  --muted-foreground: #9e988c; /* Secondary text (5.3:1 contrast) */
+  --tertiary: #7a7468;         /* Meta / placeholders (4.5:1 contrast) */
 
-  /* ── Brand Accent — Electric Violet, natural on dark surfaces ── */
-  /* Slightly more violet-leaning than pure indigo — more alive,   */
-  /* feels premium rather than generic "tailwind indigo"           */
-  --primary: #8b7cf8;
-  --primary-hover: #7a6af5;
-  --primary-muted: rgba(139, 124, 248, 0.12);
-  --primary-foreground: #ffffff;
-  --primary-tint: rgba(139, 124, 248, 0.07);
+  /* ── Brand Accent — Deep Moss / Sage Olive ───────────────────── */
+  --primary: #84a97f;          /* Muted sage-moss (7.8:1 contrast on #171614) */
+  --primary-hover: #9bbd96;
+  --primary-muted: rgba(132, 169, 127, 0.14);
+  --primary-foreground: #12110f;
+  --primary-tint: rgba(132, 169, 127, 0.08);
 
-  /* ── Semantic — Natural, not neon ───────────────────────────── */
-  /* Emerald-jade green — warmer, more natural than teal-green     */
-  --success: #3ecf8e;
-  --success-soft: rgba(62, 207, 142, 0.1);
+  /* ── Semantic — Warm-tuned ───────────────────────────────────── */
+  --success: #48bb78;          /* Forest green */
+  --success-soft: rgba(72, 187, 120, 0.12);
 
-  /* Warm amber — more natural than pure lemon yellow              */
-  --warning: #f59e0b;
-  --warning-soft: rgba(245, 158, 11, 0.1);
+  --warning: #ecc94b;          /* Ochre amber */
+  --warning-soft: rgba(236, 201, 75, 0.12);
 
-  /* Coral-red — warm and legible without being harsh              */
-  --error: #f06b6b;
-  --error-soft: rgba(240, 107, 107, 0.1);
+  --error: #f56565;            /* Warm brick red */
+  --error-soft: rgba(245, 101, 101, 0.12);
 
-  /* Sky blue — cool and calm                                      */
-  --info: #4da8f7;
-  --info-soft: rgba(77, 168, 247, 0.1);
+  --info: #63b3ed;             /* Warm slate blue */
+  --info-soft: rgba(99, 179, 237, 0.12);
 
-  --ring-offset: #0f1012;
-  --ring: rgba(139, 124, 248, 0.5);        /* Focus ring — violet semi-transparent */
+  --ring-offset: #171614;
+  --ring: rgba(132, 169, 127, 0.50);
 
   /* ── Semantic alias tokens for Tailwind ─────────────────────── */
-  --accent: rgba(139, 124, 248, 0.14);     /* Violet tint surface, active nav etc. */
-  --accent-foreground: #b8aeff;            /* Text on accent tint surface */
-  --destructive: #f06b6b;                  /* Alias of --error for Tailwind compat */
-  --destructive-foreground: #ffffff;
-  --surface-elevated: #21242a;             /* Alias for hover surfaces */
+  --accent: rgba(132, 169, 127, 0.15);
+  --accent-foreground: #aed2a9;
+  --destructive: #f56565;
+  --destructive-foreground: #12110f;
+  --surface-elevated: #36322d;
 
-  /* ── Elevation — Layered shadows, natural depth ─────────────── */
-  /* Dark mode shadows must be strong enough to separate surfaces  */
+  /* ── Elevation ──────────────────────────────────────────────── */
   --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
   --shadow-3: 0 12px 36px rgba(0, 0, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.35);
 
-  /* Glow: subtle violet bloom for primary interactive elements */
-  --glow-primary: 0 0 20px rgba(139, 124, 248, 0.18);
+  --glow-primary: 0 0 20px rgba(132, 169, 127, 0.20);
 
   /* ── Radius ─────────────────────────────────────────────────── */
   --radius-sm: 6px;
@@ -99,45 +92,64 @@
 }
 
 .light {
-  --background: #fafaf9;
-  --surface: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-hover: #f5f5f4;
-  --sidebar-bg: #f5f5f4;
-  --card-bg-gradient: linear-gradient(180deg, var(--surface) 0%, rgba(245, 245, 244, 0.8) 100%);
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  
-  --border: #e7e5e4;
-  --border-strong: #d6d3d1;
-  
-  --foreground: #1c1917;
-  --body: #57534e;
-  --muted: #f5f5f4;
-  --muted-foreground: #78716c;
-  --tertiary: #a8a29e;
-  
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-muted: #eef2ff;
-  --primary-tint: #f5f3ff;
+  /* ── Light Mode Surfaces — Warm Stone Off-White ───────────────── */
+  --background: #f6f4f0;       /* Warm stone off-white base */
+  --surface: #ffffff;          /* Crisp card surface */
+  --surface-raised: #eeebe5;   /* Elevated surface */
+  --surface-hover: #e5e1d8;    /* Interactive hover states */
+  --sidebar-bg: #eae6de;       /* Warm stone sidebar */
+
+  --card-bg-gradient: linear-gradient(180deg, #ffffff 0%, #f4f0e8 100%);
+  --sidebar-gradient: linear-gradient(180deg, #f0ece4 0%, #eae6de 60%, #e4e0d7 100%);
+  --glass-bg: rgba(255, 255, 255, 0.88);
+
+  /* ── Light Mode Borders — Warm stone neutral ──────────────────── */
+  --border: #d8d3c8;
+  --border-strong: #b3aca0;
+
+  /* ── Light Mode Text — Deep espresso & warm charcoal ──────────── */
+  --foreground: #1f1e1b;       /* Primary text / headings (14.8:1 contrast) */
+  --body: #44413c;             /* Reading body text (8.9:1 contrast) */
+  --muted: #eeebe5;
+  --muted-foreground: #635f57; /* Secondary text (5.6:1 contrast) */
+  --tertiary: #7a756b;         /* Meta / placeholders (4.5:1 contrast) */
+
+  /* ── Brand Accent — Forest Olive ────────────────────────────── */
+  --primary: #3b5738;          /* Deep forest olive (7.2:1 contrast on white) */
+  --primary-hover: #2f472d;
+  --primary-muted: rgba(59, 87, 56, 0.10);
+  --primary-tint: #f1f5f0;
   --primary-foreground: #ffffff;
-  
-  --ring-offset: #fafaf9;
-  
-  /* Elevation Shadows */
-  --shadow-1: 0 1px 2px rgba(28, 25, 23, 0.06), 0 1px 3px rgba(28, 25, 23, 0.04);
-  --shadow-2: 0 4px 8px rgba(28, 25, 23, 0.08), 0 2px 4px rgba(28, 25, 23, 0.06);
-  --shadow-3: 0 12px 24px rgba(28, 25, 23, 0.12), 0 4px 8px rgba(28, 25, 23, 0.08);
-  
-  /* Semantic Colors */
-  --success: #059669;
-  --success-soft: #ecfdf5;
-  --warning: #d97706;
-  --warning-soft: #fffbeb;
-  --error: #dc2626;
-  --error-soft: #fef2f2;
-  --info: #2563eb;
-  --info-soft: #eff6ff;
+
+  --accent: rgba(59, 87, 56, 0.08);
+  --accent-foreground: #2f472d; /* Deep olive text on tint surface (8.1:1 contrast) */
+
+  --destructive: #9b2c2c;
+  --destructive-foreground: #ffffff;
+  --surface-elevated: #e5e1d8;
+
+  --ring-offset: #f6f4f0;
+  --ring: rgba(59, 87, 56, 0.50);
+
+  /* ── Elevation ──────────────────────────────────────────────── */
+  --shadow-1: 0 1px 2px rgba(31, 30, 27, 0.05), 0 1px 3px rgba(31, 30, 27, 0.03);
+  --shadow-2: 0 4px 12px rgba(31, 30, 27, 0.07), 0 2px 4px rgba(31, 30, 27, 0.04);
+  --shadow-3: 0 12px 28px rgba(31, 30, 27, 0.10), 0 4px 10px rgba(31, 30, 27, 0.06);
+
+  --glow-primary: 0 4px 20px rgba(59, 87, 56, 0.15);
+
+  /* ── Semantic Colors (Light-tuned WCAG AA compliant) ────────── */
+  --success: #276749;          /* Forest green (5.1:1 contrast) */
+  --success-soft: rgba(39, 103, 73, 0.10);
+
+  --warning: #975a16;          /* Ochre amber (5.2:1 contrast) */
+  --warning-soft: rgba(151, 90, 22, 0.10);
+
+  --error: #9b2c2c;            /* Brick red (6.3:1 contrast) */
+  --error-soft: rgba(155, 44, 44, 0.10);
+
+  --info: #2b6cb0;             /* Slate blue (5.4:1 contrast) */
+  --info-soft: rgba(43, 108, 176, 0.10);
 }
 
 @theme inline {
@@ -206,12 +218,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark-mode ambient atmosphere: subtle violet radial glow from top-center.
+/* Dark-mode ambient atmosphere: subtle sage-moss radial glow from top-center.
    This single line transforms a flat black bg into a living, premium surface. */
 html:not(.light) body {
   background-image: radial-gradient(
     ellipse 80% 50% at 50% -10%,
-    rgba(139, 124, 248, 0.06) 0%,
+    rgba(132, 169, 127, 0.06) 0%,
     transparent 65%
   );
   background-attachment: fixed;
@@ -223,13 +235,13 @@ html:not(.light) body {
 }
 
 ::selection {
-  background: rgba(139, 124, 248, 0.28);
+  background: rgba(132, 169, 127, 0.28);
   color: var(--foreground);
 }
 
 .light ::selection {
-  background: #eef2ff;
-  color: #4f46e5;
+  background: var(--primary-tint);
+  color: var(--primary);
 }
 
 /* ─── Utilities ─── */
@@ -264,11 +276,11 @@ html:not(.light) body {
 @keyframes voice-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(139, 124, 248, 0.45);
+    box-shadow: 0 0 0 0 rgba(132, 169, 127, 0.45);
   }
   50% {
     transform: scale(1.08);
-    box-shadow: 0 0 0 10px rgba(139, 124, 248, 0);
+    box-shadow: 0 0 0 10px rgba(132, 169, 127, 0);
   }
 }
 
@@ -719,7 +731,7 @@ html:not(.light) body {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Dark Mode Premium Enhancements — Midnight Studio
+   Dark Mode Premium Enhancements — Warm Architectural Neutral
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Sidebar: violet-tinted gradient, distinct from main content ─ */
@@ -733,22 +745,22 @@ html:not(.light) button.btn-primary:hover {
   box-shadow: var(--shadow-2), var(--glow-primary);
 }
 
-/* ── Focus ring: violet glow for dark mode accessibility ─────── */
+/* ── Focus ring: sage-moss glow for dark mode accessibility ─── */
 html:not(.light) :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(139, 124, 248, 0.18);
+  box-shadow: 0 0 0 4px rgba(132, 169, 127, 0.18);
 }
 
-/* ── Card surfaces: subtle violet border glow on hover ───────── */
+/* ── Card surfaces: subtle sage-moss border glow on hover ────── */
 html:not(.light) .card-surface:hover,
 html:not(.light) .card-panel:hover {
-  border-color: rgba(139, 124, 248, 0.22);
+  border-color: rgba(132, 169, 127, 0.22);
 }
 
 /* ── Nav active item: premium left-bar with soft glow ────────── */
 html:not(.light) [class*="bg-primary-tint"] {
-  background: rgba(139, 124, 248, 0.09) !important;
+  background: rgba(132, 169, 127, 0.09) !important;
   box-shadow: inset 3px 0 0 var(--primary);
 }
 
@@ -796,9 +808,9 @@ html:not(.light) .prompt-chip {
 }
 
 html:not(.light) .prompt-chip:hover:not(:disabled) {
-  border-color: rgba(139, 124, 248, 0.35);
+  border-color: rgba(132, 169, 127, 0.35);
   color: var(--foreground);
-  background: rgba(139, 124, 248, 0.06);
+  background: rgba(132, 169, 127, 0.06);
 }
 
 /* ── Header: true glass on dark, slightly more opaque ───────── */
@@ -838,9 +850,9 @@ html:not(.light) code {
 
 .aurora-bg {
   background-image: 
-    radial-gradient(circle at 50% -20%, rgba(139, 124, 248, 0.16) 0%, transparent 60%),
-    radial-gradient(circle at 90% 30%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 10% 80%, rgba(217, 70, 239, 0.08) 0%, transparent 50%);
+    radial-gradient(circle at 50% -20%, rgba(132, 169, 127, 0.14) 0%, transparent 60%),
+    radial-gradient(circle at 90% 30%, rgba(72, 187, 120, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 10% 80%, rgba(132, 169, 127, 0.08) 0%, transparent 50%);
 }
 
 /* ─── Grid Background Utility ───────────────────────────────────── */
@@ -853,26 +865,26 @@ html:not(.light) code {
 
 /* ─── Text Gradient Utility ───────────────────────────────────── */
 .text-gradient {
-  background: linear-gradient(135deg, #ffffff 0%, #c084fc 50%, #8b7cf8 100%);
+  background: linear-gradient(135deg, var(--foreground) 0%, var(--primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 /* ─── Glow Utility ─────────────────────────────────────────────── */
 .glow-primary {
-  box-shadow: 0 0 32px -8px rgba(139, 124, 248, 0.4);
+  box-shadow: var(--glow-primary);
 }
 
 /* ─── Pulse Ring Animation ─────────────────────────────────────── */
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(139, 124, 248, 0.4);
+    box-shadow: 0 0 0 0 rgba(132, 169, 127, 0.4);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(139, 124, 248, 0);
+    box-shadow: 0 0 0 8px rgba(132, 169, 127, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(139, 124, 248, 0);
+    box-shadow: 0 0 0 0 rgba(132, 169, 127, 0);
   }
 }
 

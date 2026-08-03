@@ -83,6 +83,12 @@ export function QueryError({
   message: string;
   onRetry?: () => void;
 }) {
+  const isAuthError =
+    message.toLowerCase().includes("api key") ||
+    message.toLowerCase().includes("unauthorized") ||
+    message.toLowerCase().includes("authentication");
+  const title = isAuthError ? "Authentication Error" : "Couldn't reach the server";
+
   return (
     <div
       className="flex items-start gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-sm"
@@ -90,7 +96,7 @@ export function QueryError({
     >
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-error" aria-hidden />
       <div className="flex-1">
-        <p className="font-medium text-error">Couldn&apos;t reach the server</p>
+        <p className="font-medium text-error">{title}</p>
         <p className="mt-1 text-error/90">{message}</p>
         {onRetry && (
           <Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>

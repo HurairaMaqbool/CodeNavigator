@@ -18,7 +18,7 @@ export default function ChatPage() {
   const [mounted, setMounted] = useState(false);
   const { repoId, clearSession } = useApp();
   const status = useRepoStatus(repoId);
-  const ready = status.data ? repoIsReady(status.data) : false;
+  const ready = status.data ? repoIsReady(status.data) : true;
   const handleQuickStart = useIngestFlow();
 
   useEffect(() => {
@@ -31,12 +31,9 @@ export default function ChatPage() {
       router.replace("/onboarding");
       return;
     }
-    if (!status.isLoading && status.data && !repoIsReady(status.data)) {
-      router.replace("/onboarding");
-    }
-  }, [repoId, status.isLoading, status.data, router]);
+  }, [repoId, mounted, router]);
 
-  if (!mounted || !repoId || status.isLoading || !ready) {
+  if (!mounted || !repoId) {
     return (
       <AppShell>
         <div className="page-enter">
@@ -46,23 +43,26 @@ export default function ChatPage() {
     );
   }
 
-  // Resolve display name for active repo
+  // Resolve dynamic display properties for active repo from status.data
   const getRepoDisplayName = () => {
+    if (status.data?.repo_id) return status.data.repo_id.slice(0, 16);
     if (repoId.includes("b4f947369301e4e")) return "psf/requests";
     if (repoId.includes("c95ed10bde76")) return "pallets/flask";
-    return "active/repository";
+    return repoId.slice(0, 16);
   };
 
   const getRepoVersion = () => {
+    if (status.data?.ref) return status.data.ref;
     if (repoId.includes("b4f947369301e4e")) return "v2.31.0";
     if (repoId.includes("c95ed10bde76")) return "v3.0.2";
-    return "v1.0.0";
+    return "main";
   };
 
   const getRepoMeta = () => {
-    if (repoId.includes("b4f947369301e4e")) return "4,127 symbols · 4,104 chunks";
-    if (repoId.includes("c95ed10bde76")) return "5,291 symbols · 5,820 chunks";
-    return "128 symbols · 128 chunks";
+    if (status.data) {
+      return `${status.data.files_parsed.toLocaleString()} files · ${status.data.chunks_created.toLocaleString()} chunks`;
+    }
+    return "Indexed codebase";
   };
 
   return (

@@ -216,7 +216,9 @@ def _raise_for_ingestion_error(exc: IngestionError) -> None:
                 f"{exc} Try a smaller repository or increase MAX_REPO_SIZE_MB in configuration."
             ),
         )
-    raise HTTPException(status_code=500, detail=str(exc))
+    is_prod = settings.ENVIRONMENT.lower() == "production"
+    detail = "Internal server error during ingestion. Please check server logs." if is_prod else str(exc)
+    raise HTTPException(status_code=500, detail=detail)
 
 def _run_ingest_pipeline_remaining(job_id: str, clone_res: Any, files: list[Any], force_reindex: bool):
     """
@@ -304,10 +306,10 @@ def trigger_ingest(repo_url: str, ref: str | None, force_reindex: bool, bg_tasks
     # Mark pending and return immediately — clone/parse/embed run in the worker.
     from app.platform.audit_log import record_event
     from app.platform.tenant_context import get_tenant
-    from app.platform.usage_meter import check_quota, increment
+    from app.platform.usage_meter import check_and_increment_quota
 
     tenant = get_tenant()
-    if not check_quota(tenant.org_id, "ingest"):
+    if not check_and_increment_quota(tenant.org_id, "ingest"):
         lock_manager.release(repo_id)
         raise HTTPException(status_code=429, detail="Monthly ingest quota exceeded")
 
@@ -319,7 +321,6 @@ def trigger_ingest(repo_url: str, ref: str | None, force_reindex: bool, bg_tasks
         resource_id=repo_id,
         details={"repo_url": repo_url},
     )
-    increment(tenant.org_id, "ingest")
 
     from app.redis_client import ping_redis
 
@@ -502,12 +503,12 @@ def chat(request: Request, req: ChatRequest):
     meta = readiness.meta or meta
     if meta:
         _enforce_repo_org(meta)
-    from app.platform.usage_meter import check_quota, increment
+    from app.platform.usage_meter import check_and_increment_quota
     from app.platform.audit_log import record_event
     from app.platform.tenant_context import get_tenant
 
     tenant = get_tenant()
-    if not check_quota(tenant.org_id, "chat"):
+    if not check_and_increment_quota(tenant.org_id, "chat"):
         raise HTTPException(status_code=429, detail="Monthly chat quota exceeded")
         
     chat_history = []
@@ -547,7 +548,6 @@ def chat(request: Request, req: ChatRequest):
         ):
             answer = str(result.get("answer") or "").strip()
             if answer:
-                increment(tenant.org_id, "chat")
                 record_event(
                     "chat.completed",
                     org_id=tenant.org_id,
@@ -578,7 +578,6 @@ def chat(request: Request, req: ChatRequest):
                 headers={"Retry-After": str(wait)},
             )
 
-        increment(tenant.org_id, "chat")
         record_event(
             "chat.completed",
             org_id=tenant.org_id,
@@ -696,24 +695,21 @@ def get_file_snippet_endpoint(
     _require_repo_ready(repo_id, asset_repo_id)
 
     from app.config import settings
+    from app.security.path_jail import resolve_jailed_path, PathJailError
+
     repo_dir = Path(settings.REPOS_PATH) / asset_repo_id
+    if (repo_dir / "clone").is_dir():
+        repo_dir = repo_dir / "clone"
 
-    # Normalize file_path: strip any leading "/" or "./" so that
-    # Path(repo_dir) / "/src/foo.py" doesn't silently become an absolute path
-    # on Linux (which bypasses the traversal guard and causes 404).
-    normalized_path = file_path.lstrip("/").lstrip("\\")
-    full_path = repo_dir / normalized_path
-
-    # Security check: prevent directory traversal
     try:
-        full_path.resolve().relative_to(repo_dir.resolve())
-    except ValueError:
+        full_path = resolve_jailed_path(repo_dir, file_path)
+        normalized_path = str(full_path.relative_to(repo_dir.resolve())).replace("\\", "/")
+    except PathJailError:
         logger.warning(
             "file_snippet.traversal_blocked",
             extra={
                 "repo_id": repo_id,
                 "file_path": file_path,
-                "normalized_path": normalized_path,
                 "start_line": start_line,
                 "end_line": end_line,
             },
@@ -1017,11 +1013,11 @@ def run_eval_endpoint(repo_id: str | None = None):
     if repo_id:
         _validate_repo_id(repo_id)
     from app.platform.tenant_context import get_tenant
-    from app.platform.usage_meter import check_quota, increment
+    from app.platform.usage_meter import check_and_increment_quota
     from eval.health_check import run_full_eval_precheck
 
     tenant = get_tenant()
-    if not check_quota(tenant.org_id, "eval"):
+    if not check_and_increment_quota(tenant.org_id, "eval"):
         raise HTTPException(status_code=429, detail="Monthly eval quota exceeded")
 
     target_repo = (repo_id or "").strip()
@@ -1047,7 +1043,6 @@ def run_eval_endpoint(repo_id: str | None = None):
 
     eval_job_id = uuid.uuid4().hex
     correlation_id = uuid.uuid4().hex
-    increment(tenant.org_id, "eval")
     _set_eval_job(
         eval_job_id,
         status="queued",

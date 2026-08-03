@@ -109,7 +109,7 @@ export function OnboardingScreen() {
                     version: "v2.31.0",
                     lang: "Python",
                     desc: "A simple, yet elegant HTTP library for Python, built for human beings.",
-                    accent: "from-violet-500 to-fuchsia-500",
+                    accent: "from-[var(--primary)] to-[var(--primary-hover)]",
                   },
                   {
                     label: "pallets/flask",
@@ -119,7 +119,7 @@ export function OnboardingScreen() {
                     version: "v3.0.2",
                     lang: "Python",
                     desc: "A lightweight WSGI web application framework in Python.",
-                    accent: "from-blue-500 to-cyan-500",
+                    accent: "from-[var(--primary-hover)] to-[var(--border-strong)]",
                   },
                   {
                     label: "tiangolo/fastapi",
@@ -129,7 +129,7 @@ export function OnboardingScreen() {
                     version: "v0.110.0",
                     lang: "Python",
                     desc: "Modern, fast, high-performance web framework for building APIs.",
-                    accent: "from-emerald-500 to-teal-500",
+                    accent: "from-[var(--primary)] to-[var(--accent-foreground)]",
                   },
                   {
                     label: "vercel/next.js",
@@ -139,7 +139,7 @@ export function OnboardingScreen() {
                     version: "v14.1.0",
                     lang: "TypeScript",
                     desc: "The React Framework for the Web. Used by some of the world's largest companies.",
-                    accent: "from-amber-500 to-rose-500",
+                    accent: "from-[var(--accent-foreground)] to-[var(--primary)]",
                   },
                 ].map((repo) => (
                   <button
@@ -242,74 +242,80 @@ export function OnboardingScreen() {
 
       {/* Bottom Metric Cards (Workspace Stats) */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mt-8 w-full border-t border-border/20 pt-10">
-        {/* Stats Card 1 */}
+        {/* Stats Card 1: Active Repo / Files Parsed */}
         <div className="card-surface group flex flex-col justify-between p-5 transition-all duration-200 hover:border-primary/30 hover:-translate-y-[1px]">
           <div className="flex justify-between items-start gap-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider font-sans">
-              REPOS INDEXED
+              FILES PARSED
             </span>
             <Database className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
           <div className="mt-4">
             <span className="text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
-              12.4k
+              {status.data ? status.data.files_parsed.toLocaleString() : "—"}
             </span>
-            <p className="text-[10px] text-success font-medium mt-1">
-              +3% this week
+            <p className="text-[10px] text-muted-foreground font-medium mt-1">
+              {status.data?.repo_id ? status.data.repo_id : "No active repo selected"}
             </p>
           </div>
         </div>
 
-        {/* Stats Card 2 */}
+        {/* Stats Card 2: Chunks Created */}
         <div className="card-surface group flex flex-col justify-between p-5 transition-all duration-200 hover:border-primary/30 hover:-translate-y-[1px]">
           <div className="flex justify-between items-start gap-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider font-sans">
-              QUERIES / MIN
+              CHUNKS CREATED
             </span>
             <Activity className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
           <div className="mt-4">
             <span className="text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
-              3,281
+              {status.data ? status.data.chunks_created.toLocaleString() : "—"}
             </span>
-            <p className="text-[10px] text-success font-medium mt-1">
-              +12 vs last hour
+            <p className="text-[10px] text-muted-foreground font-medium mt-1">
+              {status.data ? "Vector embeddings indexed" : "Connect repo to build index"}
             </p>
           </div>
         </div>
 
-        {/* Stats Card 3 */}
+        {/* Stats Card 3: Index Sync Status */}
         <div className="card-surface group flex flex-col justify-between p-5 transition-all duration-200 hover:border-primary/30 hover:-translate-y-[1px]">
           <div className="flex justify-between items-start gap-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider font-sans">
-              UPTIME
+              INDEX STATUS
             </span>
             <ShieldCheck className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
-              99.98%
+            <span className="text-xl font-bold tracking-tight text-foreground font-mono uppercase">
+              {status.data?.sync_status || (ready ? "READY" : status.data?.status || "IDLE")}
             </span>
-            <p className="text-[10px] text-muted-foreground font-medium mt-1">
-              SLO healthy
+            <p className={cn(
+              "text-[10px] font-medium mt-1",
+              ready ? "text-success" : status.data?.status === "failed" ? "text-destructive" : "text-muted-foreground"
+            )}>
+              {ready ? "Index sync complete" : status.data?.status === "failed" ? "Ingestion failed" : "Awaiting repository"}
             </p>
           </div>
         </div>
 
-        {/* Stats Card 4 */}
+        {/* Stats Card 4: Backend Connection Status */}
         <div className="card-surface group flex flex-col justify-between p-5 transition-all duration-200 hover:border-primary/30 hover:-translate-y-[1px]">
           <div className="flex justify-between items-start gap-2">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider font-sans">
-              NODES
+              API BACKEND
             </span>
             <Cpu className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-bold tracking-tight text-foreground font-mono tabular-nums">
-              128
+            <span className="text-xl font-bold tracking-tight text-foreground font-mono uppercase">
+              {backendOnline ? "ONLINE" : "OFFLINE"}
             </span>
-            <p className="text-[10px] text-muted-foreground font-medium mt-1">
-              auto-scaling active
+            <p className={cn(
+              "text-[10px] font-medium mt-1",
+              backendOnline ? "text-success" : "text-amber-500"
+            )}>
+              {backendOnline ? "Port 8000 connected" : "Start FastAPI server"}
             </p>
           </div>
         </div>

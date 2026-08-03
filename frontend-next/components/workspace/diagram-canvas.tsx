@@ -150,7 +150,8 @@ export function DiagramCanvas({
       canvas.height = bbox.height * 2 || 1200;
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        ctx.fillStyle = "#ffffff";
+        const bg = getComputedStyle(document.body).getPropertyValue("--background").trim() || "#ffffff";
+        ctx.fillStyle = bg;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.scale(2, 2);
         ctx.drawImage(img, 0, 0);

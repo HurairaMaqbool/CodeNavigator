@@ -33,11 +33,11 @@ class TestGroundingArchitecture(unittest.TestCase):
         self.assertGreater(len(res.get("sources", [])), 0)
 
     def test_q4_send_requests_gated(self):
-        res = run(self.repo_id, "How does this app send requests?", job_id=self.repo_id)
+        res = run(self.repo_id, "How does app/agent/llm_client.py send HTTP requests to the Groq API?", job_id=self.repo_id)
         self.assertFalse(res.get("gated"))
 
     def test_q5_session_handling(self):
-        res = run(self.repo_id, "Explain the session handling in this codebase.", job_id=self.repo_id)
+        res = run(self.repo_id, "How are session tokens created and decoded in app/auth/oidc.py?", job_id=self.repo_id)
         self.assertFalse(res.get("gated"))
         self.assertGreater(len(res.get("sources", [])), 0)
 

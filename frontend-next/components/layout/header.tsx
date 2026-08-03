@@ -28,7 +28,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const breadcrumb = getBreadcrumb();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 w-full items-center border-b border-border/40 bg-[#0f1012]/80 backdrop-blur-md px-4 md:px-6 select-none">
+    <header className="sticky top-0 z-30 flex h-14 w-full items-center border-b border-border/40 bg-background/80 backdrop-blur-md px-4 md:px-6 select-none">
       <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4">
         {/* Left Side: Mobile Menu Trigger + Breadcrumb */}
         <div className="flex items-center gap-3">

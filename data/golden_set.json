@@ -6,7 +6,10 @@
       "id": "gs_ingest_001",
       "question": "How does the ingestion pipeline handle large repositories?",
       "ground_truth": "The ingestion pipeline checks total file size against MAX_REPO_SIZE_MB config value in clone.py. If size exceeds limit, it raises a RepoTooLargeError before cloning begins.",
-      "relevant_files": ["app/ingestion/clone.py", "app/config.py"],
+      "relevant_files": [
+        "app/ingestion/clone.py",
+        "app/config.py"
+      ],
       "category": "ingestion",
       "difficulty": "medium"
     },
@@ -14,7 +17,9 @@
       "id": "gs_ingest_002",
       "question": "What happens if the GitHub webhook receives a push event on a non-default branch?",
       "ground_truth": "The webhook checks if the push ref matches the default branch. If it's a non-default branch, the webhook ignores it and returns a 200 OK with 'ignored' status.",
-      "relevant_files": ["app/webhook/github_webhook.py"],
+      "relevant_files": [
+        "app/webhook/github_webhook.py"
+      ],
       "category": "ingestion",
       "difficulty": "easy"
     },
@@ -22,15 +27,26 @@
       "id": "gs_ingest_003",
       "question": "Which file extensions are allowed during the chunking phase?",
       "ground_truth": "Currently, only Python (.py), JavaScript (.js), and TypeScript (.ts, .tsx) files are parsed and chunked.",
-      "relevant_files": ["app/parsing/chunker.py", "app/parsing/tree_sitter_parser.py"],
+      "relevant_files": [
+        "app/ingestion/language_registry.py",
+        "app/parsing/chunker.py",
+        "app/parsing/tree_sitter_parser.py"
+      ],
       "category": "ingestion",
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "ground_truth_files": [
+        "app/ingestion/language_registry.py",
+        "app/parsing/chunker.py",
+        "app/parsing/tree_sitter_parser.py"
+      ]
     },
     {
       "id": "gs_ingest_004",
       "question": "How is the ingestion lock implemented to prevent concurrent processing of the same repo?",
       "ground_truth": "The lock manager uses file-based locks in a dedicated lock directory. It tries to acquire a file lock using fcntl (or equivalent). If successful, it writes the PID. If already locked, it returns a failed acquisition result.",
-      "relevant_files": ["app/ingestion/locking.py"],
+      "relevant_files": [
+        "app/ingestion/locking.py"
+      ],
       "category": "ingestion",
       "difficulty": "medium"
     },
@@ -38,7 +54,9 @@
       "id": "gs_ingest_005",
       "question": "What is the role of metadata_store.mark_synced?",
       "ground_truth": "It updates the repository's metadata JSON file to set sync_status='synced' and records the commit_hash, allowing the API and agent to know the repository is fully ingested.",
-      "relevant_files": ["app/ingestion/metadata_store.py"],
+      "relevant_files": [
+        "app/ingestion/metadata_store.py"
+      ],
       "category": "ingestion",
       "difficulty": "hard"
     },
@@ -46,7 +64,10 @@
       "id": "gs_retrieval_001",
       "question": "How does hybrid search combine BM25 and vector scores?",
       "ground_truth": "Hybrid search uses Reciprocal Rank Fusion (RRF) to combine sparse BM25 ranks with dense Vector ranks. The RRF formula relies on the RRF_K config parameter.",
-      "relevant_files": ["app/retrieval/hybrid_search.py", "app/config.py"],
+      "relevant_files": [
+        "app/retrieval/hybrid_search.py",
+        "app/config.py"
+      ],
       "category": "retrieval",
       "difficulty": "medium"
     },
@@ -54,7 +75,10 @@
       "id": "gs_retrieval_002",
       "question": "Where is the BM25 index persisted on disk?",
       "ground_truth": "The BM25 index is saved to the disk using pickle, at the path specified by BM25_INDEX_PATH in config.py.",
-      "relevant_files": ["app/retrieval/bm25_store.py", "app/config.py"],
+      "relevant_files": [
+        "app/retrieval/bm25_store.py",
+        "app/config.py"
+      ],
       "category": "retrieval",
       "difficulty": "easy"
     },
@@ -62,7 +86,10 @@
       "id": "gs_retrieval_003",
       "question": "Does the pipeline use a cross-encoder reranker?",
       "ground_truth": "Yes, if ENABLE_RERANKER is true, the cross-encoder reranks the top candidates retrieved from hybrid search to improve precision.",
-      "relevant_files": ["app/retrieval/reranker.py", "app/config.py"],
+      "relevant_files": [
+        "app/retrieval/reranker.py",
+        "app/config.py"
+      ],
       "category": "retrieval",
       "difficulty": "medium"
     },
@@ -70,7 +97,9 @@
       "id": "gs_retrieval_004",
       "question": "What happens if query expansion LLM request times out?",
       "ground_truth": "The query expansion function has a 5-second timeout. If it times out, it logs a warning and falls back to using the original user query.",
-      "relevant_files": ["app/retrieval/query_expansion.py"],
+      "relevant_files": [
+        "app/retrieval/query_expansion.py"
+      ],
       "category": "retrieval",
       "difficulty": "hard"
     },
@@ -78,7 +107,9 @@
       "id": "gs_retrieval_005",
       "question": "What vector database is used for semantic search?",
       "ground_truth": "The app uses ChromaDB for storing and retrieving dense embeddings.",
-      "relevant_files": ["app/retrieval/vector_store.py"],
+      "relevant_files": [
+        "app/retrieval/vector_store.py"
+      ],
       "category": "retrieval",
       "difficulty": "easy"
     },
@@ -86,7 +117,10 @@
       "id": "gs_agent_001",
       "question": "How does the agent avoid executing duplicate tool calls?",
       "ground_truth": "The agent loop tracks tool call history using canonical JSON hashing in normalize_cache_key. If a tool with the same arguments is called again, it uses the cached result.",
-      "relevant_files": ["app/agent/loop.py", "app/agent/cache_keys.py"],
+      "relevant_files": [
+        "app/agent/loop.py",
+        "app/agent/cache_keys.py"
+      ],
       "category": "agent",
       "difficulty": "medium"
     },
@@ -94,7 +128,10 @@
       "id": "gs_agent_002",
       "question": "What determines if an agent's answer is 'gated' due to hallucination?",
       "ground_truth": "The confidence module checks if cited lines actually exist in the physical cloned file. If not, or if the overall confidence score drops below MIN_CONFIDENCE_SCORE, the answer is gated.",
-      "relevant_files": ["app/agent/confidence.py", "app/config.py"],
+      "relevant_files": [
+        "app/agent/confidence.py",
+        "app/config.py"
+      ],
       "category": "agent",
       "difficulty": "hard"
     },
@@ -102,7 +139,10 @@
       "id": "gs_agent_003",
       "question": "How long is a semantic cache entry valid?",
       "ground_truth": "Semantic cache entries are valid for the number of days specified by SEMANTIC_CACHE_TTL_DAYS in config.py. Additionally, they are invalidated if the repository commit hash changes.",
-      "relevant_files": ["app/agent/semantic_cache.py", "app/config.py"],
+      "relevant_files": [
+        "app/agent/semantic_cache.py",
+        "app/config.py"
+      ],
       "category": "agent",
       "difficulty": "medium"
     },
@@ -110,7 +150,10 @@
       "id": "gs_agent_004",
       "question": "How are LLM rate limits handled in the agent loop?",
       "ground_truth": "The agent loop catches RateLimitError and returns a dict with 'rate_limited': True, which the API router translates into a 429 HTTP response.",
-      "relevant_files": ["app/agent/loop.py", "app/api/router.py"],
+      "relevant_files": [
+        "app/agent/loop.py",
+        "app/api/router.py"
+      ],
       "category": "agent",
       "difficulty": "hard"
     },
@@ -118,7 +161,9 @@
       "id": "gs_agent_005",
       "question": "What happens if an individual tool execution fails during the agent loop?",
       "ground_truth": "The loop catches the exception and returns the error message as the tool result, allowing the LLM to gracefully degrade and try another approach.",
-      "relevant_files": ["app/agent/loop.py"],
+      "relevant_files": [
+        "app/agent/loop.py"
+      ],
       "category": "agent",
       "difficulty": "medium"
     },
@@ -126,7 +171,9 @@
       "id": "gs_graph_001",
       "question": "How does the graph builder detect circular dependencies?",
       "ground_truth": "It uses a cycle detection algorithm (e.g., Tarjan's or simple DFS) with a timeout. If cycles are found, 'has_circular_dependencies' is set to true in graph metadata.",
-      "relevant_files": ["app/graph/builder.py"],
+      "relevant_files": [
+        "app/graph/builder.py"
+      ],
       "category": "graph",
       "difficulty": "medium"
     },
@@ -134,7 +181,10 @@
       "id": "gs_graph_002",
       "question": "What is the maximum number of nodes allowed in the graph?",
       "ground_truth": "The graph builder halts and sets 'graph_truncated' to true if the node count exceeds MAX_GRAPH_NODES from config.py.",
-      "relevant_files": ["app/graph/builder.py", "app/config.py"],
+      "relevant_files": [
+        "app/graph/builder.py",
+        "app/config.py"
+      ],
       "category": "graph",
       "difficulty": "easy"
     },
@@ -142,7 +192,10 @@
       "id": "gs_graph_003",
       "question": "How does get_subgraph limit the depth of the returned graph?",
       "ground_truth": "get_subgraph takes a depth parameter, but internally clamps it (e.g., max depth 3) if the graph would become too large, setting 'clamped': true.",
-      "relevant_files": ["app/graph/queries.py", "app/api/router.py"],
+      "relevant_files": [
+        "app/graph/queries.py",
+        "app/api/router.py"
+      ],
       "category": "graph",
       "difficulty": "medium"
     },
@@ -150,7 +203,9 @@
       "id": "gs_graph_004",
       "question": "What format is the graph converted to for visualization?",
       "ground_truth": "The graph is converted to Mermaid.js format by graph_to_mermaid.",
-      "relevant_files": ["app/diagrams/mermaid_generator.py"],
+      "relevant_files": [
+        "app/diagrams/mermaid_generator.py"
+      ],
       "category": "graph",
       "difficulty": "easy"
     },
@@ -158,7 +213,10 @@
       "id": "gs_graph_005",
       "question": "Are class methods linked to their parent classes in the call graph?",
       "ground_truth": "Yes, the tree-sitter parser identifies method definitions and the builder links them to their parent class nodes to maintain hierarchy.",
-      "relevant_files": ["app/parsing/tree_sitter_parser.py", "app/graph/builder.py"],
+      "relevant_files": [
+        "app/parsing/tree_sitter_parser.py",
+        "app/graph/builder.py"
+      ],
       "category": "graph",
       "difficulty": "hard"
     },
@@ -166,7 +224,10 @@
       "id": "gs_api_001",
       "question": "How is rate limiting implemented on the API endpoints?",
       "ground_truth": "Rate limiting is implemented using slowapi, with limits configured per endpoint (e.g., 3/minute for /ingest and 10/minute for /chat).",
-      "relevant_files": ["app/api/router.py", "app/api/rate_limiter.py"],
+      "relevant_files": [
+        "app/api/router.py",
+        "app/api/rate_limiter.py"
+      ],
       "category": "api",
       "difficulty": "medium"
     },
@@ -174,7 +235,9 @@
       "id": "gs_api_002",
       "question": "What validation does the /chat endpoint perform on the user question?",
       "ground_truth": "The ChatRequest Pydantic model enforces that the question has a minimum length of 5 and a maximum length defined by MAX_QUESTION_LENGTH.",
-      "relevant_files": ["app/api/router.py"],
+      "relevant_files": [
+        "app/api/router.py"
+      ],
       "category": "api",
       "difficulty": "easy"
     },
@@ -182,7 +245,9 @@
       "id": "gs_api_003",
       "question": "How does the API handle an unhandled exception globally?",
       "ground_truth": "The RequestIDMiddleware catches unhandled exceptions and returns a standardized JSON 500 response with 'error', 'code', and 'detail' fields.",
-      "relevant_files": ["app/main.py"],
+      "relevant_files": [
+        "app/main.py"
+      ],
       "category": "api",
       "difficulty": "medium"
     },
@@ -190,7 +255,9 @@
       "id": "gs_api_004",
       "question": "Is the /ingest endpoint synchronous or asynchronous?",
       "ground_truth": "The /ingest endpoint does quick validation synchronously and then offloads the heavy ingestion pipeline to FastAPI BackgroundTasks.",
-      "relevant_files": ["app/api/router.py"],
+      "relevant_files": [
+        "app/api/router.py"
+      ],
       "category": "api",
       "difficulty": "medium"
     },
@@ -198,7 +265,9 @@
       "id": "gs_api_005",
       "question": "What is the return structure of the /eval/status endpoint?",
       "ground_truth": "It returns a JSON array of the last 5 evaluation runs, read from eval_results.json.",
-      "relevant_files": ["app/api/router.py"],
+      "relevant_files": [
+        "app/api/router.py"
+      ],
       "category": "api",
       "difficulty": "easy"
     }

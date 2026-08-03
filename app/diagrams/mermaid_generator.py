@@ -149,9 +149,50 @@ def generate_mermaid(
     lines = [header]
 
     node_ids = {n["id"] for n in nodes_data}
-    sorted_nodes = sorted(node_ids)
-    kept_ids = set(sorted_nodes[:max_nodes])
-    hidden_count = max(0, len(sorted_nodes) - max_nodes)
+    entry_point = _resolve_entry_point(subgraph, nodes_data)
+
+    if len(node_ids) > max_nodes:
+        from collections import deque
+        adj: dict[str, set[str]] = {n: set() for n in node_ids}
+        edge_counts: dict[str, int] = {n: 0 for n in node_ids}
+        for e in edges_data:
+            u, v = e["source"], e["target"]
+            if u in adj and v in adj:
+                adj[u].add(v)
+                adj[v].add(u)
+                edge_counts[u] += 1
+                edge_counts[v] += 1
+
+        starts = [n for n in node_ids if n == entry_point or n.endswith(f":{entry_point}")]
+        if not starts:
+            starts = [sorted(node_ids)[0]]
+
+        dist: dict[str, int] = {}
+        queue = deque()
+        for s in starts:
+            dist[s] = 0
+            queue.append(s)
+
+        while queue:
+            curr = queue.popleft()
+            d = dist[curr]
+            for nxt in adj[curr]:
+                if nxt not in dist:
+                    dist[nxt] = d + 1
+                    queue.append(nxt)
+
+        ranked = sorted(node_ids, key=lambda n: (dist.get(n, 999999), -edge_counts.get(n, 0), n))
+        kept_initial = set(ranked[:max_nodes])
+
+        valid_edges = [
+            e for e in edges_data if e["source"] in kept_initial and e["target"] in kept_initial
+        ]
+        connected_in_subgraph = {e["source"] for e in valid_edges} | {e["target"] for e in valid_edges}
+        kept_ids = {n for n in kept_initial if n in starts or n in connected_in_subgraph}
+    else:
+        kept_ids = set(node_ids)
+
+    hidden_count = max(0, len(node_ids) - len(kept_ids))
 
     cycle_edges: set[tuple[str, str]] = set()
     if repo_id:

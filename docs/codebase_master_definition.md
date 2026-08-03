@@ -87,7 +87,7 @@ Below is the definitive catalog of all key source files and directories within t
 
 ### B. Frontend Architecture (`frontend-next/`)
 *   [`frontend-next/app/layout.tsx`](file:///d:/github project/codebase-onboarding-agent/frontend-next/app/layout.tsx): Base HTML shell setting up the global design fonts, theme providers, and UI structures.
-*   [`frontend-next/app/globals.css`](file:///d:/github project/codebase-onboarding-agent/frontend-next/app/globals.css): Configures the "Midnight Studio" CSS system, tailwind components, and scroll utilities.
+*   [`frontend-next/app/globals.css`](file:///d:/github project/codebase-onboarding-agent/frontend-next/app/globals.css): Configures the "Warm Architectural Neutral" CSS system, tailwind components, and scroll utilities.
 *   [`frontend-next/app/onboarding/page.tsx`](file:///d:/github project/codebase-onboarding-agent/frontend-next/app/onboarding/page.tsx): Input wizard mapping target repository URLs to trigger backend ingestion.
 *   [`frontend-next/app/chat/page.tsx`](file:///d:/github project/codebase-onboarding-agent/frontend-next/app/chat/page.tsx): CodeNavigator agent RAG dialog window displaying step indicators and citations.
 *   [`frontend-next/app/architecture/page.tsx`](file:///d:/github project/codebase-onboarding-agent/frontend-next/app/architecture/page.tsx): Graph canvas visualizing call graphs and code inspection side panels.
@@ -158,23 +158,33 @@ All requests must contain authentication headers if an API Key is configured (`X
 
 ---
 
-## 5. Design System Tokens (Midnight Studio Dark Theme)
+## 5. Design System Tokens (Warm Architectural Neutral)
 
 Defined in [`frontend-next/app/globals.css`](file:///d:/github project/codebase-onboarding-agent/frontend-next/app/globals.css):
 
 ```css
 :root {
-  --background: 240 10% 3.9%;      /* Deep Charcoal (#0a0a0a) */
-  --foreground: 0 0% 98%;          /* Clean White */
-  --card: 240 10% 5.9%;            /* Matte Gray */
-  --border: 240 5.9% 15%;          /* Fine Border Accent */
-  
-  --primary: 263.4 70% 50.4%;      /* Royal Violet (#8b5cf6) */
-  --primary-foreground: 210 20% 98%;
-  
-  --success: 142.1 76.2% 36.3%;    /* Forest Green */
-  --warning: 37.9 90.2% 50.2%;     /* Warning Amber */
-  --destructive: 0 72.2% 50.6%;    /* Alert Red */
+  /* ── Dark Mode — Warm Espresso Charcoal & Sage Moss ────────────── */
+  --background: #171614;       /* Warm espresso charcoal base */
+  --surface: #211f1c;          /* Card surface */
+  --surface-raised: #2b2824;   /* Elevated cards / modals */
+  --border: #3a3630;           /* Warm neutral border */
+  --foreground: #f2efe9;       /* Warm off-white headings (13.5:1 contrast) */
+  --body: #c5c0b6;             /* Reading body text (8.2:1 contrast) */
+  --primary: #84a97f;          /* Muted sage-moss (7.8:1 contrast) */
+  --accent-foreground: #aed2a9;/* Deep sage accent text */
+}
+
+.light {
+  /* ── Light Mode — Warm Stone Off-White & Forest Olive ──────────── */
+  --background: #f6f4f0;       /* Warm stone off-white base */
+  --surface: #ffffff;          /* Crisp card surface */
+  --surface-raised: #eeebe5;   /* Elevated surface */
+  --border: #d8d3c8;           /* Warm stone border */
+  --foreground: #1f1e1b;       /* Deep espresso headings (14.8:1 contrast) */
+  --body: #44413c;             /* Charcoal body text (8.9:1 contrast) */
+  --primary: #3b5738;          /* Deep forest olive (7.2:1 contrast) */
+  --accent-foreground: #2f472d;/* Forest olive text on tint (8.1:1 contrast) */
 }
 ```
 

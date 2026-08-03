@@ -29,6 +29,15 @@ import { ApiError } from "@/lib/types";
 
 type Direction = "downstream" | "upstream" | "both";
 
+const DEFAULT_SYMBOL: SymbolItem = {
+  id: "run",
+  name: "run",
+  path: "app/agent/loop.py",
+  type: "function",
+  start_line: 50,
+  end_line: 120,
+};
+
 export default function ArchitecturePage() {
   const router = useRouter();
   const { repoId, clearSession } = useApp();
@@ -37,7 +46,7 @@ export default function ArchitecturePage() {
   const handleQuickStart = useIngestFlow();
 
   // Settings states
-  const [selectedSymbol, setSelectedSymbol] = useState<SymbolItem | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<SymbolItem | null>(DEFAULT_SYMBOL);
   const [depth, setDepth] = useState(2);
   const [direction, setDirection] = useState<Direction>("downstream");
   const [granularity, setGranularity] = useState<"function" | "file">("function");
@@ -219,15 +228,32 @@ export default function ArchitecturePage() {
 
   // Handle clicking on a node in the diagram canvas
   const handleNodeClick = (nodeLabel: string) => {
-    // Determine details
-    setInspectedSymbol(nodeLabel);
-    setInspectedPath(selectedSymbol?.path || "src/requests/models.py");
+    let parsedPath = selectedSymbol?.path || null;
+    let parsedSymbol = nodeLabel;
+    let parsedLine: number | null = null;
+
+    if (nodeLabel.includes(":")) {
+      const parts = nodeLabel.split(":");
+      if (parts.length > 2 && parts[0].length === 1) {
+        parsedPath = `${parts[0]}:${parts[1]}`;
+        parsedSymbol = parts.slice(2).join(":");
+      } else {
+        parsedPath = parts[0];
+        parsedSymbol = parts.slice(1).join(":");
+      }
+      if (/^\d+$/.test(parsedSymbol)) {
+        parsedLine = parseInt(parsedSymbol, 10);
+      }
+    }
+
+    setInspectedSymbol(parsedSymbol || nodeLabel);
+    setInspectedPath(parsedPath);
     setInspectedType("method");
-    setInspectedStartLine(selectedSymbol?.start_line || 1);
-    setInspectedEndLine(selectedSymbol?.end_line || 100);
+    setInspectedStartLine(parsedLine ?? selectedSymbol?.start_line ?? null);
+    setInspectedEndLine(parsedLine ? parsedLine + 30 : selectedSymbol?.end_line ?? null);
   };
 
-  if (!repoId || status.isLoading || !ready) {
+  if (!repoId) {
     return (
       <AppShell onQuickStart={(url, ref) => void handleQuickStart(url, ref)}>
         <div className="page-enter">
@@ -240,14 +266,27 @@ export default function ArchitecturePage() {
   return (
     <AppShell onQuickStart={(url, ref) => void handleQuickStart(url, ref)}>
       <div className="page-enter space-y-6">
+        {/* ─── Breadcrumb Bar ────────────────────────── */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono select-none">
+          <span>Workspace</span>
+          <span className="text-border-strong">/</span>
+          <span className="text-foreground font-medium">{(status.data?.repo_id || repoId).slice(0, 16)}</span>
+          <span className="text-border-strong">/</span>
+          <span>architecture</span>
+          <span className="text-border-strong">/</span>
+          <span className="text-primary font-semibold truncate max-w-[200px]">
+            {selectedSymbol?.name || "Call Graph"}
+          </span>
+        </div>
+
         {/* ─── Header Row ───────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-              Architecture
+              Architecture Explorer
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Call-graph explorer · callers / callees · cycle detection
+              Call-graph inspection · callers / callees · cycle detection
             </p>
           </div>
           <Button

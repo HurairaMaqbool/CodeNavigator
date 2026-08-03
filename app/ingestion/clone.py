@@ -329,8 +329,8 @@ def _parse_github_url(repo_url: str) -> tuple[str, str]:
     https_match = re.match(r"https?://github\.com/([^/]+)/([^/]+)", url)
     if https_match:
         return https_match.group(1), https_match.group(2)
-    # git@github.com:owner/repo
-    ssh_match = re.match(r"git@github\.com:([^/]+)/([^/]+)", url)
+    # git@github.com:owner/repo or ssh://git@github.com/owner/repo
+    ssh_match = re.match(r"(?:ssh://)?git@github\.com[:/]([^/]+)/([^/]+)", url)
     if ssh_match:
         return ssh_match.group(1), ssh_match.group(2)
     raise InvalidURLError(f"Cannot parse GitHub owner/repo from URL: {repo_url!r}")
@@ -559,9 +559,16 @@ def clone_repo(
         if repo_url.startswith("http"):
             raise InvalidURLError(f"Unsafe or invalid GitHub repo URL rejected: {repo_url}")
             
-    # Remove leading/trailing whitespace which breaks clone paths
-    # check — so malformed URLs always raise InvalidURLError regardless of
-    # whether gitpython is installed.
+    # Reject any URL that does not start with a supported remote scheme.
+    if not (
+        repo_url.startswith("http://")
+        or repo_url.startswith("https://")
+        or repo_url.startswith("git@")
+        or repo_url.startswith("ssh://")
+    ):
+        raise InvalidURLError(
+            f"Local or unsupported repository URL rejected: {repo_url}. Only HTTPS, SSH, or git@ URLs are allowed."
+        )
     _validate_url(repo_url)
 
     root = base_dir if base_dir is not None else Path(settings.REPOS_PATH)

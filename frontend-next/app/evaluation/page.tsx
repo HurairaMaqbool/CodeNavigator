@@ -41,7 +41,7 @@ import { useEvalHistory } from "@/lib/hooks/use-eval-history";
 import { useEvalRunners } from "@/lib/hooks/use-eval-runners";
 import { useGoldenStatus } from "@/lib/hooks/use-golden-status";
 import { useRepoStatus } from "@/lib/hooks/use-repo-status";
-import { pickDisplayRun } from "@/lib/eval-run-utils";
+import { pickDisplayRun, sortRunsByTimestampDesc } from "@/lib/eval-run-utils";
 import { formatChunkSummary } from "@/lib/repo-display";
 import { cn, formatEvalRunLabel, getEvalRunKey } from "@/lib/utils";
 import type { RagasScores } from "@/lib/types";
@@ -55,24 +55,186 @@ function avgScore(scores: RagasScores | null | undefined): number | null {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
-function scoreLabel(score: number): string {
+/** Quality-tier label — driven by user-specified thresholds */
+function qualityTierLabel(score: number): string {
   if (score >= 0.85) return "Excellent";
-  if (score >= 0.75) return "Healthy";
-  if (score >= 0.6) return "Fair";
-  if (score >= 0.45) return "Needs work";
-  return "Critical";
+  if (score >= 0.70) return "Good";
+  if (score >= 0.50) return "Needs work";
+  return "Poor";
+}
+
+/** Inline color value (CSS token) for the quality tier */
+function qualityTierColor(score: number): string {
+  if (score >= 0.70) return "var(--primary, #84a97f)";
+  if (score >= 0.50) return "var(--warning, #ecc94b)";
+  return "var(--destructive, #f56565)";
+}
+
+function scoreLabel(score: number): string {
+  return qualityTierLabel(score);
 }
 
 function scoreChipClass(score: number): string {
-  if (score >= 0.75) return "bg-success/15 text-success";
-  if (score >= 0.6) return "bg-warning/15 text-warning";
+  if (score >= 0.70) return "bg-success/15 text-success";
+  if (score >= 0.50) return "bg-warning/15 text-warning";
   return "bg-destructive/15 text-destructive";
 }
 
 function scoreBorderClass(score: number): string {
-  if (score >= 0.75) return "border-l-4 border-l-success";
-  if (score >= 0.6) return "border-l-4 border-l-warning";
+  if (score >= 0.70) return "border-l-4 border-l-success";
+  if (score >= 0.50) return "border-l-4 border-l-warning";
   return "border-l-4 border-l-destructive";
+}
+
+/* ── Inline Sparkline SVG ─────────────────────────────────── */
+
+const SPARKLINE_METRICS = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"] as const;
+type SparklineMetric = typeof SPARKLINE_METRICS[number];
+
+function Sparkline({
+  runs,
+  metricKey,
+  width = 80,
+  height = 28,
+}: {
+  runs: any[];
+  metricKey: SparklineMetric;
+  width?: number;
+  height?: number;
+}) {
+  // Take last 8 runs (oldest→newest)
+  const pts = runs
+    .slice(0, 8)
+    .reverse()
+    .map((r) => r.ragas_scores?.[metricKey] as number | undefined)
+    .filter((v): v is number => typeof v === "number");
+
+  if (pts.length < 2) return null;
+
+  const pad = 3;
+  const w = width - pad * 2;
+  const h = height - pad * 2;
+  const xs = pts.map((_, i) => pad + (i / (pts.length - 1)) * w);
+  const ys = pts.map((v) => pad + (1 - v) * h);
+  const d = xs.map((x, i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${ys[i].toFixed(1)}`).join(" ");
+  const lastVal = pts[pts.length - 1];
+  const strokeColor = lastVal >= 0.70 ? "#48bb78" : lastVal >= 0.50 ? "#ecc94b" : "#f56565";
+  const areaD = d + ` L${xs[xs.length - 1].toFixed(1)},${(pad + h).toFixed(1)} L${xs[0].toFixed(1)},${(pad + h).toFixed(1)} Z`;
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="shrink-0 overflow-visible"
+      aria-hidden
+    >
+      {/* Gradient fill under line */}
+      <defs>
+        <linearGradient id={`sg-${metricKey}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity={0.3} />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity={0.0} />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#sg-${metricKey})`} />
+      <path d={d} fill="none" stroke={strokeColor} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      {/* Last-point dot */}
+      <circle
+        cx={xs[xs.length - 1].toFixed(1)}
+        cy={ys[ys.length - 1].toFixed(1)}
+        r={2.5}
+        fill={strokeColor}
+        opacity={0.9}
+      />
+    </svg>
+  );
+}
+
+/* ── Dedicated RAGAS Metric Card (big number + sparkline + tier) ─── */
+
+interface RagasMetricCardProps {
+  metricKey: SparklineMetric;
+  label: string;
+  value: number | null;
+  runs: any[];
+  loading?: boolean;
+  animDelay?: string;
+}
+
+function RagasMetricCard({ metricKey, label, value, runs, loading, animDelay = "0ms" }: RagasMetricCardProps) {
+  if (loading) {
+    return (
+      <div className="card-panel rounded-2xl p-4 space-y-2 flex flex-col h-full border border-border/40" style={{ animationDelay: animDelay }}>
+        <Skeleton className="h-3 w-20" />
+        <Skeleton className="h-8 w-16" />
+        <Skeleton className="h-2 w-full" />
+      </div>
+    );
+  }
+
+  const tierLabel = value != null ? qualityTierLabel(value) : null;
+  const tierColor = value != null ? qualityTierColor(value) : "var(--muted-foreground)";
+  const tierBg = `color-mix(in srgb, ${tierColor} 12%, transparent)`;
+  const numColor = value != null
+    ? value >= 0.70 ? "var(--primary, #84a97f)"
+      : value >= 0.50 ? "var(--warning, #ecc94b)"
+      : "var(--destructive, #f56565)"
+    : "var(--muted-foreground)";
+
+  return (
+    <div
+      className="card-panel rounded-2xl p-4 flex flex-col gap-2 h-full border border-border/40 transition-all duration-500 animate-fade-in-up"
+      style={{ animationDelay: animDelay }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-sans uppercase tracking-widest text-muted-foreground">{label}</p>
+        {tierLabel && (
+          <span
+            className="text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+            style={{ color: tierColor, background: tierBg }}
+          >
+            {tierLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Big number + sparkline inline */}
+      <div className="flex items-end justify-between gap-2">
+        <p
+          className="font-mono text-3xl tabular-nums leading-none font-bold"
+          style={{ color: numColor }}
+        >
+          {value != null ? value.toFixed(3) : "—"}
+        </p>
+        {/* Sparkline — always reserve space */}
+        <div className="shrink-0">
+          {runs.length >= 2 ? (
+            <Sparkline runs={runs} metricKey={metricKey} width={72} height={32} />
+          ) : (
+            <div className="w-[72px] h-[32px] rounded border border-dashed border-border/40 flex items-center justify-center">
+              <span className="text-[9px] text-muted-foreground/40 font-mono">2+ runs</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      {value != null && (
+        <div className="h-1 w-full rounded-full bg-surface-elevated overflow-hidden relative mt-auto">
+          <div
+            className="absolute top-0 bottom-0 w-px bg-primary/50 z-10"
+            style={{ left: "70%" }}
+            title="Target: 0.70"
+          />
+          <div
+            className="h-full rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${Math.round(value * 100)}%`, background: tierColor }}
+          />
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ── CI Checks Panel ─────────────────────────────────────── */
@@ -181,30 +343,48 @@ function getMetricTextColorClass(value: number): string {
   return "text-destructive";
 }
 
-function RagasMetricBars({ scores }: { scores: RagasScores }) {
+function RagasMetricBars({ scores, runs }: { scores: RagasScores; runs?: any[] }) {
   const entries = Object.entries(scores).filter(([, v]) => typeof v === "number");
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {entries.map(([key, val]) => {
         const pct = Math.round((val as number) * 100);
         const label = RAGAS_METRIC_LABELS[key] ?? key.replace(/_/g, " ");
+        const tier = qualityTierLabel(val as number);
+        const tierColor = qualityTierColor(val as number);
+        const isSparklineKey = SPARKLINE_METRICS.includes(key as SparklineMetric);
         return (
           <div key={key} className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{label}</span>
-              <span
-                className={cn(
-                  "font-mono text-[11px] tabular-nums font-semibold",
-                  getMetricTextColorClass(val as number)
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs text-muted-foreground truncate">{label}</span>
+                {/* Quality tier label */}
+                <span
+                  className="shrink-0 text-[9px] font-mono font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                  style={{ color: tierColor, background: `color-mix(in srgb, ${tierColor} 12%, transparent)` }}
+                >
+                  {tier}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Sparkline */}
+                {runs && isSparklineKey && (
+                  <Sparkline runs={runs} metricKey={key as SparklineMetric} width={56} height={20} />
                 )}
-              >
-                {(val as number).toFixed(3)}
-              </span>
+                <span
+                  className={cn(
+                    "font-mono text-[11px] tabular-nums font-semibold",
+                    getMetricTextColorClass(val as number)
+                  )}
+                >
+                  {(val as number).toFixed(3)}
+                </span>
+              </div>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-elevated relative">
               {/* Threshold marker at 70% */}
               <div
-                className="absolute top-0 bottom-0 w-[2px] bg-[#8b7cf8]/60 z-10"
+                className="absolute top-0 bottom-0 w-[2px] bg-[var(--primary)]/60 z-10"
                 style={{ left: "70%" }}
                 title="Target: 0.70"
               />
@@ -506,7 +686,7 @@ export default function EvaluationPage() {
     setCompareResult,
   } = useEvalRunners(repoId);
 
-  const allRuns = history.data ?? [];
+  const allRuns = sortRunsByTimestampDesc(history.data ?? []);
   // Match runs by explicit repo_id OR by diagnostics.job_id (legacy runs written before
   // repo_id was added to the run record — all pre-836e50a evals only stored job_id).
   const repoSpecificRuns = repoId
@@ -518,7 +698,9 @@ export default function EvaluationPage() {
     : [];
   // Use repo-filtered list when we have matches; fall back to the full history so the
   // Compare panel is never accidentally empty when there are plenty of runs to compare.
-  const runs = repoSpecificRuns.length > 0 ? repoSpecificRuns : allRuns;
+  const runs = sortRunsByTimestampDesc(
+    repoSpecificRuns.length > 0 ? repoSpecificRuns : allRuns
+  );
 
 
   const [selectedRunKey, setSelectedRunKey] = useState<string | null>(null);
@@ -795,6 +977,28 @@ export default function EvaluationPage() {
           </div>
         </div>
 
+        {/* ─── RAGAS Metric Cards with Sparklines ─────────────────────────────────── */}
+        {(displayRun?.ragas_scores || simulatedRagasLoading || ragasLoading) && (
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 items-stretch">
+            {([
+              { key: "faithfulness" as SparklineMetric, label: "Faithfulness" },
+              { key: "answer_relevancy" as SparklineMetric, label: "Answer Relevancy" },
+              { key: "context_precision" as SparklineMetric, label: "Context Precision" },
+              { key: "context_recall" as SparklineMetric, label: "Context Recall" },
+            ]).map(({ key, label }, idx) => (
+              <RagasMetricCard
+                key={key}
+                metricKey={key}
+                label={label}
+                value={displayRun?.ragas_scores?.[key] ?? null}
+                runs={runs}
+                loading={simulatedRagasLoading || ragasLoading}
+                animDelay={`${40 + idx * 50}ms`}
+              />
+            ))}
+          </div>
+        )}
+
         {/* ─── Two-column: CI checks | RAGAS Metrics ──────── */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* CI Checks */}
@@ -868,7 +1072,7 @@ export default function EvaluationPage() {
               <>
                 <RagasChart scores={displayRun.ragas_scores} />
                 <div className="border-t border-border/30 pt-4">
-                  <RagasMetricBars scores={displayRun.ragas_scores} />
+                  <RagasMetricBars scores={displayRun.ragas_scores} runs={runs} />
                 </div>
                 {displayRun.regression_warning && (
                   <Alert kind="warning">{displayRun.regression_warning}</Alert>
@@ -1022,56 +1226,81 @@ export default function EvaluationPage() {
                 {runs.length} run{runs.length !== 1 ? "s" : ""}
               </span>
             </div>
-            <div className="table-wrap">
-              <table className="data-table">
+            <div className="overflow-x-auto rounded-lg border border-border/30">
+              <table className="w-full text-xs border-collapse">
                 <thead>
-                  <tr>
-                    <th>Version</th>
-                    <th>When</th>
-                    <th>Queries</th>
-                    <th>Faithfulness</th>
+                  <tr className="bg-surface-raised border-b border-border/40">
+                    <th className="text-left py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Run</th>
+                    <th className="text-left py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">When</th>
+                    <th className="text-right py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Q</th>
+                    <th className="text-right py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Faith.</th>
+                    <th className="text-right py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Relev.</th>
+                    <th className="text-right py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Prec.</th>
+                    <th className="text-right py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Recall</th>
+                    <th className="text-right py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Overall</th>
+                    <th className="text-center py-2 px-3 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {runs.slice(0, 10).map((r) => {
+                  {runs.slice(0, 15).map((r) => {
                     const key = getEvalRunKey(r);
-                    const active =
-                      displayRun != null && key === getEvalRunKey(displayRun);
+                    const active = displayRun != null && key === getEvalRunKey(displayRun);
+                    const overall = avgScore(r.ragas_scores);
+                    const tier = overall != null ? qualityTierLabel(overall) : null;
+                    const tierBg = overall != null ? (
+                      overall >= 0.70 ? "bg-success/15 text-success"
+                        : overall >= 0.50 ? "bg-warning/15 text-warning"
+                        : "bg-destructive/15 text-destructive"
+                    ) : "bg-surface-elevated text-muted-foreground";
+
+                    const metricCell = (v: number | undefined) =>
+                      v != null ? (
+                        <span style={{ color: qualityTierColor(v) }}>{v.toFixed(3)}</span>
+                      ) : (
+                        <span className="text-muted-foreground/50">—</span>
+                      );
+
                     return (
                       <tr
                         key={key}
                         className={cn(
-                          "row-clickable cursor-pointer transition-colors duration-150",
-                          active
-                            ? "bg-primary/8 border-l-2 border-l-primary"
-                            : ""
+                          "cursor-pointer border-b border-border/20 last:border-none transition-colors duration-100",
+                          "hover:bg-surface-hover/40",
+                          active ? "bg-primary/8 border-l-2 border-l-primary" : ""
                         )}
                         onClick={() => setSelectedRunKey(key)}
                       >
-                        <td className="font-mono text-xs">{formatEvalRunLabel(r)}</td>
-                        <td className="font-mono text-xs text-muted-foreground">
-                          {r.timestamp
-                            ? new Date(r.timestamp).toLocaleString()
-                            : "—"}
+                        <td className="py-2 px-3 font-mono text-[11px] text-foreground whitespace-nowrap">{formatEvalRunLabel(r)}</td>
+                        <td className="py-2 px-3 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
+                          {r.timestamp ? new Date(r.timestamp).toLocaleString() : "—"}
                         </td>
-                        <td className="font-mono text-xs tabular-nums">
-                          {r.diagnostics?.question_count ?? (
-                            <span className="text-muted-foreground">—</span>
+                        <td className="py-2 px-3 font-mono text-[11px] tabular-nums text-right">
+                          {r.diagnostics?.question_count ?? <span className="text-muted-foreground/50">—</span>}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-[11px] tabular-nums text-right">
+                          {metricCell(r.ragas_scores?.faithfulness)}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-[11px] tabular-nums text-right">
+                          {metricCell(r.ragas_scores?.answer_relevancy)}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-[11px] tabular-nums text-right">
+                          {metricCell(r.ragas_scores?.context_precision)}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-[11px] tabular-nums text-right">
+                          {metricCell(r.ragas_scores?.context_recall)}
+                        </td>
+                        <td className="py-2 px-3 font-mono text-[11px] tabular-nums text-right font-bold">
+                          {overall != null ? (
+                            <span style={{ color: qualityTierColor(overall) }}>{overall.toFixed(3)}</span>
+                          ) : (
+                            <span className="text-muted-foreground/50">—</span>
                           )}
                         </td>
-                        <td className="font-mono text-xs tabular-nums">
-                          {r.ragas_scores?.faithfulness != null ? (
-                            <span
-                              className={
-                                r.ragas_scores.faithfulness < THRESHOLD
-                                  ? "text-warning"
-                                  : "text-foreground"
-                              }
-                            >
-                              {r.ragas_scores.faithfulness.toFixed(3)}
+                        <td className="py-2 px-3 text-center">
+                          {tier && (
+                            <span className={cn("inline-block rounded-full px-2 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wider", tierBg)}>
+                              {tier}
                             </span>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
                       </tr>

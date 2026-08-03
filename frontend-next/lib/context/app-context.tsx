@@ -4,12 +4,15 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { getEvalHistory } from "@/lib/api";
+import { sortRunsByTimestampDesc } from "@/lib/eval-run-utils";
 import type { ChatMessage } from "@/lib/types";
 
 const REPO_KEY = "cn_repo_id";
@@ -58,6 +61,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     readRepoFromStorage,
     () => null,
   );
+
+  // Dynamic initial hydration & validation from backend
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    void getEvalHistory()
+      .then((runs) => {
+        const sorted = sortRunsByTimestampDesc(runs ?? []);
+        const latest = sorted[0];
+        const activeRepo = latest?.repo_id || (latest as any)?.diagnostics?.job_id;
+        if (activeRepo) {
+          const stored = localStorage.getItem(REPO_KEY);
+          if (stored !== activeRepo) {
+            localStorage.setItem(REPO_KEY, activeRepo);
+            window.dispatchEvent(new Event(REPO_CHANGE));
+          }
+        }
+      })
+      .catch(() => {/* ignore backend offline */});
+  }, []);
 
   const [sessionId, setSessionId] = useState(newSessionId);
   const [chatByRepo, setChatByRepo] = useState<Record<string, ChatMessage[]>>(

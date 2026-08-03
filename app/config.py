@@ -108,7 +108,7 @@ class Settings(BaseSettings):
     # ── Security ─────────────────────────────────────────────────────────────
     API_KEY: str = Field(default="dev_api_key_change_in_production", description="API Key for endpoints")
     ALLOWED_ORIGINS: list[str] = Field(
-        default=["http://localhost:3000"],
+        default=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
         description="Allowed CORS origins"
     )
 

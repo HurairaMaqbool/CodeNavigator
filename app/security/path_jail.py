@@ -19,7 +19,11 @@ class PathJailError(ValueError):
 
 def normalize_repo_relative_path(file_path: str) -> str:
     """Strip clone prefixes from LLM-supplied paths."""
-    clean = file_path.replace("\\", "/").lstrip("/")
+    clean = file_path.replace("\\", "/")
+    # Reject UNC paths explicitly
+    if file_path.startswith("\\\\") or file_path.startswith("//"):
+        raise PathJailError(f"UNC paths not allowed: {file_path!r}")
+    clean = clean.lstrip("/")
     clone_marker = "/clone/"
     idx = clean.find(clone_marker)
     if idx != -1:
@@ -37,9 +41,14 @@ def resolve_jailed_path(root: Path, relative_path: str) -> Path:
 
     Uses resolve() + is_relative_to() to block ``../`` traversal.
     """
-    root_resolved = root.resolve()
-    clean = normalize_repo_relative_path(relative_path)
-    candidate = (root_resolved / clean).resolve()
-    if not candidate.is_relative_to(root_resolved):
-        raise PathJailError(f"Path escapes repository root: {relative_path!r}")
-    return candidate
+    try:
+        root_resolved = root.resolve()
+        clean = normalize_repo_relative_path(relative_path)
+        candidate = (root_resolved / clean).resolve()
+        if not candidate.is_relative_to(root_resolved):
+            raise PathJailError(f"Path escapes repository root: {relative_path!r}")
+        return candidate
+    except PathJailError:
+        raise
+    except Exception as exc:
+        raise PathJailError(f"Invalid path {relative_path!r}: {exc}") from exc

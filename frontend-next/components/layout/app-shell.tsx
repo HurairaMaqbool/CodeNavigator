@@ -14,7 +14,7 @@ export function AppShell({ children, onQuickStart }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[#0f1012] font-sans antialiased text-foreground overflow-hidden">
+    <div className="flex h-screen bg-background font-sans antialiased text-foreground overflow-hidden">
       {/* Skip Navigation Link */}
       <a
         href="#main-content"

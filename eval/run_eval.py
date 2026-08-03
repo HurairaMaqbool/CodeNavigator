@@ -59,11 +59,13 @@ def _resolve_golden_path(
 ) -> Path:
     if golden_path:
         return Path(golden_path)
-    # Repo-scoped RAGAS must use per-repo questions (tests/eval_set.json has repo_id).
-    if target_repo_id and FALLBACK_GOLDEN_SET_PATH.exists():
-        return FALLBACK_GOLDEN_SET_PATH
+    # Always prefer the primary golden set (self-repo 27-question suite).
+    # The fallback (tests/eval_set.json) contains external repo questions and
+    # should only be used when the primary file doesn't exist.
     path = DEFAULT_GOLDEN_SET_PATH
-    if not path.exists() and FALLBACK_GOLDEN_SET_PATH.exists():
+    if path.exists():
+        return path
+    if FALLBACK_GOLDEN_SET_PATH.exists():
         return FALLBACK_GOLDEN_SET_PATH
     return path
 
@@ -314,12 +316,19 @@ def _extract_ragas_scores(ragas_result, metrics_list: list[str]) -> dict[str, fl
         try:
             if df is not None and m in df.columns:
                 col = df[m].dropna()
-                scores[m] = float(col.mean()) if len(col) else 0.0
+                if len(col) == 0:
+                    print(f"WARN: RAGAS metric '{m}' returned all-NaN — likely failed (Groq n>1 rejection?). Scoring as 0.0.")
+                    scores[m] = 0.0
+                else:
+                    scores[m] = float(col.mean())
             else:
                 raw = ragas_result[m]
                 valid = [float(v) for v in raw if v == v]
+                if not valid:
+                    print(f"WARN: RAGAS metric '{m}' returned all-NaN — likely failed. Scoring as 0.0.")
                 scores[m] = sum(valid) / len(valid) if valid else 0.0
-        except Exception:
+        except Exception as exc:
+            print(f"WARN: RAGAS metric '{m}' extraction failed: {exc}. Scoring as 0.0.")
             scores[m] = 0.0
     return scores
 
@@ -359,6 +368,19 @@ def _flag_gated_regressions(
 
 def _load_ragas_deps() -> tuple[Any, ...]:
     """Import RAGAS stack lazily; patch in tests via this hook."""
+    import sys
+    import types
+    try:
+        import langchain_community.chat_models.vertexai  # noqa: F401
+    except ModuleNotFoundError:
+        try:
+            import langchain_google_vertexai
+            mod = types.ModuleType("langchain_community.chat_models.vertexai")
+            mod.ChatVertexAI = langchain_google_vertexai.ChatVertexAI
+            sys.modules["langchain_community.chat_models.vertexai"] = mod
+        except Exception:
+            pass
+
     from datasets import Dataset
     from ragas import evaluate
     from ragas.metrics import (
@@ -422,7 +444,6 @@ def run_golden_set(
             f"(status: {status})"
         )
 
-    # Now safe to import heavy dependencies after readiness check passes
     try:
         (
             Dataset,
@@ -435,11 +456,10 @@ def run_golden_set(
             get_judge_llm,
             get_judge_embeddings,
         ) = _load_ragas_deps()
+        ragas_available = True
     except ImportError as e:
-        raise ImportError(
-            f"RAGAS evaluation requires optional dependencies: {e}. "
-            "Install with: pip install -r requirements.txt"
-        ) from e
+        ragas_available = False
+        print(f"WARN: RAGAS dependencies unavailable ({e}). Skipping RAGAS metrics.")
 
     path = _resolve_golden_path(golden_path, target_repo_id=target_repo_id)
     eval_data = load_golden_set(path, target_repo_id=target_repo_id)
@@ -485,7 +505,7 @@ def run_golden_set(
         question = case["question"]
         case_repo = case.get("repo_id", job_id)
         _, case_asset = resolve_asset_repo_id(case_repo)
-        chat_repo = case_asset or asset_repo_id
+        chat_repo = asset_repo_id  # Force use of current active asset repo
 
         # ── Per-question 429 retry loop ────────────────────────────────────────
         # _invoke_chat_endpoint already handles HTTP-429 and body rate_limited retries.
@@ -563,7 +583,7 @@ def run_golden_set(
         if not res.get("sources"):
             empty_source_count += 1
 
-        gt_files = case.get("ground_truth_files", [])
+        gt_files = case.get("ground_truth_files") or case.get("relevant_files", [])
         p_at_3, top_files, gt_hit = precision_at_k(res, gt_files, k=3)
         total_precision_at_3 += p_at_3
         total_confidence += float(res.get("confidence_score") or 0.0)
@@ -591,7 +611,7 @@ def run_golden_set(
         questions.append(question)
         answers.append(ans_text)
         contexts.append(ctx_list)
-        ground_truths.append(case.get("ground_truth_answer_summary", ""))
+        ground_truths.append(case.get("ground_truth_answer_summary") or case.get("ground_truth", ""))
 
     n = len(eval_data)
     if rate_limited_count > 0:
@@ -603,58 +623,60 @@ def run_golden_set(
 
     gated_regressions = _flag_gated_regressions(per_question, eval_data)
 
-    dataset = Dataset.from_dict({
-        "question": questions,
-        "answer": answers,
-        "contexts": contexts,
-        "ground_truth": ground_truths,
-    })
-
-    judge_llm = get_judge_llm()
-    judge_embeddings = get_judge_embeddings()
-    eval_kwargs: dict[str, Any] = {"llm": judge_llm, "embeddings": judge_embeddings}
-    if RunConfig is not None:
-        eval_kwargs["run_config"] = RunConfig(
-            timeout=int(settings.EVAL_RAGAS_TIMEOUT_S),
-            max_retries=4,
-            max_wait=120,
-            max_workers=1,
-        )
-
     metrics_list = ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]
-    ragas_judge_cooldown()
     ragas_result = None
     last_ragas_err: Exception | None = None
-    for attempt in range(3):
-        try:
-            ragas_result = _run_ragas_evaluate(
-                dataset,
-                metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
-                **eval_kwargs,
+    
+    if ragas_available:
+        dataset = Dataset.from_dict({
+            "question": questions,
+            "answer": answers,
+            "contexts": contexts,
+            "ground_truth": ground_truths,
+        })
+    
+        judge_llm = get_judge_llm()
+        judge_embeddings = get_judge_embeddings()
+        eval_kwargs: dict[str, Any] = {"llm": judge_llm, "embeddings": judge_embeddings}
+        if RunConfig is not None:
+            eval_kwargs["run_config"] = RunConfig(
+                timeout=int(settings.EVAL_RAGAS_TIMEOUT_S),
+                max_retries=4,
+                max_wait=120,
+                max_workers=1,
             )
-            break
-        except Exception as exc:
-            last_ragas_err = exc
-            err = str(exc).lower()
-            if "429" not in err and "rate" not in err:
-                raise
-            if attempt < 2:
-                wait_s = 90 * (attempt + 1)
-                print(f"RAGAS judge rate-limited — cooling down {wait_s}s before retry…")
-                time.sleep(wait_s)
-                ragas_judge_cooldown()
-    if ragas_result is None:
-        raise EvalPipelineError(
-            f"RAGAS judge failed after retries: {last_ragas_err}",
-            diagnostics={
-                "rate_limited_count": rate_limited_count,
-                "question_count": n,
-                "chat_phase_complete": True,
-            },
-        ) from last_ragas_err
 
-    ragas_scores = _extract_ragas_scores(ragas_result, metrics_list)
-    row_scores = _per_row_ragas_scores(ragas_result, metrics_list)
+        # Fix: Groq rejects n>1 requests (HTTP 400 "'n': number must be at most 1").
+        # answer_relevancy uses strictness (number of generations) to compute variance.
+        # Setting strictness=1 forces single-generation scoring — compatible with Groq.
+        try:
+            answer_relevancy.strictness = 1
+        except Exception:
+            pass
+
+        ragas_judge_cooldown()
+        for attempt in range(3):
+            try:
+                ragas_result = _run_ragas_evaluate(
+                    dataset,
+                    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+                    **eval_kwargs,
+                )
+                break
+            except Exception as exc:
+                last_ragas_err = exc
+                err = str(exc).lower()
+                if "429" not in err and "rate" not in err:
+                    print(f"WARN: RAGAS judge failed: {exc}")
+                    break
+                if attempt < 2:
+                    wait_s = 90 * (attempt + 1)
+                    print(f"RAGAS judge rate-limited — cooling down {wait_s}s before retry…")
+                    time.sleep(wait_s)
+                    ragas_judge_cooldown()
+        
+    ragas_scores = _extract_ragas_scores(ragas_result, metrics_list) if ragas_result else {m: 0.0 for m in metrics_list}
+    row_scores = _per_row_ragas_scores(ragas_result, metrics_list) if ragas_result else [{m: 0.0 for m in metrics_list} for _ in range(n)]
     for pq, rs in zip(per_question, row_scores):
         pq["ragas_scores"] = rs
 

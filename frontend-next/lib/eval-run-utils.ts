@@ -24,17 +24,26 @@ export function normalizeEvalRun(run: EvalRun): EvalRun {
   };
 }
 
-export function normalizeEvalHistory(runs: EvalRun[]): EvalRun[] {
-  return runs.map(normalizeEvalRun);
+export function sortRunsByTimestampDesc(runs: EvalRun[]): EvalRun[] {
+  return [...runs].sort((a, b) => {
+    const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timeB - timeA;
+  });
 }
 
-/** Pick the best run to display scores for (prefers rows with per-question data). */
+export function normalizeEvalHistory(runs: EvalRun[]): EvalRun[] {
+  return sortRunsByTimestampDesc(runs.map(normalizeEvalRun));
+}
+
+/** Pick the best run to display scores for (defaults to most recent run by timestamp). */
 export function pickDisplayRun(
   runs: EvalRun[],
   preferred?: EvalRun | null,
 ): EvalRun | null {
+  const sorted = sortRunsByTimestampDesc(runs);
   if (preferred?.ragas_scores) return normalizeEvalRun(preferred);
-  for (const run of runs) {
+  for (const run of sorted) {
     if (run.ragas_scores) return normalizeEvalRun(run);
   }
   return null;

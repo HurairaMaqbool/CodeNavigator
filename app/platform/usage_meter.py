@@ -11,6 +11,7 @@ Per-organization usage counters for billing and quotas.
 from __future__ import annotations
 
 import json
+import threading
 from datetime import datetime, timezone
 from typing import Any
 
@@ -21,6 +22,7 @@ from app.platform.billing.subscriptions import get_subscription
 from app.paths import data_path
 
 _METER_PATH = data_path("usage_meter.json")
+_METER_LOCK = threading.Lock()
 
 
 def _use_pg() -> bool:
@@ -39,7 +41,10 @@ def _load() -> dict[str, Any]:
 
 def _save(data: dict[str, Any]) -> None:
     _METER_PATH.parent.mkdir(parents=True, exist_ok=True)
-    _METER_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    tmp_path = _METER_PATH.with_suffix(".json.tmp")
+    tmp_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    import os
+    os.replace(str(tmp_path), str(_METER_PATH))
 
 
 def _month_key() -> str:
@@ -51,13 +56,14 @@ def increment(org_id: str, metric: str, amount: int = 1) -> dict[str, int]:
     if _use_pg():
         from app.platform.db.stores import pg_increment_usage
         return pg_increment_usage(org_id, month, metric, amount)
-    data = _load()
-    org = data.setdefault(org_id, {})
-    month = _month_key()
-    bucket = org.setdefault(month, {})
-    bucket[metric] = int(bucket.get(metric, 0)) + amount
-    _save(data)
-    return dict(bucket)
+    with _METER_LOCK:
+        data = _load()
+        org = data.setdefault(org_id, {})
+        month = _month_key()
+        bucket = org.setdefault(month, {})
+        bucket[metric] = int(bucket.get(metric, 0)) + amount
+        _save(data)
+        return dict(bucket)
 
 
 def get_usage(org_id: str) -> dict[str, Any]:
@@ -66,9 +72,10 @@ def get_usage(org_id: str) -> dict[str, Any]:
         from app.platform.db.stores import pg_get_usage
         current = pg_get_usage(org_id, month)
     else:
-        data = _load()
-        org = data.get(org_id, {})
-        current = org.get(month, {})
+        with _METER_LOCK:
+            data = _load()
+            org = data.get(org_id, {})
+            current = org.get(month, {})
     sub = get_subscription(org_id)
     plan_id = sub.get("plan_id", "free")
     return {
@@ -107,3 +114,25 @@ def check_quota(org_id: str, metric: str) -> bool:
         return True
     usage = get_usage(org_id)["metrics"].get(metric, 0)
     return usage < cap
+
+
+def check_and_increment_quota(org_id: str, metric: str, amount: int = 1) -> bool:
+    """Atomic check-and-increment to prevent race condition quota bypass in file-store mode."""
+    if settings.ENVIRONMENT.lower() != "production":
+        increment(org_id, metric, amount)
+        return True
+    cap = _effective_limit(org_id, metric)
+    if cap <= 0:
+        increment(org_id, metric, amount)
+        return True
+    with _METER_LOCK:
+        data = _load()
+        org = data.setdefault(org_id, {})
+        month = _month_key()
+        bucket = org.setdefault(month, {})
+        current = int(bucket.get(metric, 0))
+        if current >= cap:
+            return False
+        bucket[metric] = current + amount
+        _save(data)
+        return True

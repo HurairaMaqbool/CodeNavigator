@@ -165,6 +165,24 @@ def check_cache(question: str, repo_id: str, commit_hash: str) -> dict[str, Any]
         _STATS["misses"] += 1
         return None
 
+    # Gate: evict and treat as miss if stored confidence is below current threshold.
+    # This prevents low-quality answers written before a verification-layer fix from
+    # being replayed indefinitely — the core cause of stale cache hits on hallucinations.
+    stored_confidence = float(payload.get("confidence_score", 0.0))
+    if stored_confidence < settings.MIN_CONFIDENCE_SCORE:
+        try:
+            col.delete(ids=[results["ids"][0][0]])
+            logger.info(
+                "semantic_cache_evict_low_confidence",
+                repo_id=repo_id,
+                stored_confidence=stored_confidence,
+                threshold=settings.MIN_CONFIDENCE_SCORE,
+            )
+        except Exception:
+            pass
+        _STATS["misses"] += 1
+        return None
+
     _STATS["hits"] += 1
     logger.info("semantic_cache_hit", repo_id=repo_id, commit_hash=commit_hash[:12], similarity=similarity)
     return {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Send } from "lucide-react";
+import { Compass, FileCode, GitBranch, Loader2, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import {
   chatWithRetry,
@@ -12,6 +12,7 @@ import { CHAT_STARTER_PROMPTS } from "@/lib/constants";
 import { notifyChatQuerySuccess } from "@/lib/chat-query-events";
 import { useApp } from "@/lib/context/app-context";
 import { ApiError, type ChatMessage } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,16 +169,33 @@ export function ChatPanel({ repoId, ready }: ChatPanelProps) {
             title="Ask your codebase anything"
             description="Architecture, symbols, call flows — answers include file citations you can verify."
             action={
-              <div className="flex flex-wrap justify-center gap-2">
-                {CHAT_STARTER_PROMPTS.map((p) => (
+              <div className="grid gap-2.5 sm:grid-cols-2 max-w-xl mx-auto mt-2">
+                {[
+                  { prompt: CHAT_STARTER_PROMPTS[0] ?? "How does ingestion work?", icon: Compass, tag: "Architecture" },
+                  { prompt: CHAT_STARTER_PROMPTS[1] ?? "Where are API endpoints defined?", icon: FileCode, tag: "Endpoints" },
+                  { prompt: CHAT_STARTER_PROMPTS[2] ?? "Explain the call graph indexing pipeline", icon: GitBranch, tag: "Indexing" },
+                  { prompt: "What error handling patterns are used?", icon: ShieldCheck, tag: "Resilience" },
+                ].map(({ prompt, icon: Icon, tag }) => (
                   <button
-                    key={p}
+                    key={prompt}
                     type="button"
                     disabled={!ready}
-                    onClick={() => void sendQuestion(p)}
-                    className="prompt-chip"
+                    onClick={() => void sendQuestion(prompt)}
+                    className={cn(
+                      "flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-raised/60 p-3.5 text-left text-xs font-medium text-foreground transition-all duration-200 cursor-pointer select-none",
+                      "hover:border-primary/50 hover:bg-surface-raised hover:text-primary hover:shadow-sm active:scale-[0.98]",
+                      "disabled:opacity-40 disabled:pointer-events-none"
+                    )}
                   >
-                    {p}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface border border-border/40 text-primary">
+                        <Icon className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="truncate">{prompt}</span>
+                    </div>
+                    <span className="shrink-0 rounded bg-primary-tint px-2 py-0.5 font-mono text-[10px] font-semibold text-primary">
+                      {tag}
+                    </span>
                   </button>
                 ))}
               </div>

@@ -281,10 +281,38 @@ def _extract_lines(content: str, start_line: int, end_line: int) -> str:
     return "\n".join(lines[max(0, start_line - 1) : end_line])
 
 
+def _get_module_header(content: str, max_lines: int = 15) -> str:
+    """
+    Extract a compact module header (imports, top-level constants, docstrings)
+    from the beginning of *content*.
+    """
+    if not content or not content.strip():
+        return ""
+    lines = content.splitlines()
+    header_lines = []
+    for line in lines[:max_lines]:
+        stripped = line.strip()
+        # Stop if we hit a function or class definition
+        if stripped.startswith("def ") or stripped.startswith("class ") or stripped.startswith("export default function"):
+            break
+        if (stripped.startswith("import ") or stripped.startswith("from ") or
+            stripped.startswith("#") or stripped.startswith("//") or
+            "=" in stripped or stripped.startswith('"""') or stripped.startswith("'''") or
+            stripped == ""):
+            header_lines.append(line)
+    if not header_lines:
+        return ""
+    res = "\n".join(header_lines).strip()
+    if len(res) > 400:
+        res = res[:400] + "\n..."
+    return res
+
+
 def _make_chunks(
     *,
     raw_body: str,
     header: str,
+    module_header: str = "",
     file_path: str,
     display_path: str,
     normalized_path: str,
@@ -299,12 +327,15 @@ def _make_chunks(
     Core chunk factory.
 
     Order of operations (load-bearing — do not reorder):
-    1. Prepend synthetic header to raw body.
+    1. Prepend synthetic header and optional compact module header to raw body.
     2. Mask secrets on the full text (header + body).
     3. Split if over token limit.
     4. Compute fingerprint on each masked piece.
     """
-    full_text = f"{header}\n{raw_body}"
+    if module_header:
+        full_text = f"{header}\n# Module Context:\n{module_header}\n\n{raw_body}"
+    else:
+        full_text = f"{header}\n{raw_body}"
 
     # ── Step 2: mask secrets before ANYTHING else ────────────────────────────
     masked_text = mask_secrets(full_text)
@@ -346,10 +377,12 @@ def _chunk_function(
 ) -> list[CodeChunk]:
     """Produce chunks for a top-level function."""
     body = _extract_lines(content, func.start_line, func.end_line)
+    mod_header = _get_module_header(content) if func.start_line > 15 else ""
     header = f"# File: {display_path} | Function: {func.name}"
     return _make_chunks(
         raw_body=body,
         header=header,
+        module_header=mod_header,
         file_path=file_path,
         display_path=display_path,
         normalized_path=normalized_path,
@@ -373,10 +406,12 @@ def _chunk_method(
 ) -> list[CodeChunk]:
     """Produce chunks for a single class method (when class is large)."""
     body = _extract_lines(content, method.start_line, method.end_line)
+    mod_header = _get_module_header(content) if method.start_line > 15 else ""
     header = f"# File: {display_path} | Class: {class_name}.{method.name}"
     return _make_chunks(
         raw_body=body,
         header=header,
+        module_header=mod_header,
         file_path=file_path,
         display_path=display_path,
         normalized_path=normalized_path,
@@ -399,10 +434,12 @@ def _chunk_class(
 ) -> list[CodeChunk]:
     """Produce chunks for an entire class (when class is small or has no methods)."""
     body = _extract_lines(content, cls.start_line, cls.end_line)
+    mod_header = _get_module_header(content) if cls.start_line > 15 else ""
     header = f"# File: {display_path} | Class: {cls.name}"
     return _make_chunks(
         raw_body=body,
         header=header,
+        module_header=mod_header,
         file_path=file_path,
         display_path=display_path,
         normalized_path=normalized_path,
@@ -501,6 +538,25 @@ def chunk_parsed_file(
                     file_path, display_path, normalized_path,
                 )
             )
+
+    # ── Top-level module chunk (imports, constants, module docstrings) ─────────────
+    mod_header = _get_module_header(content, max_lines=40)
+    if mod_header and len(mod_header) > 20:
+        mod_fp = compute_fingerprint(normalized_path, "module_header", mod_header)
+        mod_chunk = CodeChunk(
+            chunk_text=f"# File: {display_path} | Module Header & Constants\n{mod_header}",
+            file_path=file_path,
+            display_path=display_path,
+            normalized_path=normalized_path,
+            function_name="<module>",
+            start_line=1,
+            end_line=min(40, len(content.splitlines())),
+            type="module",
+            language=parsed.language,
+            fingerprint=mod_fp,
+            class_name=None,
+        )
+        chunks.insert(0, mod_chunk)
 
     if not chunks:
         log.debug(

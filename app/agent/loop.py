@@ -394,7 +394,14 @@ def _symbol_boost_chunks(
             try:
                 lines = src.read_text(encoding="utf-8", errors="replace").splitlines()
                 end_idx = min(len(lines), max(end, start + 40))
-                chunk_text = "\n".join(lines[start - 1 : end_idx])
+                snippet_body = "\n".join(lines[start - 1 : end_idx])
+                if start > 15 and len(lines) > 12:
+                    mod_head = "\n".join(lines[:12]).strip()
+                    if len(mod_head) > 400:
+                        mod_head = mod_head[:400] + "\n..."
+                    chunk_text = f"# File: {fp} Header:\n{mod_head}\n\n# Definition ({start}-{end_idx}):\n{snippet_body}"
+                else:
+                    chunk_text = snippet_body
             except OSError:
                 pass
         boosted.append({
@@ -953,7 +960,7 @@ def _merge_search_results(batches: list[list[dict[str, Any]]]) -> list[dict[str,
 @_register(AgentState.INTAKE)
 def _handle_intake(ctx: AgentContext) -> AgentState:
     # Exact replay cache (zero Groq) — before semantic cache embedding call.
-    if not ctx.chat_history:
+    if not ctx.chat_history and settings.SEMANTIC_CACHE_ENABLED:
         exact = _exact_question_cache_get(ctx.repo_id, ctx.question)
         if exact:
             ctx.answer = exact["answer"]
@@ -964,7 +971,7 @@ def _handle_intake(ctx: AgentContext) -> AgentState:
             return _transition(ctx, AgentState.RESPOND)
 
     # Semantic cache (embedding lookup, no Groq on hit).
-    if not ctx.chat_history:
+    if not ctx.chat_history and settings.SEMANTIC_CACHE_ENABLED:
         cached = semantic_cache_lookup(ctx.repo_id, ctx.question)
         if cached and not cached.get("gated"):
             ctx.answer = cached["answer"]
@@ -1180,7 +1187,7 @@ def _handle_decide(ctx: AgentContext) -> AgentState:
             prompt,
             max_tokens=settings.DECIDE_MAX_TOKENS,
             purpose="decide",
-            model=settings.DECIDE_LLM_MODEL,
+            model=settings.LLM_MODEL,
             wall_clock_timeout_s=float(settings.GROQ_DECIDE_TIMEOUT_S),
             ctx=ctx,
         ).upper()

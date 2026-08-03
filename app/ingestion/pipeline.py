@@ -130,6 +130,27 @@ def run_ingestion_sync(
 
         chunks = chunk_all_files(parsed_files, contents, file_records)
 
+        # Auto-promote force_reindex=True if prior ingestion was not cleanly SYNCED or has integrity mismatch
+        if not force_reindex:
+            meta = metadata_store.get(job_id) or metadata_store.get(clone_res.repo_id)
+            sync_status = (meta.sync_status if meta else "").lower()
+            if sync_status and sync_status != Stage.SYNCED.value:
+                log.info(
+                    "auto_enabling_force_reindex_due_to_unclean_status",
+                    prior_status=sync_status,
+                )
+                force_reindex = True
+            else:
+                from app.ingestion.index_integrity import check_index_integrity
+
+                report = check_index_integrity(clone_res.repo_id, job_id=job_id)
+                if not report.ok:
+                    log.info(
+                        "auto_enabling_force_reindex_due_to_index_integrity_mismatch",
+                        errors=report.errors,
+                    )
+                    force_reindex = True
+
         if force_reindex:
             from app.agent.semantic_cache import clear_repo_semantic_cache
 
@@ -176,3 +197,4 @@ def run_ingestion_sync(
         return False
     finally:
         lock_manager.release(job_id)
+ingest_repository = run_ingestion_sync

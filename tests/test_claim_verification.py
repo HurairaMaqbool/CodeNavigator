@@ -7,6 +7,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from app.agent.claim_verification import (
+    _check_claim_responsiveness,
     _retrieval_text_for_citation,
     fetch_cited_text,
     verify_claims_batch,
@@ -203,3 +204,23 @@ def test_embed_failure_falls_back_to_lexical_not_hard_gate():
     assert result.get("verification_error") is not True
     assert result["verified_count"] >= 1
     assert result["results"][0]["method"] in ("lexical", "lexical_reroute")
+
+
+# ── New test: Issue 10 fail-open gate ────────────────────────────────────────
+
+def test_responsiveness_missing_inputs_returns_fail():
+    """
+    _check_claim_responsiveness must return FAIL (not YES) when either
+    the claim or the question is empty/None.  This pins the fix for the
+    fail-open default that was at line 744:
+        if not claim or not question: return "YES"  # BUG — now returns "FAIL"
+    """
+    # Empty claim
+    assert _check_claim_responsiveness("", "What does Session.send do?") == "FAIL"
+    # Empty question
+    assert _check_claim_responsiveness("Session.send dispatches HTTP.", "") == "FAIL"
+    # Both empty
+    assert _check_claim_responsiveness("", "") == "FAIL"
+    # None-equivalent (falsy)
+    assert _check_claim_responsiveness(None, "Some question?") == "FAIL"   # type: ignore[arg-type]
+    assert _check_claim_responsiveness("Some claim.", None) == "FAIL"       # type: ignore[arg-type]
