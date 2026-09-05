@@ -47,14 +47,14 @@
 | # | Section | # | Section |
 |---|---------|---|---------|
 | 1 | [About the Project](#about-the-project) | 10 | [Design System](#design-system) |
-| 2 | [Live Evaluation Metrics](#live-evaluation-metrics) | 11 | [Directory Map](#directory-map) |
-| 3 | [Features](#features) | 12 | [Setup & Local Execution](#setup--local-execution) |
-| 4 | [System Architecture](#system-architecture) | 13 | [Testing & Evaluation](#testing--evaluation) |
-| 5 | [Agentic FSM Loop](#the-agentic-fsm-loop) | 14 | [Engineering Notes](#engineering-notes) |
-| 6 | [Hybrid Retrieval Engine](#hybrid-retrieval-engine-rrf) | 15 | [Roadmap](#roadmap) |
-| 7 | [Verification Firewall](#verification-firewall) | 16 | [License & IP](#license--intellectual-property) |
-| 8 | [IP-Protected Prompt Loader](#ip-protected-prompt-loader) | 17 | [Author](#author) |
-| 9 | [API Reference](#api-reference) | | |
+| 2 | [Live Evaluation Metrics](#live-evaluation-metrics) | 11 | [Tech Stack](#tech-stack) |
+| 3 | [Features](#features) | 12 | [Directory Map](#directory-map) |
+| 4 | [System Architecture](#system-architecture) | 13 | [Setup & Local Execution](#setup--local-execution) |
+| 5 | [Agentic FSM Loop](#the-agentic-fsm-loop) | 14 | [Testing & Evaluation](#testing--evaluation) |
+| 6 | [Hybrid Retrieval Engine](#hybrid-retrieval-engine-rrf) | 15 | [Engineering Notes](#engineering-notes) |
+| 7 | [Verification Firewall](#verification-firewall) | 16 | [Roadmap](#roadmap) |
+| 8 | [IP-Protected Prompt Loader](#ip-protected-prompt-loader) | 17 | [License & IP](#license--intellectual-property) |
+| 9 | [API Reference](#api-reference) | 18 | [Author](#author) |
 
 </details>
 
@@ -227,6 +227,7 @@ RRF_Score(d) = Σ (1 / (k + r_m(d)))   for each retrieval model m in M
 - **r_m(d)** — the 1-indexed rank of document `d` under model `m`
 - **k** — smoothing constant, configured as `60`
 - Documents matching test-file patterns (`/tests/`, `test_*.py`) have their rank penalized so implementation source code is prioritized over test scaffolding
+- Top-k merged results are then re-scored by a cross-encoder reranker for a final precision pass before reaching the agent
 
 ---
 
@@ -326,6 +327,8 @@ CodeNavigator ships a custom **Warm Architectural Neutral** identity — Stone &
 ```
 
 Typography: **Plus Jakarta Sans** (display), **Inter** (body), **JetBrains Mono** (code, IDs, scores).
+
+The UI is organized around five focused screens: a repository **onboarding** wizard, the agentic **chat** panel, an **architecture** call-graph explorer with a line-numbered source inspector, an **evaluation** dashboard tracking RAGAS metrics over time, and a **platform** dashboard for API keys, usage quotas, and audit logs.
 
 ---
 
@@ -457,7 +460,7 @@ cd frontend-next && npm install && cd ..
 cp .env.example .env
 ```
 
-Edit `.env` with your keys (`GROQ_API_KEY`, `POSTGRES_URI`, `REPOS_PATH`, model selections, search thresholds — see `app/config.py`).
+Edit `.env` with your own keys and paths (`GROQ_API_KEY`, `POSTGRES_URI`, `REPOS_PATH`, model selections, search thresholds — see `app/config.py`). **Never commit a populated `.env` file** — `.env.example` should only ever contain placeholder values.
 
 ### Run
 
