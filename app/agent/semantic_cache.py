@@ -59,10 +59,10 @@ def _get_cache_collection(repo_id: str, commit_hash: str = "") -> chromadb.Colle
         col = client.get_collection(name)
         raw_meta = col.metadata or {}
         col_meta = dict(raw_meta) if isinstance(raw_meta, dict) else {}
-        if col_meta.get("embedding_model_id") != settings.EMBEDDING_MODEL:
+        if "embedding_model_id" in col_meta and col_meta.get("embedding_model_id") != settings.EMBEDDING_MODEL:
             client.delete_collection(name)
             col = None
-        elif col_meta.get("prompt_version") != PROMPT_VERSION:
+        elif "prompt_version" in col_meta and col_meta.get("prompt_version") != PROMPT_VERSION:
             client.delete_collection(name)
             col = None
     except chromadb.errors.InvalidCollectionException:
@@ -166,29 +166,31 @@ def check_cache(question: str, repo_id: str, commit_hash: str) -> dict[str, Any]
         return None
 
     # Gate: evict and treat as miss if stored confidence is below current threshold.
-    # This prevents low-quality answers written before a verification-layer fix from
-    # being replayed indefinitely — the core cause of stale cache hits on hallucinations.
-    stored_confidence = float(payload.get("confidence_score", 0.0))
-    if stored_confidence < settings.MIN_CONFIDENCE_SCORE:
-        try:
-            col.delete(ids=[results["ids"][0][0]])
-            logger.info(
-                "semantic_cache_evict_low_confidence",
-                repo_id=repo_id,
-                stored_confidence=stored_confidence,
-                threshold=settings.MIN_CONFIDENCE_SCORE,
-            )
-        except Exception:
-            pass
-        _STATS["misses"] += 1
-        return None
+    # Handles both 0..1 scale (threshold 0.8) and 1..5 scale (threshold 4.0).
+    raw_confidence = payload.get("confidence_score")
+    if raw_confidence is not None:
+        conf_val = float(raw_confidence)
+        effective_thresh = (settings.MIN_CONFIDENCE_SCORE / 5.0) if conf_val <= 1.0 else settings.MIN_CONFIDENCE_SCORE
+        if conf_val < effective_thresh:
+            try:
+                col.delete(ids=[results["ids"][0][0]])
+                logger.info(
+                    "semantic_cache_evict_low_confidence",
+                    repo_id=repo_id,
+                    stored_confidence=conf_val,
+                    threshold=effective_thresh,
+                )
+            except Exception:
+                pass
+            _STATS["misses"] += 1
+            return None
 
     _STATS["hits"] += 1
     logger.info("semantic_cache_hit", repo_id=repo_id, commit_hash=commit_hash[:12], similarity=similarity)
     return {
         "answer": str(payload.get("answer", "")),
         "sources": payload.get("sources", []),
-        "confidence_score": float(payload.get("confidence_score", 0.0)),
+        "confidence_score": float(payload.get("confidence_score", 5.0)),
     }
 
 
@@ -217,6 +219,14 @@ def store(
         logger.debug("semantic_cache_store_skipped_error_response", repo_id=repo_id)
         return
 
+    raw_conf = answer.get("confidence_score")
+    if raw_conf is not None:
+        conf_val = float(raw_conf)
+        effective_thresh = (settings.MIN_CONFIDENCE_SCORE / 5.0) if conf_val <= 1.0 else settings.MIN_CONFIDENCE_SCORE
+        if conf_val < effective_thresh:
+            logger.debug("semantic_cache_store_skipped_low_confidence", confidence=raw_conf, threshold=effective_thresh)
+            return
+
     try:
         query_embedding = embed(question)
     except Exception as exc:
@@ -230,7 +240,7 @@ def store(
     payload = {
         "answer": answer.get("answer", ""),
         "sources": answer.get("sources", []),
-        "confidence_score": float(answer.get("confidence_score", 0.0)),
+        "confidence_score": float(answer.get("confidence_score") if answer.get("confidence_score") is not None else 5.0),
         "gated": False,
     }
 
@@ -347,7 +357,7 @@ class SemanticCache:
         payload = {
             "answer": answer.get("answer", ""),
             "sources": answer.get("sources", []),
-            "confidence_score": float(answer.get("confidence_score", 0.0)),
+            "confidence_score": float(answer.get("confidence_score") if answer.get("confidence_score") is not None else 5.0),
             "gated": False,
         }
         try:

@@ -1,0 +1,221 @@
+{
+  "evaluation_id": "RAGAS_POSTFIX_EVAL_20260905",
+  "timestamp": "2026-09-05T02:08:35Z",
+  "environment": {
+    "commit": "a9792b53b817c180907e80556b6aa99e12089f81",
+    "llm_model": "llama-3.1-8b-instant",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "ragas_version": "0.2.12",
+    "judge_model": "llama-3.1-8b-instant"
+  },
+  "summary": {
+    "total_queries": 10,
+    "successful_evaluations": 10,
+    "failed_evaluations": 0,
+    "skipped_evaluations": 0,
+    "rate_limited_retries": 0,
+    "sentinel_context_count": 0,
+    "mean_scores": {
+      "faithfulness": 0.8333,
+      "context_recall": 0.8333,
+      "context_precision": 0.9185,
+      "answer_relevancy": 0.8201
+    }
+  },
+  "details": [
+    {
+      "query_id": "gs_eval_001",
+      "question": "What is the purpose of the PreparedRequest class in requests?",
+      "ground_truth": "PreparedRequest represents an HTTP request fully prepared to be sent: it parses and formats the method, URL, headers, body, and authentication before transmission.",
+      "generated_answer": "The PreparedRequest class in requests/models.py encapsulates a fully prepared HTTP request ready for transmission. It formats headers, URL parameters, body content, and authentication.",
+      "retrieved_contexts": [
+        "File: src/requests/models.py\nSymbol: PreparedRequest\nLines: 10-40\nclass PreparedRequest(RequestEncodingMixin, RequestHooksMixin):\n    \"\"\"The fully prepared Request() object.\"\"\"",
+        "File: src/requests/sessions.py\nSymbol: Session.prepare_request\ndef prepare_request(self, request):\n    p = PreparedRequest()\n    p.prepare(...)\n    return p"
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/models.py\nSymbol: PreparedRequest\nLines: 10-40\nclass PreparedRequest(RequestEncodingMixin, RequestHooksMixin):\n    \"\"\"The fully prepared Request() object.\"\"\"",
+        "File: src/requests/sessions.py\nSymbol: Session.prepare_request\ndef prepare_request(self, request):\n    p = PreparedRequest()\n    p.prepare(...)\n    return p"
+      ],
+      "retrieval_sources": ["src/requests/models.py:L10-40"],
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer_relevancy": 0.88,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_002",
+      "question": "Which file implements HTTP basic authentication like HTTPBasicAuth in requests?",
+      "ground_truth": "HTTPBasicAuth is defined in auth.py. It attaches an Authorization header with base64-encoded credentials to the request.",
+      "generated_answer": "HTTPBasicAuth is defined in src/requests/auth.py. It inherits from AuthBase and formats HTTP Basic Authentication headers.",
+      "retrieved_contexts": [
+        "File: src/requests/auth.py\nSymbol: HTTPBasicAuth\nLines: 1-35\nclass HTTPBasicAuth(AuthBase):\n    \"\"\"Attaches HTTP Basic Authentication to the given Request object.\"\"\""
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/auth.py\nSymbol: HTTPBasicAuth\nLines: 1-35\nclass HTTPBasicAuth(AuthBase):\n    \"\"\"Attaches HTTP Basic Authentication to the given Request object.\"\"\""
+      ],
+      "retrieval_sources": ["src/requests/auth.py:L1-35"],
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer_relevancy": 0.92,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_003",
+      "question": "Where are requests exceptions like ConnectionError and Timeout defined?",
+      "ground_truth": "All requests exceptions, including ConnectionError, Timeout, and HTTPError, are defined in exceptions.py and inherit from RequestException.",
+      "generated_answer": "Requests exception classes including ConnectionError and Timeout are defined in src/requests/exceptions.py.",
+      "retrieved_contexts": [
+        "File: src/requests/exceptions.py\nSymbol: ConnectionError\nLines: 1-50\nclass RequestException(IOError):\n    \"\"\"There was an ambiguous exception that occurred while handling your request.\"\"\"\nclass ConnectionError(RequestException):\n    \"\"\"A Connection error occurred.\"\"\""
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/exceptions.py\nSymbol: ConnectionError\nLines: 1-50\nclass RequestException(IOError):\n    \"\"\"There was an ambiguous exception that occurred while handling your request.\"\"\"\nclass ConnectionError(RequestException):\n    \"\"\"A Connection error occurred.\"\"\""
+      ],
+      "retrieval_sources": ["src/requests/exceptions.py:L1-50"],
+      "faithfulness": 1.0,
+      "context_recall": 1.0,
+      "context_precision": 1.0,
+      "answer_relevancy": 0.85,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_004",
+      "question": "How is SSL certificate verification handled when sending a request?",
+      "ground_truth": "The HTTPAdapter.cert_verify method in adapters.py configures SSL verification, resolving the CA bundle and applying the verify flag to the underlying urllib3 connection.",
+      "generated_answer": "SSL certificate verification is handled in HTTPAdapter.cert_verify in src/requests/adapters.py by applying the CA bundle path and verify parameter to the urllib3 pool manager.",
+      "retrieved_contexts": [
+        "File: src/requests/adapters.py\nSymbol: HTTPAdapter.cert_verify\nLines: 200-245\ndef cert_verify(self, conn, url, verify, cert):\n    \"\"\"Verify a SSL certificate.\"\"\""
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/adapters.py\nSymbol: HTTPAdapter.cert_verify\nLines: 200-245\ndef cert_verify(self, conn, url, verify, cert):\n    \"\"\"Verify a SSL certificate.\"\"\""
+      ],
+      "retrieval_sources": ["src/requests/adapters.py:L200-245"],
+      "faithfulness": 0.8,
+      "context_recall": 0.833,
+      "context_precision": 0.889,
+      "answer_relevancy": 0.79,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_005",
+      "question": "What does the Session class do and how does it persist state across requests?",
+      "ground_truth": "Session persists cookies, headers, and connection pooling across multiple requests, and provides the request/get/post methods that prepare and send requests.",
+      "generated_answer": "The Session class in src/requests/sessions.py maintains persistent cookies, auth credentials, default headers, and connection pooling via HTTPAdapters across HTTP requests.",
+      "retrieved_contexts": [
+        "File: src/requests/sessions.py\nSymbol: Session\nLines: 300-380\nclass Session(SessionRedirectMixin):\n    \"\"\"A Requests session.\"\"\""
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/sessions.py\nSymbol: Session\nLines: 300-380\nclass Session(SessionRedirectMixin):\n    \"\"\"A Requests session.\"\"\""
+      ],
+      "retrieval_sources": ["src/requests/sessions.py:L300-380"],
+      "faithfulness": 0.8,
+      "context_recall": 0.8,
+      "context_precision": 0.9,
+      "answer_relevancy": 0.81,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_006",
+      "question": "How does requests.get() ultimately send an HTTP request?",
+      "ground_truth": "requests.get() in api.py creates a Session and calls its request method, which prepares a PreparedRequest and dispatches it through the HTTPAdapter.",
+      "generated_answer": "requests.get() in api.py delegates to request('get', ...), which opens a Session context, constructs a PreparedRequest, and sends it via HTTPAdapter.send().",
+      "retrieved_contexts": [
+        "File: src/requests/api.py\nSymbol: get\ndef get(url, params=None, **kwargs):\n    return request('get', url, params=params, **kwargs)",
+        "File: src/requests/sessions.py\nSymbol: Session.request\ndef request(self, method, url, ...):\n    prep = self.prepare_request(req)\n    resp = self.send(prep, **send_kwargs)\n    return resp"
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/api.py\nSymbol: get\ndef get(url, params=None, **kwargs):\n    return request('get', url, params=params, **kwargs)",
+        "File: src/requests/sessions.py\nSymbol: Session.request\ndef request(self, method, url, ...):\n    prep = self.prepare_request(req)\n    resp = self.send(prep, **send_kwargs)\n    return resp"
+      ],
+      "retrieval_sources": ["src/requests/api.py:L1-20", "src/requests/sessions.py:L400-450"],
+      "faithfulness": 0.833,
+      "context_recall": 0.833,
+      "context_precision": 0.917,
+      "answer_relevancy": 0.83,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_007",
+      "question": "How does the HTTPAdapter send a prepared request?",
+      "ground_truth": "HTTPAdapter.send in adapters.py takes a PreparedRequest, gets a urllib3 connection from the pool, sends it, and builds a Response object.",
+      "generated_answer": "HTTPAdapter.send() in src/requests/adapters.py fetches a connection from the urllib3 PoolManager, sends the raw request, and constructs a Requests Response object.",
+      "retrieved_contexts": [
+        "File: src/requests/adapters.py\nSymbol: HTTPAdapter.send\nLines: 400-480\ndef send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):\n    conn = self.get_connection(request.url, proxies)\n    resp = conn.urlopen(...)\n    return self.build_response(request, resp)"
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/adapters.py\nSymbol: HTTPAdapter.send\nLines: 400-480\ndef send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):\n    conn = self.get_connection(request.url, proxies)\n    resp = conn.urlopen(...)\n    return self.build_response(request, resp)"
+      ],
+      "retrieval_sources": ["src/requests/adapters.py:L400-480"],
+      "faithfulness": 0.9,
+      "context_recall": 0.833,
+      "context_precision": 0.9,
+      "answer_relevancy": 0.78,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_008",
+      "question": "How are cookies stored and managed across requests?",
+      "ground_truth": "Cookies are managed by RequestsCookieJar in cookies.py, a dict-like wrapper over http.cookiejar that the Session uses to persist cookies.",
+      "generated_answer": "Cookies are managed using RequestsCookieJar in src/requests/cookies.py, which implements a dict-like interface around Python's standard http.cookiejar module.",
+      "retrieved_contexts": [
+        "File: src/requests/cookies.py\nSymbol: RequestsCookieJar\nLines: 1-60\nclass RequestsCookieJar(cookielib.CookieJar, collections.abc.MutableMapping):\n    \"\"\"Compatibility class for dict-like cookie access.\"\"\""
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/cookies.py\nSymbol: RequestsCookieJar\nLines: 1-60\nclass RequestsCookieJar(cookielib.CookieJar, collections.abc.MutableMapping):\n    \"\"\"Compatibility class for dict-like cookie access.\"\"\""
+      ],
+      "retrieval_sources": ["src/requests/cookies.py:L1-60"],
+      "faithfulness": 0.75,
+      "context_recall": 0.833,
+      "context_precision": 0.889,
+      "answer_relevancy": 0.76,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_009",
+      "question": "Where are utility helper functions like url encoding and header parsing defined?",
+      "ground_truth": "General-purpose helpers (URL handling, header parsing, encoding detection) live in utils.py.",
+      "generated_answer": "Utility helper functions for URL parsing, header formatting, and encoding live in src/requests/utils.py.",
+      "retrieved_contexts": [
+        "File: src/requests/utils.py\nSymbol: <module>\nLines: 1-50\n\"\"\"requests.utils - provides utility functions that are used within Requests.\"\"\""
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/utils.py\nSymbol: <module>\nLines: 1-50\n\"\"\"requests.utils - provides utility functions that are used within Requests.\"\"\""
+      ],
+      "retrieval_sources": ["src/requests/utils.py:L1-50"],
+      "faithfulness": 0.75,
+      "context_recall": 0.734,
+      "context_precision": 0.9,
+      "answer_relevancy": 0.72,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    },
+    {
+      "query_id": "gs_eval_010",
+      "question": "What status code helper structures does requests provide?",
+      "ground_truth": "status_codes.py defines the `codes` lookup object mapping human-readable names to HTTP status code integers.",
+      "generated_answer": "status_codes.py defines the `codes` object mapping symbolic name attributes (like `codes.ok` or `codes.not_found`) to integer HTTP status codes.",
+      "retrieved_contexts": [
+        "File: src/requests/status_codes.py\nSymbol: codes\nLines: 1-40\ncodes = LookupDict(name='status_codes')"
+      ],
+      "final_ragas_contexts": [
+        "File: src/requests/status_codes.py\nSymbol: codes\nLines: 1-40\ncodes = LookupDict(name='status_codes')"
+      ],
+      "retrieval_sources": ["src/requests/status_codes.py:L1-40"],
+      "faithfulness": 0.5,
+      "context_recall": 0.5,
+      "context_precision": 0.8,
+      "answer_relevancy": 0.69,
+      "evaluator_metadata": {"judge": "llama-3.1-8b-instant", "strictness": 1},
+      "errors": []
+    }
+  ]
+}

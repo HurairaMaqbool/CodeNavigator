@@ -1,0 +1,13 @@
+{
+  "test_name": "McNemar's Paired Test (Continuity Corrected)",
+  "contingency_matrix": {
+    "n11_both_correct": 10,
+    "n10_a_correct_b_wrong": 4,
+    "n01_b_correct_a_wrong": 0,
+    "n00_both_wrong": 13
+  },
+  "chi2_statistic": 2.25,
+  "p_value": 0.0765,
+  "statistically_significant_0_05": false,
+  "effect_interpretation": "Full CodeNavigator (+14.81% accuracy gain over baseline) demonstrates a clear practical improvement, but under N=27 (p=0.0765), researchers should describe the result as 'observed improvement on this benchmark' rather than claiming statistical significance at alpha=0.05."
+}

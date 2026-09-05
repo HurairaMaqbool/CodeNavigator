@@ -1,0 +1,38 @@
+{
+  "experiment_id": "EXP-C",
+  "name": "Retrieval Subsystem Ablation",
+  "variants": {
+    "dense_only": {
+      "accuracy": 0.4444,
+      "precision": 0.5556,
+      "recall": 0.5263,
+      "f1": 0.5405,
+      "mrr": 0.58,
+      "p_at_5": 0.55
+    },
+    "bm25_only": {
+      "accuracy": 0.4074,
+      "precision": 0.5263,
+      "recall": 0.5263,
+      "f1": 0.5263,
+      "mrr": 0.51,
+      "p_at_5": 0.48
+    },
+    "hybrid_rrf": {
+      "accuracy": 0.4815,
+      "precision": 0.625,
+      "recall": 0.5263,
+      "f1": 0.5714,
+      "mrr": 0.67,
+      "p_at_5": 0.65
+    },
+    "hybrid_rrf_reranker": {
+      "accuracy": 0.5185,
+      "precision": 0.6667,
+      "recall": 0.6316,
+      "f1": 0.6486,
+      "mrr": 0.74,
+      "p_at_5": 0.72
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "verdict": "VALID",
+  "exp_a_count": 27,
+  "exp_b_count": 27,
+  "query_id_sets_identical": true,
+  "question_matches": 27,
+  "question_mismatches": 0,
+  "ground_truth_matches": 27,
+  "ground_truth_mismatches": 0,
+  "execution_sources_identical": true,
+  "contradictions_found": [],
+  "mismatched_queries": [],
+  "evidence_files": [
+    "data/golden_set.json",
+    "experiments/live/full_system_exp_a.py",
+    "experiments/live/naive_dense_baseline.py",
+    "experiments/live/raw/exp_a_full_system_live.json",
+    "experiments/live/raw/exp_b_naive_dense_rag_live.json"
+  ]
+}

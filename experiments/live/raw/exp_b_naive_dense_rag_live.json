@@ -1,0 +1,1293 @@
+{
+  "experiment_id": "EXP-B_LIVE",
+  "experiment_name": "Naive Dense RAG Live Baseline",
+  "timestamp": "2026-09-05T03:47:21Z",
+  "configuration": {
+    "repo_id": "5749924cb6a9850057686b664b4b980fc407af109104df6f0aec8ec8182a4338",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "llm_model": "qwen/qwen3.6-27b",
+    "llm_provider": "groq",
+    "top_k": 5,
+    "bm25_enabled": false,
+    "rrf_enabled": false,
+    "reranker_enabled": false,
+    "graph_enabled": false,
+    "verification_gating_enabled": false
+  },
+  "total_queries": 27,
+  "results": [
+    {
+      "query_id": "gs_ingest_001",
+      "category": "ingestion",
+      "question": "How does the ingestion pipeline handle large repositories?",
+      "ground_truth_files": [
+        "app/ingestion/clone.py",
+        "app/config.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/ingestion/repo_readiness.py",
+          "start_line": 443,
+          "end_line": 461,
+          "score": 0.4348
+        },
+        {
+          "file_path": "app/ingestion/pipeline.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.4195
+        },
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 221,
+          "end_line": 269,
+          "score": 0.4193
+        },
+        {
+          "file_path": "scripts/audit_ingestion_pipeline.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.395
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "start_line": 374,
+          "end_line": 414,
+          "score": 0.3866
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking how the ingestion pipeline handles large repositories based on the provided code context.\nI need to look for any mentions of handling large repositories, chunking, batching, memory management, or specific strategies for large repos in the provided files.\n\nLet's review the provided code context:\n1. `app/ingestion/repo_readiness.py`: Defines `is_repo_ready` which calls `evaluate_chat_readiness`. No mention of large repos.\n2. `app/ingestion/pipeline.py`: Module header & constants. Imports `build_graph`, `IngestionError`, `clone_repo`. No logic shown.\n3. `app/api/router.py`: `_run_ingest_pipeline_remaining` function. It iterates over `files`, decodes them, parses them, chunks them (`chunk_all_files`), stores chunks (`store_chunks`), builds BM25 index, builds graph, marks synced. No specific handling for \"large repositories\" mentioned.\n4. `scripts/audit_ingestion_pipeline.py`: Audit script. No logic for handling large repos.\n5. `app/ingestion/metadata_store.py`: `last_checkpoint` method. Handles retry/resume logic by finding the last good stage.",
+      "cited_files": [
+        "app/ingestion/repo_readiness.py",
+        "app/ingestion/pipeline.py",
+        "app/api/router.py",
+        "scripts/audit_ingestion_pipeline.py",
+        "app/ingestion/metadata_store.py"
+      ],
+      "latency_s": 1.23,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_002",
+      "category": "ingestion",
+      "question": "What happens if the GitHub webhook receives a push event on a non-default branch?",
+      "ground_truth_files": [
+        "app/webhook/github_webhook.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/webhook/github_app_webhook.py",
+          "start_line": 36,
+          "end_line": 97,
+          "score": 0.5853
+        },
+        {
+          "file_path": "tests/test_github_webhook.py",
+          "start_line": 97,
+          "end_line": 114,
+          "score": 0.5823
+        },
+        {
+          "file_path": "tests/test_github_webhook.py",
+          "start_line": 85,
+          "end_line": 95,
+          "score": 0.5731
+        },
+        {
+          "file_path": "app/webhook/github_webhook.py",
+          "start_line": 65,
+          "end_line": 128,
+          "score": 0.5645
+        },
+        {
+          "file_path": "tests/test_github_webhook.py",
+          "start_line": 37,
+          "end_line": 40,
+          "score": 0.5188
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"What happens if the GitHub webhook receives a push event on a non-default branch?\"\n\n2.  **Analyze Provided Code Context:**\n   - I need to look at the webhook handling code for GitHub push events.\n   - There are two relevant files: `app/webhook/github_app_webhook.py` and `app/webhook/github_webhook.py`.\n   - Let's check `app/webhook/github_app_webhook.py` (lines 36-97):\n     - Handles `event == \"push\"` starting around line 78.\n     - Extracts `ref`, `default_branch`.\n     - Line 86: `if ref and ref != default_branch:`\n     - Line 87: `return JSONResponse({\"status\": \"ignored\", \"reason\": \"non-default branch\"})`\n   - Let's check `app/webhook/github_webhook.py` (lines 65-128):\n     - Handles `event != \"push\"` first.\n     - Extracts `branch` and `default_branch`.\n     - Line 103",
+      "cited_files": [
+        "app/webhook/github_app_webhook.py",
+        "app/webhook/github_webhook.py"
+      ],
+      "latency_s": 1.2,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_003",
+      "category": "ingestion",
+      "question": "Which file extensions are allowed during the chunking phase?",
+      "ground_truth_files": [
+        "app/ingestion/chunker.py",
+        "app/config.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/parsing/chunker.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.5313
+        },
+        {
+          "file_path": "app/parsing/chunker.py",
+          "start_line": 520,
+          "end_line": 570,
+          "score": 0.5191
+        },
+        {
+          "file_path": "app/parsing/chunker.py",
+          "start_line": 422,
+          "end_line": 517,
+          "score": 0.5116
+        },
+        {
+          "file_path": "app/parsing/chunker.py",
+          "start_line": 284,
+          "end_line": 336,
+          "score": 0.5111
+        },
+        {
+          "file_path": "app/parsing/chunker.py",
+          "start_line": 971,
+          "end_line": 1016,
+          "score": 0.4795
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking about which file extensions are allowed during the chunking phase.\nI need to look at the provided code context to see if there's any mention of allowed file extensions.\nThe provided code context includes:\n- `app/parsing/chunker.py:1-40` (header)\n- `app/parsing/chunker.py:520-570` (`chunk_all_files`)\n- `app/parsing/chunker.py:422-517` (`chunk_parsed_file`)\n- `app/parsing/chunker.py:284-336` (`_make_chunks`)\n- `app/parsing/chunker.py:971-1016` (`create_chunk_from_pack`)\n\nNone of these snippets mention file extensions or filtering by extension. The chunking phase seems to operate on already parsed files (`ParsedFile` objects) and contents. The filtering by extension likely happens in an earlier phase (e.g., ingestion or file filtering), which is not provided in the context.\n\nTherefore, I must state that the reference cannot be verified based on the provided code context.\n\nI will formulate the response clearly stating that the provided code does not",
+      "cited_files": [
+        "app/parsing/chunker.py"
+      ],
+      "latency_s": 13.07,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_004",
+      "category": "ingestion",
+      "question": "How is the ingestion lock implemented to prevent concurrent ingestion of the same repo?",
+      "ground_truth_files": [
+        "app/ingestion/metadata_store.py",
+        "app/api/router.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/ingestion/locking.py",
+          "start_line": 287,
+          "end_line": 291,
+          "score": 0.564
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "start_line": 130,
+          "end_line": 131,
+          "score": 0.5585
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "start_line": 162,
+          "end_line": 241,
+          "score": 0.554
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "start_line": 121,
+          "end_line": 128,
+          "score": 0.5487
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "start_line": 274,
+          "end_line": 284,
+          "score": 0.5263
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"How is the ingestion lock implemented to prevent concurrent ingestion of the same repo?\"\n2.  **Analyze Code Context:** I need to look at the provided code snippets from `app/ingestion/locking.py` to understand the locking mechanism.\n   - `release_lock(repo_id)` calls `lock_manager.release(repo_id)` (line 287-291)\n   - `_lock_file_path(repo_id)` returns `Path(settings.REPOS_PATH) / repo_id / \"ingest.lock\"` (line 130-131)\n   - `try_acquire(repo_id, metadata_store)` is the core method (lines 162-241). It outlines a 3-step algorithm:\n     1. Check metadata for a stale `pending` record (crashed-process recovery). If stale, force-clear thread lock and release file lock.\n     2. Try to acquire a per-repo `threading.Lock` (non-blocking). Failure means another in-process coroutine is ingesting.\n     3. Try to acquire a file lock (non-blocking,",
+      "cited_files": [
+        "app/ingestion/locking.py"
+      ],
+      "latency_s": 1.21,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_005",
+      "category": "ingestion",
+      "question": "What is the role of metadata_store.mark_synced?",
+      "ground_truth_files": [
+        "app/ingestion/metadata_store.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "start_line": 491,
+          "end_line": 544,
+          "score": 0.6282
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "start_line": 546,
+          "end_line": 574,
+          "score": 0.5067
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "start_line": 576,
+          "end_line": 599,
+          "score": 0.5027
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "start_line": 442,
+          "end_line": 489,
+          "score": 0.4947
+        },
+        {
+          "file_path": "tests/test_module_10.py",
+          "start_line": 58,
+          "end_line": 87,
+          "score": 0.4918
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"What is the role of metadata_store.mark_synced?\"\n2.  **Locate Relevant Code:** I need to look at the provided code context for `metadata_store.py`, specifically the `mark_synced` method.\n   - Found in `app/ingestion/metadata_store.py:491-544`\n3.  **Analyze the Code & Docstring:**\n   - Docstring says: \"Transition to ``synced``. Called by the ingestion orchestrator **only** after both the vector store (Module 6) and the graph store (Module 7) confirm successful writes. Until both confirm, the repo stays ``pending``.\"\n   - Parameters: `repo_id`, `commit_hash`, `cloned_at`, `files_parsed`, `chunks_created`\n   - Logic:\n     - Acquires a lock for the repo.\n     - Reads raw metadata.\n     - Checks if it exists (raises KeyError if not).\n     - Updates `sync_status` to `\"synced\"`.\n     - Updates `last_stage` to `Stage.SYNCED",
+      "cited_files": [
+        "metadata_store.py",
+        "app/ingestion/metadata_store.py"
+      ],
+      "latency_s": 13.02,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_001",
+      "category": "retrieval",
+      "question": "How does hybrid search combine BM25 and vector scores?",
+      "ground_truth_files": [
+        "app/retrieval/hybrid_search.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "tests/test_module_6a.py",
+          "start_line": 286,
+          "end_line": 301,
+          "score": 0.5679
+        },
+        {
+          "file_path": "tests/test_retrieval_6a.py",
+          "start_line": 127,
+          "end_line": 142,
+          "score": 0.5584
+        },
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "start_line": 81,
+          "end_line": 187,
+          "score": 0.5545
+        },
+        {
+          "file_path": "tests/test_module_6a.py",
+          "start_line": 264,
+          "end_line": 280,
+          "score": 0.551
+        },
+        {
+          "file_path": "tests/test_module_6a.py",
+          "start_line": 98,
+          "end_line": 149,
+          "score": 0.5488
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"How does hybrid search combine BM25 and vector scores?\"\n2.  **Scan Context for Keywords:** Look for \"hybrid search\", \"combine\", \"BM25\", \"vector\", \"score\", \"RRF\", \"fusion\".\n3.  **Locate Relevant Code:**\n   - `app/retrieval/hybrid_search.py:81-187` contains the `search_hybrid` function.\n   - The docstring explicitly describes the algorithm:\n     ```\n     Algorithm\n     ---------\n     1. Query vector store for top N.\n     2. Query BM25 store for top N.\n     3. For each hit across both lists, compute RRF score:\n        `score = 0`\n        `if in vector: score += 1 / (k + vector_rank)`\n        `if in bm25:   score += 1 / (k + bm25_rank)`\n     4. Sort by RRF score descending.\n     ```\n   - The implementation uses a helper `_merge_hit` that",
+      "cited_files": [
+        "app/retrieval/hybrid_search.py"
+      ],
+      "latency_s": 37.68,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_002",
+      "category": "retrieval",
+      "question": "Where is the BM25 index persisted on disk?",
+      "ground_truth_files": [
+        "app/retrieval/bm25_store.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "start_line": 247,
+          "end_line": 263,
+          "score": 0.6004
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "start_line": 102,
+          "end_line": 216,
+          "score": 0.5848
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "start_line": 219,
+          "end_line": 244,
+          "score": 0.5813
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "start_line": 387,
+          "end_line": 437,
+          "score": 0.5403
+        },
+        {
+          "file_path": "app/ingestion/index_integrity.py",
+          "start_line": 98,
+          "end_line": 106,
+          "score": 0.4994
+        }
+      ],
+      "model_answer": "\n<think>\nThe user wants to know where the BM25 index is persisted on disk based on the provided code.\nI need to look for the file path or directory where the BM25 index is saved.\nLooking at `app/retrieval/bm25_store.py`:\nIn `build_bm25_index` (lines 102-216), there is:\n`pkl_path = _index_path_for(repo_id)`\n`pkl_path.parent.mkdir(parents=True, exist_ok=True)`\n`with pkl_path.open(\"wb\") as f: pickle.dump(data, f)`\n\nSo the path is determined by `_index_path_for(repo_id)`.\nI should check if `_index_path_for` is defined in the provided context. It's not explicitly shown in the snippets, but I can mention that it's determined by the `_index_path_for(repo_id)` function.\nWait, let's search the context for `_index_path_for`. It's not in the provided snippets.\nI will state that the index is persisted to a pickle file at the path returned by `_index_path_for(repo_id)`, as seen in `app/retrieval/bm25_store.py`.\n",
+      "cited_files": [
+        "app/retrieval/bm25_store.py"
+      ],
+      "latency_s": 0.95,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_003",
+      "category": "retrieval",
+      "question": "Does the pipeline use a cross-encoder reranker?",
+      "ground_truth_files": [
+        "app/retrieval/hybrid_search.py",
+        "app/retrieval/reranker.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "start_line": 95,
+          "end_line": 124,
+          "score": 0.5542
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "start_line": 300,
+          "end_line": 403,
+          "score": 0.5306
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "start_line": 169,
+          "end_line": 285,
+          "score": 0.5222
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "start_line": 127,
+          "end_line": 150,
+          "score": 0.4926
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "start_line": 292,
+          "end_line": 297,
+          "score": 0.4257
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking whether the pipeline uses a cross-encoder reranker based on the provided code context.\nLooking at the code:\n- `app/retrieval/reranker.py` contains functions `rerank`, `cross_encoder_rerank`, `_rerank_with_path_boost`, `_get_model`, `get_model`.\n- `rerank` function checks `if not settings.ENABLE_RERANKER:` and falls back to `_rerank_with_path_boost`.\n- If enabled, it tries to get a model using `get_model()`, which loads a `CrossEncoder` from `sentence_transformers`.\n- It uses `model.predict(pairs, show_progress_bar=False)` to get scores.\n- `cross_encoder_rerank` also uses `_get_model()` which loads a `CrossEncoder`.\n- The code explicitly mentions \"Cross-Encoder\" and uses `sentence_transformers.CrossEncoder`.\n\nSo yes, the pipeline uses a cross-encoder reranker, conditionally based on `settings.ENABLE_RERANKER`, and falls back to a path-boosted RRF score if unavailable or disabled.\n\nI will formulate the answer citing the relevant files and lines.\n- `app/re",
+      "cited_files": [
+        "app/retrieval/reranker.py"
+      ],
+      "latency_s": 37.54,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_004",
+      "category": "retrieval",
+      "question": "What happens if query expansion LLM request times out?",
+      "ground_truth_files": [
+        "app/retrieval/query_expansion.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "start_line": 125,
+          "end_line": 147,
+          "score": 0.5507
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "start_line": 324,
+          "end_line": 417,
+          "score": 0.4569
+        },
+        {
+          "file_path": "tests/test_query_decomposition.py",
+          "start_line": 39,
+          "end_line": 46,
+          "score": 0.4366
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "start_line": 120,
+          "end_line": 122,
+          "score": 0.3944
+        },
+        {
+          "file_path": "tests/test_query_decomposition.py",
+          "start_line": 20,
+          "end_line": 25,
+          "score": 0.3542
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking what happens if the query expansion LLM request times out.\nI need to look at the `expand_query` function in `app/retrieval/query_expansion.py`.\nLooking at lines 324-417:\n```python\n    attempts = 2\n    for attempt in range(attempts):\n        try:\n            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:\n                future = executor.submit(client.generate_text, prompt)\n                response_text = future.result(timeout=5.0)\n            if response_text:\n                break\n        except Exception as exc:\n            log.warning(\n                \"query_expansion_via_llm_client_failed\",\n                attempt=attempt + 1,\n                error=str(exc),\n            )\n            if attempt == attempts - 1:\n                log.warning(\"query_expansion_failed_all_attempts\")\n                return _dedupe_preserve_order([question] + det)\n```\nIf the LLM request times out (or raises any exception), it catches the exception, logs a warning `\"query_expansion_via_llm_client_failed\"`, and if it's the last attempt (attempts =",
+      "cited_files": [
+        "app/retrieval/query_expansion.py"
+      ],
+      "latency_s": 1.19,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_005",
+      "category": "retrieval",
+      "question": "What vector database is used for semantic search?",
+      "ground_truth_files": [
+        "app/retrieval/vector_store.py",
+        "app/chroma_client.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/retrieval/vector_store.py",
+          "start_line": 334,
+          "end_line": 377,
+          "score": 0.4124
+        },
+        {
+          "file_path": "tests/test_retrieval_6a.py",
+          "start_line": 97,
+          "end_line": 102,
+          "score": 0.3969
+        },
+        {
+          "file_path": "app/retrieval/vector_store.py",
+          "start_line": 268,
+          "end_line": 331,
+          "score": 0.3813
+        },
+        {
+          "file_path": "tests/test_retrieval_6a.py",
+          "start_line": 127,
+          "end_line": 142,
+          "score": 0.3748
+        },
+        {
+          "file_path": "tests/test_module_6a.py",
+          "start_line": 286,
+          "end_line": 301,
+          "score": 0.3674
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking about the vector database used for semantic search based on the provided code context.\nLooking at the code context:\n`app/retrieval/vector_store.py` contains functions `search_vectors` and `query`.\nIn `search_vectors`, it calls `collection.query(query_embeddings=[query_embedding], n_results=actual_n_results, include=[\"documents\", \"metadatas\", \"distances\"])`.\nIn `query`, it calls `collection.query(query_embeddings=[query_vector], n_results=actual_top_k, include=[\"documents\", \"metadatas\", \"distances\"])`.\nThe `collection` object is obtained via `get_collection(repo_id)`.\nThe API `collection.query(query_embeddings=..., n_results=..., include=[\"documents\", \"metadatas\", \"distances\"])` is highly characteristic of ChromaDB.\nLet's check if there are any imports or explicit mentions of the database. The provided context doesn't show imports, but the method signature `collection.query(query_embeddings=..., n_results=..., include=...)` matches ChromaDB's API exactly.\nWait, the prompt says \"Answer the user's question using ONLY the provided code context.\"\nDoes the provided code context explicitly",
+      "cited_files": [
+        "app/retrieval/vector_store.py"
+      ],
+      "latency_s": 0.87,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_001",
+      "category": "agent",
+      "question": "How does the agent avoid executing duplicate tool calls?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/tools.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "tests/test_agent_9a.py",
+          "start_line": 69,
+          "end_line": 107,
+          "score": 0.4693
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 357,
+          "end_line": 402,
+          "score": 0.463
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 328,
+          "end_line": 350,
+          "score": 0.4368
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 214,
+          "end_line": 215,
+          "score": 0.4255
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 405,
+          "end_line": 438,
+          "score": 0.4162
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Analyze User Question:** The user asks: \"How does the agent avoid executing duplicate tool calls?\"\n\n2.  **Scan Code Context for Keywords:** I need to look for terms like \"duplicate\", \"cache\", \"avoid\", \"prevent\", \"tool call\", \"execution\", \"variant\", \"merge\", etc.\n   - In `tests/test_agent_9a.py:69-107`, there's a test named `test_tool_cache_hit_prevents_duplicate_execution`.\n   - The docstring says: `\"\"\"Module #21: identical search variants are merged; retrieval runs once per variant set.\"\"\"`\n   - The test patches `app.agent.loop.semantic_cache_lookup`, `app.retrieval.query_expansion.expand_query`, `app.retrieval.hybrid_search.search`, etc.\n   - It asserts `self.assertEqual(search_mock.call_count, 1)` with the comment: `# One variant \u2192 one search call (no duplicate retrieval for the same query).`\n   - This strongly suggests that a semantic cache or variant merging mechanism prevents duplicate executions.\n\n3.  **Evaluate Context for Direct Answers:**\n   - The provided context",
+      "cited_files": [
+        "tests/test_agent_9a.py"
+      ],
+      "latency_s": 13.07,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_002",
+      "category": "agent",
+      "question": "What determines if an agent's answer is 'gated' due to hallucination?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/confidence.py",
+        "app/agent/claim_verification.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "tests/test_grounding_parroting.py",
+          "start_line": 43,
+          "end_line": 50,
+          "score": 0.2905
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 1596,
+          "end_line": 1608,
+          "score": 0.2822
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 1207,
+          "end_line": 1339,
+          "score": 0.271
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 1109,
+          "end_line": 1115,
+          "score": 0.2599
+        },
+        {
+          "file_path": "app/agent/prompts/decide_prompt.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.2517
+        }
+      ],
+      "model_answer": "\n<think>\nThe user wants to know what determines if an agent's answer is 'gated' due to hallucination, based on the provided code context.\nI need to look for mentions of \"gated\", \"hallucination\", \"parroting\", \"leaked\", or similar concepts in the code.\n\nFrom `app/agent/loop.py:1596-1608`:\n`_ensure_no_structured_json_leak` checks if `looks_like_leaked_finalize_json(ctx.answer)` is true. If so, it sets `ctx.gated = True`, `ctx.answer = GATED_FALLBACK_MESSAGE`, `ctx.sources = []`, `ctx.confidence_score = 0.0`. This is a \"Hard gate: structured FINALIZE JSON must never appear in user-visible answers.\"\n\nFrom `app/agent/loop.py:1207-1339`:\n`_handle_finalize` handles the finalization step.\nIf `_apply_structured(raw)` fails, and `looks_like_leaked_finalize_json(raw)` is true, it retries. If it still fails, it calls `_gate_finalize_parse_failure`, which sets `ctx.gated = True`, `ctx.answer =",
+      "cited_files": [
+        "app/agent/loop.py"
+      ],
+      "latency_s": 13.04,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_003",
+      "category": "agent",
+      "question": "How long is a semantic cache entry valid?",
+      "ground_truth_files": [
+        "app/agent/semantic_cache.py",
+        "app/config.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 101,
+          "end_line": 113,
+          "score": 0.5776
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 66,
+          "end_line": 98,
+          "score": 0.5444
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "start_line": 316,
+          "end_line": 347,
+          "score": 0.5362
+        },
+        {
+          "file_path": "tests/test_semantic_cache.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.5292
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "start_line": 177,
+          "end_line": 232,
+          "score": 0.5093
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking about the validity duration of a semantic cache entry based on the provided code context.\nI need to look for any expiration, TTL (time-to-live), or validity logic in the semantic cache implementation.\n\nLooking at the provided files:\n`app/agent/loop.py` contains `semantic_cache_store` and `semantic_cache_lookup`.\n`app/agent/semantic_cache.py` contains `SemanticCache.store` and `store` function.\n`tests/test_semantic_cache.py` is just imports.\n\nIn `app/agent/semantic_cache.py`, the `store` function adds entries to a Chroma collection:\n```python\n        col.add(\n            ids=[f\"cache_{uuid.uuid4().hex}\"],\n            embeddings=[query_embedding],\n            metadatas=[{\n                \"answer_json\": json.dumps(payload),\n                \"repo_commit_hash\": commit_hash,\n                \"repo_id\": repo_id,\n                \"timestamp\": int(time.time()),\n            }],\n        )\n```\nIt stores a `timestamp`, but there's no explicit TTL or expiration logic shown in the provided snippets.\nIn `semantic_cache_lookup` (`app/agent/loop",
+      "cited_files": [
+        "app/agent/loop.py",
+        "app/agent/semantic_cache.py",
+        "tests/test_semantic_cache.py"
+      ],
+      "latency_s": 13.04,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_004",
+      "category": "agent",
+      "question": "How are LLM rate limits handled in the agent loop?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/llm_client.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/agent/llm_client.py",
+          "start_line": 53,
+          "end_line": 55,
+          "score": 0.5549
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 570,
+          "end_line": 574,
+          "score": 0.5311
+        },
+        {
+          "file_path": "tests/test_rate_limit_regressions.py",
+          "start_line": 1,
+          "end_line": 30,
+          "score": 0.4962
+        },
+        {
+          "file_path": "tests/test_rate_limit_regressions.py",
+          "start_line": 11,
+          "end_line": 23,
+          "score": 0.4684
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 563,
+          "end_line": 567,
+          "score": 0.456
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"How are LLM rate limits handled in the agent loop?\"\n2.  **Analyze Provided Code Context:**\n   - `app/agent/llm_client.py:53-55`: Defines `RateLimitError(Exception)` with a docstring: \"Raised when the provider rate limits us (429), explicitly retryable.\"\n   - `app/agent/loop.py:570-574`: Defines `_rate_limit_sleep_budget_exhausted(ctx)` which checks if the cumulative rate limit sleep time (`ctx.rate_limit_sleep_ms`) exceeds a configured cap (`settings.AGENT_MAX_CUMULATIVE_RATE_LIMIT_SLEEP_S`).\n   - `tests/test_rate_limit_regressions.py:1-30 & 11-23`: Shows a test `test_rate_limited_message_is_actionable_not_gated_technical` that uses `_apply_provider_failure(ctx, RateLimitError(...), phase=\"finalize\")`. It asserts that `ctx.rate_limited` becomes `True`, `ctx.retry_after_s` is set to 25.0, and the returned",
+      "cited_files": [
+        "app/agent/llm_client.py",
+        "app/agent/loop.py",
+        "tests/test_rate_limit_regressions.py"
+      ],
+      "latency_s": 0.79,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_005",
+      "category": "agent",
+      "question": "What happens if an individual tool execution fails during the agent loop?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/tools.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 405,
+          "end_line": 438,
+          "score": 0.4923
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 1109,
+          "end_line": 1115,
+          "score": 0.4863
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 357,
+          "end_line": 402,
+          "score": 0.4441
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 1119,
+          "end_line": 1203,
+          "score": 0.431
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "start_line": 552,
+          "end_line": 555,
+          "score": 0.4222
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"What happens if an individual tool execution fails during the agent loop?\"\n\n2.  **Analyze Provided Code Context:**\n   - I need to look for tool execution logic, specifically how failures are handled.\n   - Relevant files/functions:\n     - `app/agent/tools.py:405-438` -> `execute_tool_with_retry`\n     - `app/agent/tools.py:357-402` -> `execute`\n     - `app/agent/loop.py` -> `_handle_observe`, `_handle_decide`, etc. (but the question is specifically about *tool execution failure*)\n   - Let's examine `execute_tool_with_retry` (lines 405-438):\n     - It validates the tool input.\n     - Defines `_run()` which calls `_dispatch_validated(validated, repo_id)`.\n     - Tries `_run()`. If it succeeds, returns result.\n     - If it raises an `Exception`, it logs a warning, sleeps for 1.0 second, and retries exactly once (`_",
+      "cited_files": [
+        "app/agent/tools.py",
+        "app/agent/loop.py"
+      ],
+      "latency_s": 13.1,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_001",
+      "category": "graph",
+      "question": "How does the graph builder detect circular dependencies?",
+      "ground_truth_files": [
+        "app/graph/builder.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/graph/builder.py",
+          "start_line": 280,
+          "end_line": 291,
+          "score": 0.5336
+        },
+        {
+          "file_path": "app/agent/claim_verification.py",
+          "start_line": 530,
+          "end_line": 599,
+          "score": 0.4604
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 393,
+          "end_line": 409,
+          "score": 0.4499
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 374,
+          "end_line": 390,
+          "score": 0.4484
+        },
+        {
+          "file_path": "tests/test_module_7.py",
+          "start_line": 63,
+          "end_line": 73,
+          "score": 0.4427
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"How does the graph builder detect circular dependencies?\"\n2.  **Scan Context for Keywords:** Look for \"circular dependencies\", \"cycles\", \"detect_cycles\", \"graph builder\", etc.\n3.  **Locate Relevant Code:**\n   - `app/graph/builder.py:280-291` contains the `detect_cycles` function.\n   - The docstring says: \"Find circular import/call chains in the graph. Uses networkx.simple_cycles which is a DFS-based cycle search algorithm.\"\n   - The implementation checks if the graph has nodes, then calls `nx.simple_cycles(graph)` and returns the list of cycles. It catches exceptions and logs a warning if it fails.\n4.  **Formulate Answer:**\n   - State that the graph builder uses the `detect_cycles` function in `app/graph/builder.py`.\n   - Explain that it relies on the `networkx` library's `simple_cycles` function.\n   - Mention that `simple_cycles` implements a DFS-based cycle search algorithm to find circular import/call chains.\n   - Note the safety",
+      "cited_files": [
+        "app/graph/builder.py"
+      ],
+      "latency_s": 13.03,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_002",
+      "category": "graph",
+      "question": "What is the maximum number of nodes allowed in the graph?",
+      "ground_truth_files": [
+        "app/graph/builder.py",
+        "app/config.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/graph/builder.py",
+          "start_line": 55,
+          "end_line": 277,
+          "score": 0.4419
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 188,
+          "end_line": 232,
+          "score": 0.4356
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 235,
+          "end_line": 371,
+          "score": 0.435
+        },
+        {
+          "file_path": "tests/test_graph.py",
+          "start_line": 143,
+          "end_line": 161,
+          "score": 0.4164
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "start_line": 294,
+          "end_line": 307,
+          "score": 0.3986
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking for the maximum number of nodes allowed in the graph.\nLooking at the code context:\nIn `app/graph/builder.py`, line 83: `max_nodes = settings.MAX_GRAPH_NODES`\nIn `tests/test_graph.py`, line 148: `old_max = settings.MAX_GRAPH_NODES`\nThe maximum number of nodes is controlled by `settings.MAX_GRAPH_NODES`.\nI should state that it is determined by the `settings.MAX_GRAPH_NODES` configuration variable.\nLet's verify the exact line numbers.\n`app/graph/builder.py:83` shows `max_nodes = settings.MAX_GRAPH_NODES`\nThe docstring for `build_graph` says: \"Enforces MAX_GRAPH_NODES. If exceeded, drops excess nodes deterministically...\"\nSo the answer is `settings.MAX_GRAPH_NODES`.\n\nI will formulate the response citing `app/graph/builder.py:83` and the docstring.\nCheck if there's any other mention. `settings.MAX_GRAPH_NODES` is the configuration setting.\nI'll answer clearly.\n\"The maximum number of nodes allowed in the graph is determined by the `settings.MAX_GRAPH_NODES` configuration variable.\"\nCite `app/graph/builder.py",
+      "cited_files": [
+        "app/graph/builder.py",
+        "tests/test_graph.py"
+      ],
+      "latency_s": 37.85,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_003",
+      "category": "graph",
+      "question": "How does get_subgraph limit the depth of the returned graph?",
+      "ground_truth_files": [
+        "app/graph/queries.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 294,
+          "end_line": 297,
+          "score": 0.6863
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 235,
+          "end_line": 371,
+          "score": 0.6329
+        },
+        {
+          "file_path": "tests/test_module_11.py",
+          "start_line": 85,
+          "end_line": 100,
+          "score": 0.5302
+        },
+        {
+          "file_path": "tests/test_module_7.py",
+          "start_line": 156,
+          "end_line": 201,
+          "score": 0.5269
+        },
+        {
+          "file_path": "tests/test_module_7.py",
+          "start_line": 414,
+          "end_line": 419,
+          "score": 0.5134
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"How does get_subgraph limit the depth of the returned graph?\"\n\n2.  **Locate Relevant Code:** I need to look at the `get_subgraph` function in `app/graph/queries.py` (lines 235-371).\n\n3.  **Analyze the Code for Depth Limiting Logic:**\n   - The function signature has `max_depth: int = 3` and `depth: int | None = None`.\n   - It handles backward compatibility: `if depth is not None: max_depth = depth`\n   - It calculates clamping:\n     ```python\n     original_depth = max_depth\n     clamped = (max_depth > 3)\n     clamped_depth = min(max(1, max_depth), 3)\n     ```\n   - It uses `clamped_depth` in the BFS loop:\n     ```python\n     for _ in range(clamped_depth):\n         # ... BFS logic ...\n     ```\n   - It returns metadata about the clamping:\n     ```python\n     return {\n         ...\n        ",
+      "cited_files": [
+        "app/graph/queries.py"
+      ],
+      "latency_s": 13.13,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_004",
+      "category": "graph",
+      "question": "What format is the graph converted to for visualization?",
+      "ground_truth_files": [
+        "app/diagrams/mermaid.py",
+        "app/graph/queries.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/graph/__init__.py",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.4041
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.3982
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.395
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "start_line": 61,
+          "end_line": 62,
+          "score": 0.3759
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "start_line": 294,
+          "end_line": 307,
+          "score": 0.3651
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking about the format the graph is converted to for visualization.\nI need to look at the provided code context to find information about graph visualization or conversion formats.\nLooking at the files:\n`app/graph/__init__.py` - just headers\n`app/graph/builder.py` - imports `networkx as nx`, has `get_graph` function that loads a graph from JSON using `nx.node_link_graph(payload[\"graph\"])`.\n`app/graph/queries.py` - imports `networkx as nx`\n`app/agent/tools.py` - `GraphNameArgs` class\n\nNone of the provided code snippets mention visualization or converting the graph to a specific format for visualization. The context only shows loading a graph from JSON using `nx.node_link_graph`.\nTherefore, I must state that the reference cannot be verified based on the provided code context.\n\nWait, let's double check. Is there any mention of visualization? No.\nThe question asks: \"What format is the graph converted to for visualization?\"\nSince the context does not contain this information, I will state that clearly.\nI will follow the instruction: \"If the context does not contain enough information to answer, state clearly that the",
+      "cited_files": [
+        "app/graph/__init__.py",
+        "app/graph/builder.py",
+        "app/graph/queries.py",
+        "app/agent/tools.py"
+      ],
+      "latency_s": 1.11,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_005",
+      "category": "graph",
+      "question": "Are class methods linked to their parent classes in the call graph?",
+      "ground_truth_files": [
+        "app/graph/builder.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 109,
+          "end_line": 142,
+          "score": 0.4322
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 145,
+          "end_line": 177,
+          "score": 0.4234
+        },
+        {
+          "file_path": "app/parsing/tree_sitter_parser.py",
+          "start_line": 227,
+          "end_line": 248,
+          "score": 0.3923
+        },
+        {
+          "file_path": "tests/test_graph.py",
+          "start_line": 51,
+          "end_line": 68,
+          "score": 0.3646
+        },
+        {
+          "file_path": "app/parsing/tree_sitter_parser.py",
+          "start_line": 212,
+          "end_line": 224,
+          "score": 0.3622
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking whether class methods are linked to their parent classes in the call graph based on the provided code context.\nI need to look at the code to see how the call graph is built and queried, specifically regarding class methods and their parent classes.\n\nLooking at the provided code:\n- `app/graph/queries.py` contains `get_callers` and `get_callees`. They use `graph.in_edges` and `graph.out_edges`.\n- `app/parsing/tree_sitter_parser.py` contains `_collect_call_names` and `_find_nodes`.\n- `tests/test_graph.py` shows a basic test with `ParsedFunction` and `ParsedFile`.\n\nThe provided code snippets do not explicitly show how the graph is built (`build_graph` is called in the test but not defined in the context), nor do they show how class methods are handled or linked to parent classes.\nWait, `_find_nodes` mentions: \"BFS order means parent nodes appear before children, which is important for separating top-level functions from methods inside classes.\" This implies class methods are parsed, but does it say they are linked to parent classes in the *call graph*?\nThe question asks: \"Are class methods",
+      "cited_files": [
+        "app/graph/queries.py",
+        "app/parsing/tree_sitter_parser.py",
+        "tests/test_graph.py"
+      ],
+      "latency_s": 0.84,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_001",
+      "category": "api",
+      "question": "How is rate limiting implemented on the API endpoints?",
+      "ground_truth_files": [
+        "app/api/rate_limiter.py",
+        "app/main.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.623
+        },
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "start_line": 41,
+          "end_line": 91,
+          "score": 0.6015
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "start_line": 53,
+          "end_line": 55,
+          "score": 0.4951
+        },
+        {
+          "file_path": "tests/test_api_endpoints.py",
+          "start_line": 145,
+          "end_line": 161,
+          "score": 0.4625
+        },
+        {
+          "file_path": "app/platform/usage_meter.py",
+          "start_line": 88,
+          "end_line": 98,
+          "score": 0.441
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks \"How is rate limiting implemented on the API endpoints?\" based on the provided code context.\n\n2.  **Analyze Provided Code Context:**\n   - `app/api/rate_limiter.py` (lines 1-91): Contains a FastAPI dependency factory `check_rate_limit(endpoint: str)`. It uses a sliding window algorithm with a `deque` to store timestamps. It checks against settings like `RATE_LIMIT_CHAT_PER_MINUTE`, `RATE_LIMIT_INGEST_PER_MINUTE`, etc. It raises `HTTPException` with status 429 if the limit is exceeded. It skips rate limiting in development/testing environments. It uses an in-memory store `_rate_limit_store` (implied, though not fully shown, it's used as a dict of deques).\n   - `app/agent/llm_client.py` (lines 53-55): Defines a `RateLimitError` exception for when the LLM provider rate limits requests.\n   - `tests/test_api_endpoints.py` (lines 145-161): Shows a test case `test_chat_rate_limit",
+      "cited_files": [
+        "app/api/rate_limiter.py",
+        "app/agent/llm_client.py",
+        "tests/test_api_endpoints.py"
+      ],
+      "latency_s": 12.95,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_002",
+      "category": "api",
+      "question": "What validation does the /chat endpoint perform on the user question?",
+      "ground_truth_files": [
+        "app/api/router.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 70,
+          "end_line": 73,
+          "score": 0.3993
+        },
+        {
+          "file_path": "scripts/scorecard_verify.py",
+          "start_line": 50,
+          "end_line": 58,
+          "score": 0.378
+        },
+        {
+          "file_path": "scripts/verify_regression_chat.py",
+          "start_line": 25,
+          "end_line": 58,
+          "score": 0.3548
+        },
+        {
+          "file_path": "scripts/collect_p0_evidence.py",
+          "start_line": 82,
+          "end_line": 145,
+          "score": 0.3513
+        },
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 81,
+          "end_line": 85,
+          "score": 0.3401
+        }
+      ],
+      "model_answer": "\n<think>\nThe user wants to know what validation the `/chat` endpoint performs on the user question.\nI need to look at the code context provided, specifically focusing on the `/chat` endpoint and the `ChatRequest` model.\n\nFrom `app/api/router.py:70-73`:\n```python\nclass ChatRequest(BaseModel):\n    repo_id: str\n    question: str = Field(min_length=5, max_length=settings.MAX_QUESTION_LENGTH)\n    session_id: str | None = Field(default=None, description=\"Optional session ID for multi-turn chat memory\")\n```\n\nThis shows that the `question` field in `ChatRequest` is validated to have a minimum length of 5 and a maximum length defined by `settings.MAX_QUESTION_LENGTH`.\n\nI should cite `app/api/router.py:70-73` (or specifically lines 72-73).\nThe question asks: \"What validation does the /chat endpoint perform on the user question?\"\nAnswer: It validates that the question string has a minimum length of 5 characters and a maximum length defined by `settings.MAX_QUESTION_LENGTH`.\n\nLet's double check the exact lines.\n`app/api/router.py:70-",
+      "cited_files": [
+        "app/api/router.py"
+      ],
+      "latency_s": 13.01,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_003",
+      "category": "api",
+      "question": "How does the API handle an unhandled exception globally?",
+      "ground_truth_files": [
+        "app/main.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/main.py",
+          "start_line": 420,
+          "end_line": 446,
+          "score": 0.5873
+        },
+        {
+          "file_path": "app/main.py",
+          "start_line": 401,
+          "end_line": 417,
+          "score": 0.5174
+        },
+        {
+          "file_path": "tests/test_api_endpoints.py",
+          "start_line": 135,
+          "end_line": 140,
+          "score": 0.4688
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "start_line": 470,
+          "end_line": 511,
+          "score": 0.34
+        },
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 196,
+          "end_line": 219,
+          "score": 0.338
+        }
+      ],
+      "model_answer": "\n<think>\nHere's a thinking process:\n\n1.  **Understand User Question:** The user asks: \"How does the API handle an unhandled exception globally?\"\n2.  **Scan Code Context for Keywords:** Look for \"global exception handler\", \"unhandled exception\", \"global_exception_handler\", etc.\n3.  **Locate Relevant Code:**\n   - `app/main.py:420-446` contains `global_exception_handler(request: Request, exc: Exception) -> JSONResponse`.\n   - The docstring says: \"Catch-all handler for unhandled exceptions that escape route handlers.\"\n   - It specifies requirements: Never leak stack trace, log full trace server-side bound to request_id, return a single JSON envelope `{error, error_code, message}`.\n   - Implementation details:\n     - Logs the exception: `logger.exception(\"unhandled_exception\", error=str(exc))`\n     - Gets context variables: `ctx = structlog.contextvars.get_contextvars()`\n     - Extracts request ID: `req_id = ctx.get(\"request_id\", \"unknown\")`\n     - Returns a `JSONResponse` with status code 500 and a specific JSON structure containing",
+      "cited_files": [
+        "app/main.py"
+      ],
+      "latency_s": 0.87,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_004",
+      "category": "api",
+      "question": "Is the /ingest endpoint synchronous or asynchronous?",
+      "ground_truth_files": [
+        "app/api/router.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "start_line": 95,
+          "end_line": 141,
+          "score": 0.3285
+        },
+        {
+          "file_path": "app/ingestion/pipeline.py",
+          "start_line": 66,
+          "end_line": 178,
+          "score": 0.3087
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "start_line": 374,
+          "end_line": 414,
+          "score": 0.3066
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.306
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "start_line": 130,
+          "end_line": 131,
+          "score": 0.2923
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking whether the `/ingest` endpoint is synchronous or asynchronous based on the provided code context.\nI need to look for references to an `/ingest` endpoint or ingestion pipeline execution in the provided files.\nThe provided files are:\n- `app/ingestion/metadata_store.py` (Stage enum, last_checkpoint method)\n- `app/ingestion/pipeline.py` (run_ingestion_sync function)\n- `app/ingestion/locking.py` (RepoLockManager)\n\nIn `app/ingestion/pipeline.py`, there is a function `run_ingestion_sync` which is described as:\n```python\ndef run_ingestion_sync(\n    repo_url: str,\n    ref: str | None,\n    force_reindex: bool,\n    job_id: str,\n    *,\n    clone_res: Any = None,\n    prefiltered_files: list[Any] | None = None,\n    re_raise: bool = False,\n) -> bool:\n    \"\"\"\n    Synchronous entry point for the ingestion pipeline.\n    Returns True on success. When re_raise is True (Celery), failures propagate.\n    \"\"\"\n```\n",
+      "cited_files": [
+        "app/ingestion/metadata_store.py",
+        "app/ingestion/pipeline.py",
+        "app/ingestion/locking.py"
+      ],
+      "latency_s": 37.29,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_005",
+      "category": "api",
+      "question": "What is the return structure of the /eval/status endpoint?",
+      "ground_truth_files": [
+        "app/api/router.py"
+      ],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 1106,
+          "end_line": 1112,
+          "score": 0.4413
+        },
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 1084,
+          "end_line": 1102,
+          "score": 0.4337
+        },
+        {
+          "file_path": "scripts/diag_status_vs_eval.py",
+          "start_line": 21,
+          "end_line": 42,
+          "score": 0.4053
+        },
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 1011,
+          "end_line": 1063,
+          "score": 0.4012
+        },
+        {
+          "file_path": "scripts/diag_status_vs_eval.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.3925
+        }
+      ],
+      "model_answer": "\n<think>\nThe user wants to know the return structure of the `/eval/status` endpoint based on the provided code context.\nLooking at the code, there is a function `eval_status(job_id: str)` in `app/api/router.py:1084-1102`.\nIt returns a dictionary:\n```python\n    return {\n        \"job_id\": job_id,\n        \"status\": job[\"status\"],\n        \"started_at\": job.get(\"started_at\"),\n        \"correlation_id\": job.get(\"correlation_id\"),\n        \"job_type\": job.get(\"job_type\"),\n        \"result\": job.get(\"result\"),\n        \"error\": job.get(\"error\"),\n    }\n```\nThe docstring says:\n```\n    Poll the status of an async eval job.\n    Status values: queued | running | done | error\n    When done, the full result is included in the response.\n```\n\nI will construct the answer based on this dictionary structure and cite the file `app/api/router.py:1084-1102`.\n\nLet's double check the exact lines.\n`app/api/router.py:1084-",
+      "cited_files": [
+        "app/api/router.py"
+      ],
+      "latency_s": 0.92,
+      "error": null
+    },
+    {
+      "query_id": "gs_hall_001",
+      "category": "hallucination",
+      "question": "Is the class InvalidUrlException defined in app/api/router.py?",
+      "ground_truth_files": [],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 65,
+          "end_line": 68,
+          "score": 0.5876
+        },
+        {
+          "file_path": "app/api/platform_router.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.5734
+        },
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.5701
+        },
+        {
+          "file_path": "tests/test_api_endpoints.py",
+          "start_line": 135,
+          "end_line": 140,
+          "score": 0.5577
+        },
+        {
+          "file_path": "app/api/router.py",
+          "start_line": 22,
+          "end_line": 24,
+          "score": 0.5566
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking if the class `InvalidUrlException` is defined in `app/api/router.py`.\nI need to check the provided code context for `app/api/router.py`.\nThe context shows:\n`app/api/router.py:65-68` defines `IngestRequest`.\n`app/api/router.py:1-40` shows imports and module header.\n`app/api/router.py:22-24` defines `_validate_repo_id`.\nNone of the provided snippets show a class named `InvalidUrlException`.\nI will state that based on the provided code context, the class `InvalidUrlException` is not defined in `app/api/router.py`. I will cite the relevant files/lines to show what *is* there, or just state it clearly.\n\nLet's double check the context.\n`app/api/router.py` snippets:\n- 65-68: `IngestRequest` class\n- 1-40: imports, `from fastapi import ...`, `from pydantic import ...`\n- 22-24: `_validate_repo_id` function\n\nNo `InvalidUrlException` is visible.\nI will answer",
+      "cited_files": [
+        "app/api/router.py"
+      ],
+      "latency_s": 22.96,
+      "error": null
+    },
+    {
+      "query_id": "gs_hall_002",
+      "category": "hallucination",
+      "question": "Does app/graph/builder.py define a CypherQueryExecutor class?",
+      "ground_truth_files": [],
+      "retrieved_chunks": [
+        {
+          "file_path": "app/graph/builder.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.5844
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "start_line": 55,
+          "end_line": 277,
+          "score": 0.5796
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 1,
+          "end_line": 40,
+          "score": 0.5783
+        },
+        {
+          "file_path": "tests/test_module_7.py",
+          "start_line": 63,
+          "end_line": 73,
+          "score": 0.5677
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "start_line": 433,
+          "end_line": 434,
+          "score": 0.5343
+        }
+      ],
+      "model_answer": "\n<think>\nThe user is asking whether `app/graph/builder.py` defines a `CypherQueryExecutor` class.\nI need to check the provided code context for `app/graph/builder.py`.\nLooking at `app/graph/builder.py:1-40` and `app/graph/builder.py:55-277`, I see imports, constants, and a function `build_graph`.\nThere is no mention of `CypherQueryExecutor` in the provided context for `app/graph/builder.py`.\nI will state that based on the provided code context, `app/graph/builder.py` does not define a `CypherQueryExecutor` class. It only defines the `build_graph` function and imports/constants.\nI will cite the relevant file.\nCheck context: `app/graph/builder.py` contains `build_graph` function. No class definitions are shown.\nAnswer: No, it does not. The provided context for `app/graph/builder.py` only shows the `build_graph` function and module-level imports/constants.\nI will formulate the response accordingly.\nReference: `app/graph/builder.py:1-277` (or just the file path).\nDone.",
+      "cited_files": [
+        "app/graph/builder.py"
+      ],
+      "latency_s": 1.08,
+      "error": null
+    }
+  ]
+}

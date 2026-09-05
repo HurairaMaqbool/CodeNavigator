@@ -1,0 +1,45 @@
+{
+  "repository_id": "5749924cb6a9850057686b664b4b980fc407af109104df6f0aec8ec8182a4338",
+  "total_queries": 27,
+  "exp_a": {
+    "raw_artifact": "experiments/live/raw/exp_a_full_system_live.json",
+    "sha256": "27d22d7852cc01932bc091e658842407150b15cb3cd0e1f2d7866ebd99600318",
+    "md5": "ee3471329f736c9fd2195e9c4b54220b",
+    "lines": 2414,
+    "accuracy_count": 5,
+    "accuracy_pct": 18.5,
+    "bootstrap_95ci": [
+      3.7,
+      33.3
+    ],
+    "gated_queries": 21,
+    "ungated_queries": 6
+  },
+  "exp_b": {
+    "raw_artifact": "experiments/live/raw/exp_b_naive_dense_rag_live.json",
+    "sha256": "a51a4e5c13b55a8a2be5714f92fa5b17febf1204350eca49baf0f4f8a51a62e2",
+    "md5": "bda9a7bdb08a2fbe78fb0fbe9af3af13",
+    "lines": 1293,
+    "accuracy_count": 21,
+    "accuracy_pct": 77.8,
+    "bootstrap_95ci": [
+      63.0,
+      92.6
+    ]
+  },
+  "contingency_table": {
+    "a_T_b_T": 5,
+    "a_T_b_F": 0,
+    "a_F_b_T": 16,
+    "a_F_b_F": 6
+  },
+  "mcnemar_test": {
+    "b": 0,
+    "c": 16,
+    "chi2_uncorrected": 16.0,
+    "p_uncorrected": 6.334248e-05,
+    "chi2_corrected": 14.0625,
+    "p_corrected": 0.0001768346
+  },
+  "verdict": "PAPER-READY: GO (Live baseline comparison executed & statistically verified)"
+}

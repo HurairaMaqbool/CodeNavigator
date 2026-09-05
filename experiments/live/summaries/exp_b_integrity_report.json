@@ -1,0 +1,11 @@
+{
+  "file_path": "experiments\\live\\raw\\exp_b_naive_dense_rag_live.json",
+  "file_size_bytes": 61661,
+  "md5": "bda9a7bdb08a2fbe78fb0fbe9af3af13",
+  "sha256": "a51a4e5c13b55a8a2be5714f92fa5b17febf1204350eca49baf0f4f8a51a62e2",
+  "timestamp": "2026-09-05T03:47:21Z",
+  "experiment_id": "EXP-B_LIVE",
+  "total_records": 27,
+  "unique_query_ids": 27,
+  "all_required_keys_present": true
+}

@@ -59,9 +59,8 @@ def _resolve_golden_path(
 ) -> Path:
     if golden_path:
         return Path(golden_path)
-    # Always prefer the primary golden set (self-repo 27-question suite).
-    # The fallback (tests/eval_set.json) contains external repo questions and
-    # should only be used when the primary file doesn't exist.
+    if target_repo_id and FALLBACK_GOLDEN_SET_PATH.exists():
+        return FALLBACK_GOLDEN_SET_PATH
     path = DEFAULT_GOLDEN_SET_PATH
     if path.exists():
         return path

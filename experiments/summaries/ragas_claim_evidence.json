@@ -1,0 +1,34 @@
+{
+  "claims": [
+    {
+      "claim": "CodeNavigator achieves high faithfulness on repository QA.",
+      "evidence": "Observed post-fix faithfulness = 0.8333 (95% CI: [0.742, 0.912], N=10).",
+      "verified": true,
+      "safe_for_manuscript": true
+    },
+    {
+      "claim": "CodeNavigator achieves high context recall on repository QA.",
+      "evidence": "Observed post-fix context recall = 0.8333 (95% CI: [0.733, 0.917], N=10).",
+      "verified": true,
+      "safe_for_manuscript": true
+    },
+    {
+      "claim": "The context-builder correction improves context recall and faithfulness compared to trace-only short-circuiting.",
+      "evidence": "Context recall increased from 0.490 to 0.833 (+0.343), faithfulness increased from 0.552 to 0.833 (+0.281).",
+      "verified": true,
+      "safe_for_manuscript": true
+    },
+    {
+      "claim": "The system provides grounded answers using verified citations.",
+      "evidence": "Golden-set CI 10/10 passed, invalid reference rate = 0.0, post-fix context precision = 0.9185.",
+      "verified": true,
+      "safe_for_manuscript": true
+    },
+    {
+      "claim": "CodeNavigator eliminates 100% of hallucinations on all queries.",
+      "evidence": "Query-level hallucination rate in EXP-A classification audit is 0.2222 (6 FP / 27). Claim of 100% hallucination-free is contradicted by evidence.",
+      "verified": false,
+      "safe_for_manuscript": false
+    }
+  ]
+}

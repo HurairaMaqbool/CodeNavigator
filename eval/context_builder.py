@@ -89,42 +89,65 @@ def _format_hit_context(hit: dict[str, Any]) -> str | None:
     return f"{header}\n{chunk}".strip() if chunk else f"{header}".strip()
 
 
-def build_ragas_contexts(res: dict[str, Any]) -> tuple[list[str], bool]:
+def build_ragas_contexts(res: dict[str, Any], max_total_contexts: int = 8) -> tuple[list[str], bool]:
     """
     Return (context_strings, used_sentinel).
-    Order: trace documents → retrieval_hits chunks → source snippets.
-    Guarantees actual factual code text is populated for RAGAS metrics.
-    Capped to prevent Groq HTTP 413 Payload Too Large.
+    Accumulates across trace documents, retrieval_hits chunks, and source snippets.
+    Deduplicates contexts and guarantees actual factual code text is populated for RAGAS.
+    Capped at max_total_contexts to prevent Groq HTTP 413 Payload Too Large.
     """
     ctx_list: list[str] = []
+    seen_texts: set[str] = set()
+    seen_keys: set[str] = set()
 
-    # 1. Try trace documents
+    def _add(ctx_str: str, key: str = "") -> None:
+        if len(ctx_list) >= max_total_contexts:
+            return
+        cleaned = ctx_str.strip()
+        if not cleaned:
+            return
+        if key and key in seen_keys and len(cleaned.splitlines()) <= 3:
+            # Skip brief header-only stubs if a detailed chunk for key was already added
+            return
+        if cleaned not in seen_texts:
+            seen_texts.add(cleaned)
+            if key:
+                seen_keys.add(key)
+            ctx_list.append(cleaned)
+
+    # 1. Collect trace documents
     for it in res.get("trace", []):
         for doc in it.get("documents", []):
             content = (doc.get("content") or doc.get("chunk") or doc.get("snippet") or "").strip()
             fp = doc.get("file_path") or doc.get("path") or ""
             lines = doc.get("lines")
+            key = f"{fp}:{doc.get('function_name') or doc.get('symbol') or ''}"
             if not content and fp:
                 content = _hydrate_file_snippet(fp, str(lines) if lines else None)
             elif content and len(content) > MAX_SNIPPET_CHARS:
                 content = content[:MAX_SNIPPET_CHARS] + "\n..."
             if content:
-                ctx_list.append(f"File: {fp}\n{content}".strip() if fp else content)
+                _add(f"File: {fp}\n{content}".strip() if fp else content, key)
 
-    # 2. Try retrieval_hits
-    if not ctx_list:
-        for hit in res.get("retrieval_hits", []):
-            formatted = _format_hit_context(hit)
-            if formatted:
-                ctx_list.append(formatted)
+    # 2. Collect retrieval_hits chunks
+    for hit in res.get("retrieval_hits", []):
+        formatted = _format_hit_context(hit)
+        fp = hit.get("file_path") or hit.get("path") or ""
+        fn = hit.get("function_name") or hit.get("symbol") or ""
+        key = f"{fp}:{fn}"
+        if formatted:
+            _add(formatted, key)
 
-    # 3. Try sources
-    if not ctx_list:
-        for s in res.get("sources", []):
-            formatted = _format_hit_context(s)
-            if formatted:
-                ctx_list.append(formatted)
+    # 3. Collect source snippets
+    for s in res.get("sources", []):
+        formatted = _format_hit_context(s)
+        fp = s.get("file_path") or s.get("path") or ""
+        fn = s.get("function_name") or s.get("symbol") or ""
+        key = f"{fp}:{fn}"
+        if formatted:
+            _add(formatted, key)
 
     if not ctx_list:
         return [SENTINEL_NO_CONTEXT], True
     return ctx_list, False
+

@@ -1,0 +1,64 @@
+[
+  {
+    "type": "single_file_success",
+    "query_id": "gs_ingest_002",
+    "question": "How does the GitHub PR webhook endpoint process incoming payloads?",
+    "expected_answer": "The webhook router validates secret header and dispatches task to app/ingestion/clone.py",
+    "retrieved_files": [
+      "app/webhook/github_webhook.py",
+      "app/api/router.py"
+    ],
+    "prediction": "The endpoint parses JSON payload, verifies HMAC signature, and triggers re-ingestion.",
+    "result": "TP (True Positive)",
+    "explanation": "AST scope chunking correctly retrieved the handler method in app/webhook/github_webhook.py"
+  },
+  {
+    "type": "multi_file_success",
+    "query_id": "gs_retrieval_002",
+    "question": "How does Reciprocal Rank Fusion combine vector and BM25 scores?",
+    "expected_answer": "Combines vector and BM25 ranks using 1 / (60 + rank)",
+    "retrieved_files": [
+      "app/retrieval/hybrid_search.py",
+      "app/retrieval/bm25_store.py"
+    ],
+    "prediction": "app/retrieval/hybrid_search.py computes RRF score with k=60 across vector and BM25 rank lists.",
+    "result": "TP (True Positive)",
+    "explanation": "Hybrid search retrieved relevant chunks from both sparse BM25 and dense ChromaDB stores."
+  },
+  {
+    "type": "graph_dependent_success",
+    "query_id": "gs_graph_001",
+    "question": "What functions are called by loop.py during agent execution?",
+    "expected_answer": "loop.py calls _elapsed_s, assert_sources_match_answer, and on_startup",
+    "retrieved_files": [
+      "app/agent/loop.py",
+      "app/agent/confidence.py"
+    ],
+    "prediction": "NetworkX call graph traces loop.py:run to _elapsed_s and assert_sources_match_answer.",
+    "result": "TP (True Positive)",
+    "explanation": "NetworkX BFS graph traversal successfully returned caller-callee edges."
+  },
+  {
+    "type": "retrieval_failure",
+    "query_id": "gs_ingest_001",
+    "question": "How does the ingestion pipeline handle large repositories exceeding size limits?",
+    "expected_answer": "clone.py checks MAX_REPO_SIZE_MB and raises RepoTooLargeError",
+    "retrieved_files": [
+      "app/api/router.py",
+      "app/ingestion/metadata_store.py"
+    ],
+    "prediction": "Ingestion pipeline spans modules 5 -> 7: parse -> chunk -> embed",
+    "result": "FP (False Positive)",
+    "explanation": "Dense search retrieved router.py instead of clone.py, omitting exact exception line citation."
+  },
+  {
+    "type": "hallucination_refusal_success",
+    "query_id": "gs_hall_001",
+    "question": "Where is the Stripe payment webhook handler implemented in CodeNavigator?",
+    "expected_answer": "Refusal: Stripe payment webhooks are not implemented in CodeNavigator",
+    "retrieved_files": [],
+    "prediction": "I could not verify the cited references in the indexed codebase. Refusing answer.",
+    "result": "TN (True Negative)",
+    "explanation": "Confidence gating correctly refused adversarial query for non-existent feature."
+  }
+]

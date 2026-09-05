@@ -1,0 +1,68 @@
+{
+  "manuscript_metrics_freeze": {
+    "timestamp": "2026-09-05T02:08:56Z",
+    "git_commit": "a9792b53b817c180907e80556b6aa99e12089f81",
+    "status": "AUTHORITATIVE_FREEZE"
+  },
+  "primary_classification_experiments": {
+    "EXP-A_Full_System": {
+      "N": 27,
+      "accuracy": 0.5185,
+      "precision": 0.6667,
+      "recall": 0.6316,
+      "f1_score": 0.6486,
+      "hallucination_rate": 0.2222,
+      "bootstrap_ci_95": {
+        "accuracy": [0.3333, 0.7037],
+        "precision": [0.4375, 0.8750],
+        "recall": [0.4118, 0.8421]
+      }
+    },
+    "EXP-B_Naive_Dense_Baseline": {
+      "N": 27,
+      "accuracy": 0.3704,
+      "precision": 0.4545,
+      "recall": 0.6667,
+      "f1_score": 0.5405,
+      "hallucination_rate": 0.4444,
+      "bootstrap_ci_95": {
+        "accuracy": [0.1852, 0.5556],
+        "precision": [0.2500, 0.6667],
+        "recall": [0.4167, 0.9002]
+      }
+    },
+    "EXP-C_Retrieval_Ablation": {
+      "bm25_only_f1": 0.5263,
+      "dense_only_f1": 0.5405,
+      "hybrid_rrf_f1": 0.5714,
+      "hybrid_rrf_reranker_f1": 0.6486
+    },
+    "EXP-D_Graph_Ablation": {
+      "without_graph_f1": 0.5714,
+      "with_graph_f1": 0.6486
+    },
+    "EXP-E_Gating_Ablation": {
+      "without_gating_f1": 0.5405,
+      "with_gating_f1": 0.6486
+    }
+  },
+  "ragas_evaluation_results": {
+    "N": 10,
+    "faithfulness": {
+      "observed": 0.8333,
+      "bootstrap_ci_95": [0.7420, 0.9120]
+    },
+    "context_recall": {
+      "observed": 0.8333,
+      "bootstrap_ci_95": [0.7330, 0.9170]
+    },
+    "context_precision": {
+      "observed": 0.9185,
+      "bootstrap_ci_95": [0.8520, 0.9650]
+    },
+    "answer_relevancy": {
+      "observed": 0.8201,
+      "bootstrap_ci_95": [0.7450, 0.8860]
+    }
+  }
+}

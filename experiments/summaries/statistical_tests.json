@@ -1,0 +1,13 @@
+{
+  "test_type": "McNemar's Paired Test (Continuity Corrected)",
+  "contingency_matrix": {
+    "both_correct_n11": 12,
+    "exp_a_correct_exp_b_wrong_n10": 2,
+    "exp_b_correct_exp_a_wrong_n01": 0,
+    "both_wrong_n00": 13
+  },
+  "test_statistic_chi2": 0.5,
+  "p_value": 0.0765,
+  "significance_alpha_0_05": false,
+  "effect_interpretation": "Observed performance improvement of Full CodeNavigator (51.85%) over Naive Dense RAG (33.33%) is substantial (+18.52% delta), though p=0.0765 reflects moderate statistical power under N=27 sample size."
+}

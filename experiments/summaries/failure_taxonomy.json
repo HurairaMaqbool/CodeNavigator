@@ -1,0 +1,27 @@
+{
+  "total_misclassifications": 13,
+  "false_positives": 6,
+  "false_negatives": 7,
+  "taxonomy_counts": {
+    "context_truncation_gaps": {
+      "count": 5,
+      "percentage": 38.5,
+      "description": "AST scope chunking isolated function bodies from module-level constants/imports"
+    },
+    "conservative_refusal_gating": {
+      "count": 4,
+      "percentage": 30.8,
+      "description": "Confidence score fell below 4.0 because line citations were missing in output"
+    },
+    "sub_symbol_granularity_gaps": {
+      "count": 2,
+      "percentage": 15.4,
+      "description": "Query referenced inline lambda or inner closure not assigned distinct AST node ID"
+    },
+    "external_llm_rate_limits": {
+      "count": 2,
+      "percentage": 15.4,
+      "description": "Free-tier Groq API TPM rate limit forced retry/timeout during bulk execution"
+    }
+  }
+}

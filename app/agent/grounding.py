@@ -18,6 +18,7 @@ from typing import Any
 from app.observability.logging_config import logger
 
 _JSON_FENCE_RE = re.compile(r"^```(?:json)?\s*|\s*```$", re.MULTILINE)
+_THINK_TAG_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 
 # Shared FINALIZE citation contract — keep parse + verification in sync.
 _CITATION_INLINE_RE = re.compile(
@@ -52,6 +53,7 @@ _ABSTENTION_MARKERS = (
 
 def strip_json_fences(raw: str) -> str:
     text = (raw or "").strip()
+    text = _THINK_TAG_RE.sub("", text).strip()
     text = _JSON_FENCE_RE.sub("", text).strip()
     return text
 
@@ -85,11 +87,20 @@ def parse_finalize_json(raw: str) -> list[dict[str, Any]]:
     if not clean:
         return []
 
+    payload = None
     try:
         payload = json.loads(clean)
-    except json.JSONDecodeError as exc:
-        logger.warning("finalize_json_parse_failed", error=str(exc), preview=clean[:200])
-        return []
+    except json.JSONDecodeError:
+        obj_match = re.search(r"(\{[\s\S]*\}|\[[\s\S]*\])", clean)
+        if obj_match:
+            try:
+                payload = json.loads(obj_match.group(1))
+            except json.JSONDecodeError as exc:
+                logger.warning("finalize_json_parse_failed", error=str(exc), preview=clean[:200])
+                return []
+        else:
+            logger.warning("finalize_json_parse_failed", error="No JSON object found", preview=clean[:200])
+            return []
 
     if isinstance(payload, dict):
         claims = payload.get("claims")

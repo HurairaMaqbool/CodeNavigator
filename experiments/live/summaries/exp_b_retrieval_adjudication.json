@@ -1,0 +1,413 @@
+[
+  {
+    "query_id": "gs_ingest_001",
+    "category": "ingestion",
+    "question": "How does the ingestion pipeline handle large repositories?",
+    "ground_truth_files": [
+      "app/ingestion/clone.py",
+      "app/config.py"
+    ],
+    "retrieved_files": [
+      "scripts/audit_ingestion_pipeline.py",
+      "app/ingestion/metadata_store.py",
+      "app/ingestion/repo_readiness.py",
+      "app/api/router.py",
+      "app/ingestion/pipeline.py"
+    ],
+    "retrieval_relevant": false,
+    "relevance_reason": "Missed ground truth files ['app/config.py', 'app/ingestion/clone.py']; retrieved ['scripts/audit_ingestion_pipeline.py', 'app/ingestion/metadata_store.py', 'app/ingestion/repo_readiness.py']"
+  },
+  {
+    "query_id": "gs_ingest_002",
+    "category": "ingestion",
+    "question": "What happens if the GitHub webhook receives a push event on a non-default branch?",
+    "ground_truth_files": [
+      "app/webhook/github_webhook.py"
+    ],
+    "retrieved_files": [
+      "tests/test_github_webhook.py",
+      "app/webhook/github_app_webhook.py",
+      "app/webhook/github_webhook.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/webhook/github_webhook.py']"
+  },
+  {
+    "query_id": "gs_ingest_003",
+    "category": "ingestion",
+    "question": "Which file extensions are allowed during the chunking phase?",
+    "ground_truth_files": [
+      "app/ingestion/chunker.py",
+      "app/config.py"
+    ],
+    "retrieved_files": [
+      "app/parsing/chunker.py"
+    ],
+    "retrieval_relevant": false,
+    "relevance_reason": "Missed ground truth files ['app/config.py', 'app/ingestion/chunker.py']; retrieved ['app/parsing/chunker.py']"
+  },
+  {
+    "query_id": "gs_ingest_004",
+    "category": "ingestion",
+    "question": "How is the ingestion lock implemented to prevent concurrent ingestion of the same repo?",
+    "ground_truth_files": [
+      "app/ingestion/metadata_store.py",
+      "app/api/router.py"
+    ],
+    "retrieved_files": [
+      "app/ingestion/locking.py"
+    ],
+    "retrieval_relevant": false,
+    "relevance_reason": "Missed ground truth files ['app/ingestion/metadata_store.py', 'app/api/router.py']; retrieved ['app/ingestion/locking.py']"
+  },
+  {
+    "query_id": "gs_ingest_005",
+    "category": "ingestion",
+    "question": "What is the role of metadata_store.mark_synced?",
+    "ground_truth_files": [
+      "app/ingestion/metadata_store.py"
+    ],
+    "retrieved_files": [
+      "app/ingestion/metadata_store.py",
+      "tests/test_module_10.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/ingestion/metadata_store.py']"
+  },
+  {
+    "query_id": "gs_retrieval_001",
+    "category": "retrieval",
+    "question": "How does hybrid search combine BM25 and vector scores?",
+    "ground_truth_files": [
+      "app/retrieval/hybrid_search.py"
+    ],
+    "retrieved_files": [
+      "tests/test_module_6a.py",
+      "app/retrieval/hybrid_search.py",
+      "tests/test_retrieval_6a.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/retrieval/hybrid_search.py']"
+  },
+  {
+    "query_id": "gs_retrieval_002",
+    "category": "retrieval",
+    "question": "Where is the BM25 index persisted on disk?",
+    "ground_truth_files": [
+      "app/retrieval/bm25_store.py"
+    ],
+    "retrieved_files": [
+      "app/ingestion/index_integrity.py",
+      "app/retrieval/bm25_store.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/retrieval/bm25_store.py']"
+  },
+  {
+    "query_id": "gs_retrieval_003",
+    "category": "retrieval",
+    "question": "Does the pipeline use a cross-encoder reranker?",
+    "ground_truth_files": [
+      "app/retrieval/hybrid_search.py",
+      "app/retrieval/reranker.py"
+    ],
+    "retrieved_files": [
+      "app/retrieval/reranker.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/retrieval/reranker.py']"
+  },
+  {
+    "query_id": "gs_retrieval_004",
+    "category": "retrieval",
+    "question": "What happens if query expansion LLM request times out?",
+    "ground_truth_files": [
+      "app/retrieval/query_expansion.py"
+    ],
+    "retrieved_files": [
+      "app/retrieval/query_expansion.py",
+      "tests/test_query_decomposition.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/retrieval/query_expansion.py']"
+  },
+  {
+    "query_id": "gs_retrieval_005",
+    "category": "retrieval",
+    "question": "What vector database is used for semantic search?",
+    "ground_truth_files": [
+      "app/retrieval/vector_store.py",
+      "app/chroma_client.py"
+    ],
+    "retrieved_files": [
+      "tests/test_module_6a.py",
+      "app/retrieval/vector_store.py",
+      "tests/test_retrieval_6a.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/retrieval/vector_store.py']"
+  },
+  {
+    "query_id": "gs_agent_001",
+    "category": "agent",
+    "question": "How does the agent avoid executing duplicate tool calls?",
+    "ground_truth_files": [
+      "app/agent/loop.py",
+      "app/agent/tools.py"
+    ],
+    "retrieved_files": [
+      "tests/test_agent_9a.py",
+      "app/agent/tools.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/agent/tools.py']"
+  },
+  {
+    "query_id": "gs_agent_002",
+    "category": "agent",
+    "question": "What determines if an agent's answer is 'gated' due to hallucination?",
+    "ground_truth_files": [
+      "app/agent/loop.py",
+      "app/agent/confidence.py",
+      "app/agent/claim_verification.py"
+    ],
+    "retrieved_files": [
+      "tests/test_grounding_parroting.py",
+      "app/agent/loop.py",
+      "app/agent/prompts/decide_prompt.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/agent/loop.py']"
+  },
+  {
+    "query_id": "gs_agent_003",
+    "category": "agent",
+    "question": "How long is a semantic cache entry valid?",
+    "ground_truth_files": [
+      "app/agent/semantic_cache.py",
+      "app/config.py"
+    ],
+    "retrieved_files": [
+      "tests/test_semantic_cache.py",
+      "app/agent/semantic_cache.py",
+      "app/agent/loop.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/agent/semantic_cache.py']"
+  },
+  {
+    "query_id": "gs_agent_004",
+    "category": "agent",
+    "question": "How are LLM rate limits handled in the agent loop?",
+    "ground_truth_files": [
+      "app/agent/loop.py",
+      "app/agent/llm_client.py"
+    ],
+    "retrieved_files": [
+      "app/agent/llm_client.py",
+      "tests/test_rate_limit_regressions.py",
+      "app/agent/loop.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/agent/llm_client.py', 'app/agent/loop.py']"
+  },
+  {
+    "query_id": "gs_agent_005",
+    "category": "agent",
+    "question": "What happens if an individual tool execution fails during the agent loop?",
+    "ground_truth_files": [
+      "app/agent/loop.py",
+      "app/agent/tools.py"
+    ],
+    "retrieved_files": [
+      "app/agent/loop.py",
+      "app/agent/tools.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/agent/loop.py', 'app/agent/tools.py']"
+  },
+  {
+    "query_id": "gs_graph_001",
+    "category": "graph",
+    "question": "How does the graph builder detect circular dependencies?",
+    "ground_truth_files": [
+      "app/graph/builder.py"
+    ],
+    "retrieved_files": [
+      "tests/test_module_7.py",
+      "app/graph/queries.py",
+      "app/graph/builder.py",
+      "app/agent/claim_verification.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/graph/builder.py']"
+  },
+  {
+    "query_id": "gs_graph_002",
+    "category": "graph",
+    "question": "What is the maximum number of nodes allowed in the graph?",
+    "ground_truth_files": [
+      "app/graph/builder.py",
+      "app/config.py"
+    ],
+    "retrieved_files": [
+      "app/graph/queries.py",
+      "tests/test_graph.py",
+      "app/graph/builder.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/graph/builder.py']"
+  },
+  {
+    "query_id": "gs_graph_003",
+    "category": "graph",
+    "question": "How does get_subgraph limit the depth of the returned graph?",
+    "ground_truth_files": [
+      "app/graph/queries.py"
+    ],
+    "retrieved_files": [
+      "tests/test_module_11.py",
+      "app/graph/queries.py",
+      "tests/test_module_7.py",
+      "app/agent/tools.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/graph/queries.py']"
+  },
+  {
+    "query_id": "gs_graph_004",
+    "category": "graph",
+    "question": "What format is the graph converted to for visualization?",
+    "ground_truth_files": [
+      "app/diagrams/mermaid.py",
+      "app/graph/queries.py"
+    ],
+    "retrieved_files": [
+      "app/graph/queries.py",
+      "app/graph/__init__.py",
+      "app/graph/builder.py",
+      "app/agent/tools.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/graph/queries.py']"
+  },
+  {
+    "query_id": "gs_graph_005",
+    "category": "graph",
+    "question": "Are class methods linked to their parent classes in the call graph?",
+    "ground_truth_files": [
+      "app/graph/builder.py"
+    ],
+    "retrieved_files": [
+      "app/graph/queries.py",
+      "app/parsing/tree_sitter_parser.py",
+      "tests/test_graph.py"
+    ],
+    "retrieval_relevant": false,
+    "relevance_reason": "Missed ground truth files ['app/graph/builder.py']; retrieved ['app/graph/queries.py', 'app/parsing/tree_sitter_parser.py', 'tests/test_graph.py']"
+  },
+  {
+    "query_id": "gs_api_001",
+    "category": "api",
+    "question": "How is rate limiting implemented on the API endpoints?",
+    "ground_truth_files": [
+      "app/api/rate_limiter.py",
+      "app/main.py"
+    ],
+    "retrieved_files": [
+      "app/agent/llm_client.py",
+      "app/api/rate_limiter.py",
+      "tests/test_api_endpoints.py",
+      "app/platform/usage_meter.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/api/rate_limiter.py']"
+  },
+  {
+    "query_id": "gs_api_002",
+    "category": "api",
+    "question": "What validation does the /chat endpoint perform on the user question?",
+    "ground_truth_files": [
+      "app/api/router.py"
+    ],
+    "retrieved_files": [
+      "scripts/collect_p0_evidence.py",
+      "scripts/verify_regression_chat.py",
+      "scripts/scorecard_verify.py",
+      "app/api/router.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/api/router.py']"
+  },
+  {
+    "query_id": "gs_api_003",
+    "category": "api",
+    "question": "How does the API handle an unhandled exception globally?",
+    "ground_truth_files": [
+      "app/main.py"
+    ],
+    "retrieved_files": [
+      "app/main.py",
+      "app/api/router.py",
+      "tests/test_api_endpoints.py",
+      "app/ingestion/clone.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/main.py']"
+  },
+  {
+    "query_id": "gs_api_004",
+    "category": "api",
+    "question": "Is the /ingest endpoint synchronous or asynchronous?",
+    "ground_truth_files": [
+      "app/api/router.py"
+    ],
+    "retrieved_files": [
+      "app/ingestion/metadata_store.py",
+      "app/ingestion/locking.py",
+      "app/ingestion/pipeline.py"
+    ],
+    "retrieval_relevant": false,
+    "relevance_reason": "Missed ground truth files ['app/api/router.py']; retrieved ['app/ingestion/metadata_store.py', 'app/ingestion/locking.py', 'app/ingestion/pipeline.py']"
+  },
+  {
+    "query_id": "gs_api_005",
+    "category": "api",
+    "question": "What is the return structure of the /eval/status endpoint?",
+    "ground_truth_files": [
+      "app/api/router.py"
+    ],
+    "retrieved_files": [
+      "app/api/router.py",
+      "scripts/diag_status_vs_eval.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Retrieved ground truth file(s): ['app/api/router.py']"
+  },
+  {
+    "query_id": "gs_hall_001",
+    "category": "hallucination",
+    "question": "Is the class InvalidUrlException defined in app/api/router.py?",
+    "ground_truth_files": [],
+    "retrieved_files": [
+      "app/api/platform_router.py",
+      "app/api/router.py",
+      "tests/test_api_endpoints.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Negative hallucination probe query; correctly retrieved candidate target files for inspection."
+  },
+  {
+    "query_id": "gs_hall_002",
+    "category": "hallucination",
+    "question": "Does app/graph/builder.py define a CypherQueryExecutor class?",
+    "ground_truth_files": [],
+    "retrieved_files": [
+      "tests/test_module_7.py",
+      "app/graph/queries.py",
+      "app/graph/builder.py"
+    ],
+    "retrieval_relevant": true,
+    "relevance_reason": "Negative hallucination probe query; correctly retrieved candidate target files for inspection."
+  }
+]

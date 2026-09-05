@@ -1,0 +1,2414 @@
+{
+  "experiment_id": "EXP-A_LIVE",
+  "experiment_name": "Full CodeNavigator System Live Rerun",
+  "timestamp": "2026-09-05T06:55:04Z",
+  "configuration": {
+    "experiment_id": "EXP-A_LIVE",
+    "experiment_name": "Full CodeNavigator System Live Rerun",
+    "timestamp": "2026-09-05T06:40:11Z",
+    "repository_id": "5749924cb6a9850057686b664b4b980fc407af109104df6f0aec8ec8182a4338",
+    "benchmark_hash": "5afb58a9ff44e2b9d4b5c10c06cb2ff6747a5882b3cf61b1923feb13f95c1ccd",
+    "llm_provider": "groq",
+    "llm_model": "qwen/qwen3.6-27b",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "dense_enabled": true,
+    "bm25_enabled": true,
+    "rrf_enabled": true,
+    "reranker_enabled": true,
+    "graph_enabled": true,
+    "agent_enabled": true,
+    "semantic_cache_enabled": true,
+    "query_expansion_enabled": false,
+    "verification_enabled": true,
+    "confidence_gate_enabled": true,
+    "top_k": 10,
+    "reranker_top_k": 5,
+    "graph_depth": 3,
+    "confidence_threshold": 4.0
+  },
+  "total_queries": 27,
+  "results": [
+    {
+      "query_id": "gs_ingest_001",
+      "category": "ingestion",
+      "question": "How does the ingestion pipeline handle large repositories?",
+      "ground_truth_files": [
+        "app/ingestion/clone.py",
+        "app/config.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 2.9,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/ingestion/pipeline.py",
+          "function_name": "run_ingestion_sync",
+          "start_line": 66,
+          "end_line": 178,
+          "rerank_score": 0.28638378662919917
+        },
+        {
+          "file_path": "scripts/audit_ingestion_pipeline.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.26751100934264743
+        },
+        {
+          "file_path": "app/platform/repo_registry.py",
+          "function_name": "list_tenant_repositories",
+          "start_line": 18,
+          "end_line": 73,
+          "rerank_score": 0.2624184273560894
+        },
+        {
+          "file_path": "scripts/audit_ingestion_pipeline.py",
+          "function_name": "_ts",
+          "start_line": 19,
+          "end_line": 20,
+          "rerank_score": 0.25678454763726033
+        },
+        {
+          "file_path": "app/ingestion/pipeline.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.2536099177754306
+        },
+        {
+          "file_path": "app/ingestion/repo_readiness.py",
+          "function_name": "is_repo_ready",
+          "start_line": 443,
+          "end_line": 461,
+          "rerank_score": 0.2502694611713322
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "function_name": "RepoTooLargeError",
+          "start_line": 96,
+          "end_line": 102,
+          "rerank_score": 0.00016945114265591073
+        },
+        {
+          "file_path": "app/api/platform_router.py",
+          "function_name": "list_repositories",
+          "start_line": 37,
+          "end_line": 39,
+          "rerank_score": 0.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_run_ingest_pipeline_remaining",
+          "start_line": 221,
+          "end_line": 269,
+          "rerank_score": 0.0
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "Stage",
+          "start_line": 95,
+          "end_line": 141,
+          "rerank_score": 0.0
+        }
+      ],
+      "timing": {
+        "total_ms": 5593.4,
+        "retrieval_ms": 2275.6,
+        "generation_ms": 2005.0,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 0.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 22.61,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_002",
+      "category": "ingestion",
+      "question": "What happens if the GitHub webhook receives a push event on a non-default branch?",
+      "ground_truth_files": [
+        "app/webhook/github_webhook.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 1.9,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/webhook/github_webhook.py",
+          "function_name": "github_webhook",
+          "start_line": 65,
+          "end_line": 128,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/webhook/github_app_webhook.py",
+          "function_name": "github_app_webhook",
+          "start_line": 36,
+          "end_line": 97,
+          "rerank_score": 0.30593502379818044
+        },
+        {
+          "file_path": "app/webhook/github_webhook.py",
+          "function_name": "_safe_trigger_ingest",
+          "start_line": 59,
+          "end_line": 60,
+          "rerank_score": 0.25243298357197175
+        },
+        {
+          "file_path": "app/webhook/stripe_webhook.py",
+          "function_name": "stripe_webhook",
+          "start_line": 24,
+          "end_line": 63,
+          "rerank_score": 0.2512158452891799
+        },
+        {
+          "file_path": "app/webhook/github_webhook.py",
+          "function_name": "verify_hmac_signature",
+          "start_line": 38,
+          "end_line": 55,
+          "rerank_score": 0.2506288079908716
+        },
+        {
+          "file_path": "app/config.py",
+          "function_name": "effective_webhook_secret",
+          "start_line": 415,
+          "end_line": 420,
+          "rerank_score": 0.0011217138164138073
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "function_name": "clone_repo[part 1/2]",
+          "start_line": 518,
+          "end_line": 781,
+          "rerank_score": 0.00023602079376411304
+        },
+        {
+          "file_path": "app/platform/billing/stripe_client.py",
+          "function_name": "construct_webhook_event",
+          "start_line": 66,
+          "end_line": 70,
+          "rerank_score": 0.0001742086348025168
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "function_name": "_validate_url",
+          "start_line": 135,
+          "end_line": 157,
+          "rerank_score": 2.9187133626918067e-05
+        },
+        {
+          "file_path": "app/api/state_stream.py",
+          "function_name": "emit",
+          "start_line": 171,
+          "end_line": 194,
+          "rerank_score": 2.776615699869749e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 31893.1,
+        "retrieval_ms": 11211.1,
+        "generation_ms": 3057.8,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 15500.0,
+        "groq_calls": 6
+      },
+      "groq_calls": 6,
+      "latency_s": 31.89,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_003",
+      "category": "ingestion",
+      "question": "Which file extensions are allowed during the chunking phase?",
+      "ground_truth_files": [
+        "app/ingestion/chunker.py",
+        "app/config.py"
+      ],
+      "model_answer": "The provided codebase context does not contain information regarding which file extensions are allowed during the chunking phase.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 8.0,
+      "gated": false,
+      "retrieved_hits": [],
+      "timing": {
+        "total_ms": 95.7,
+        "retrieval_ms": 0.0,
+        "generation_ms": 0.0,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 0.0,
+        "groq_calls": 0
+      },
+      "groq_calls": 0,
+      "latency_s": 0.1,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_004",
+      "category": "ingestion",
+      "question": "How is the ingestion lock implemented to prevent concurrent ingestion of the same repo?",
+      "ground_truth_files": [
+        "app/ingestion/metadata_store.py",
+        "app/api/router.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 1.6,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "acquire_lock",
+          "start_line": 274,
+          "end_line": 284,
+          "rerank_score": 0.881968770782985
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "try_acquire",
+          "start_line": 162,
+          "end_line": 241,
+          "rerank_score": 0.6882545647850248
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "release_lock",
+          "start_line": 287,
+          "end_line": 291,
+          "rerank_score": 0.5641580531153837
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "_get_thread_lock",
+          "start_line": 114,
+          "end_line": 119,
+          "rerank_score": 0.3752827850629104
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "_drop_thread_lock",
+          "start_line": 121,
+          "end_line": 128,
+          "rerank_score": 0.37349713213539815
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "release",
+          "start_line": 243,
+          "end_line": 267,
+          "rerank_score": 0.3580151930701509
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "_lock_file_path",
+          "start_line": 130,
+          "end_line": 131,
+          "rerank_score": 0.3508688053714814
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "__init__",
+          "start_line": 105,
+          "end_line": 110,
+          "rerank_score": 0.3310360813379809
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "_release_file_lock",
+          "start_line": 133,
+          "end_line": 143,
+          "rerank_score": 0.301372446207073
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "_acquire_file_lock",
+          "start_line": 145,
+          "end_line": 158,
+          "rerank_score": 0.27576507112349125
+        }
+      ],
+      "timing": {
+        "total_ms": 19197.9,
+        "retrieval_ms": 1351.3,
+        "generation_ms": 1683.9,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 15500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 19.2,
+      "error": null
+    },
+    {
+      "query_id": "gs_ingest_005",
+      "category": "ingestion",
+      "question": "What is the role of metadata_store.mark_synced?",
+      "ground_truth_files": [
+        "app/ingestion/metadata_store.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 1.8,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "mark_synced",
+          "start_line": 491,
+          "end_line": 544,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "mark_pending",
+          "start_line": 442,
+          "end_line": 489,
+          "rerank_score": 0.8561522332003022
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "mark_filtered",
+          "start_line": 576,
+          "end_line": 599,
+          "rerank_score": 0.8559797084078381
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "mark_cloned",
+          "start_line": 546,
+          "end_line": 574,
+          "rerank_score": 0.6964073134837223
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "mark_failed",
+          "start_line": 601,
+          "end_line": 631,
+          "rerank_score": 0.6003419872423139
+        },
+        {
+          "file_path": "app/ingestion/repo_readiness.py",
+          "function_name": "mirror_sync_to_alias_pair",
+          "start_line": 261,
+          "end_line": 297,
+          "rerank_score": 0.38221613218882344
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "get",
+          "start_line": 269,
+          "end_line": 285,
+          "rerank_score": 0.363890980497082
+        },
+        {
+          "file_path": "app/ingestion/metadata_store.py",
+          "function_name": "Stage",
+          "start_line": 95,
+          "end_line": 141,
+          "rerank_score": 0.315146318985717
+        },
+        {
+          "file_path": "app/ingestion/repo_readiness.py",
+          "function_name": "_pick_authoritative_meta",
+          "start_line": 60,
+          "end_line": 77,
+          "rerank_score": 0.047871321101928724
+        },
+        {
+          "file_path": "app/repo_resolver.py",
+          "function_name": "resolve_asset_repo_id",
+          "start_line": 21,
+          "end_line": 51,
+          "rerank_score": 0.02465236071789483
+        }
+      ],
+      "timing": {
+        "total_ms": 24877.7,
+        "retrieval_ms": 1396.4,
+        "generation_ms": 2323.4,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 20500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 24.88,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_001",
+      "category": "retrieval",
+      "question": "How does hybrid search combine BM25 and vector scores?",
+      "ground_truth_files": [
+        "app/retrieval/hybrid_search.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 5.5,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "function_name": "search_hybrid",
+          "start_line": 81,
+          "end_line": 187,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "function_name": "search",
+          "start_line": 329,
+          "end_line": 433,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "function_name": "search_code",
+          "start_line": 219,
+          "end_line": 302,
+          "rerank_score": 0.7274171713969045
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "search_bm25",
+          "start_line": 387,
+          "end_line": 437,
+          "rerank_score": 0.30001512620171855
+        },
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.2546294500692206
+        },
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "function_name": "_deterministic_hit_key",
+          "start_line": 44,
+          "end_line": 51,
+          "rerank_score": 0.25186014628871967
+        },
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "function_name": "_deterministic_candidate_key",
+          "start_line": 54,
+          "end_line": 60,
+          "rerank_score": 0.25008076536790214
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "query",
+          "start_line": 322,
+          "end_line": 384,
+          "rerank_score": 0.1895831276656296
+        },
+        {
+          "file_path": "app/retrieval/vector_store.py",
+          "function_name": "search_vectors",
+          "start_line": 334,
+          "end_line": 377,
+          "rerank_score": 0.10281653143137594
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "function_name": "cross_encoder_rerank",
+          "start_line": 169,
+          "end_line": 285,
+          "rerank_score": 0.004724647865766811
+        }
+      ],
+      "timing": {
+        "total_ms": 27132.9,
+        "retrieval_ms": 1369.6,
+        "generation_ms": 1610.5,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 23500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 27.13,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_002",
+      "category": "retrieval",
+      "question": "Where is the BM25 index persisted on disk?",
+      "ground_truth_files": [
+        "app/retrieval/bm25_store.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 3.3,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/ingestion/index_integrity.py",
+          "function_name": "bm25_chunk_count",
+          "start_line": 98,
+          "end_line": 106,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "build_bm25_index",
+          "start_line": 102,
+          "end_line": 216,
+          "rerank_score": 0.8077522662661882
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "load_bm25_index",
+          "start_line": 219,
+          "end_line": 244,
+          "rerank_score": 0.768847103832372
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "store_bm25",
+          "start_line": 247,
+          "end_line": 263,
+          "rerank_score": 0.7057384559209493
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "delete_repo",
+          "start_line": 281,
+          "end_line": 306,
+          "rerank_score": 0.589430897513168
+        },
+        {
+          "file_path": "app/ingestion/index_integrity.py",
+          "function_name": "check_bm25_integrity",
+          "start_line": 109,
+          "end_line": 128,
+          "rerank_score": 0.570598436310668
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "search_bm25",
+          "start_line": 387,
+          "end_line": 437,
+          "rerank_score": 0.5276474693974685
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "query",
+          "start_line": 322,
+          "end_line": 384,
+          "rerank_score": 0.35135694669831363
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "_index_path_for",
+          "start_line": 75,
+          "end_line": 78,
+          "rerank_score": 0.272288014172147
+        },
+        {
+          "file_path": "app/retrieval/bm25_store.py",
+          "function_name": "upsert_chunks",
+          "start_line": 266,
+          "end_line": 278,
+          "rerank_score": 0.19388932198639605
+        }
+      ],
+      "timing": {
+        "total_ms": 26179.5,
+        "retrieval_ms": 1367.5,
+        "generation_ms": 1613.3,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 22500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 26.18,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_003",
+      "category": "retrieval",
+      "question": "Does the pipeline use a cross-encoder reranker?",
+      "ground_truth_files": [
+        "app/retrieval/hybrid_search.py",
+        "app/retrieval/reranker.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 2.0,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "function_name": "cross_encoder_rerank",
+          "start_line": 169,
+          "end_line": 285,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "function_name": "_get_model",
+          "start_line": 127,
+          "end_line": 150,
+          "rerank_score": 0.7327394814617667
+        },
+        {
+          "file_path": "app/main.py",
+          "function_name": "on_startup",
+          "start_line": 74,
+          "end_line": 98,
+          "rerank_score": 0.5726410857227038
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "function_name": "rerank",
+          "start_line": 300,
+          "end_line": 403,
+          "rerank_score": 0.4956430146785147
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "function_name": "_rerank_with_path_boost",
+          "start_line": 95,
+          "end_line": 124,
+          "rerank_score": 0.4289275843898487
+        },
+        {
+          "file_path": "app/retrieval/hybrid_search.py",
+          "function_name": "search_code",
+          "start_line": 219,
+          "end_line": 302,
+          "rerank_score": 0.3231591862675645
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "function_name": "get_model",
+          "start_line": 292,
+          "end_line": 297,
+          "rerank_score": 0.32309015931991447
+        },
+        {
+          "file_path": "app/retrieval/reranker.py",
+          "function_name": "_definition_boost",
+          "start_line": 153,
+          "end_line": 166,
+          "rerank_score": 0.25008239078992056
+        },
+        {
+          "file_path": "app/agent/confidence.py",
+          "function_name": "compute_confidence_score",
+          "start_line": 965,
+          "end_line": 991,
+          "rerank_score": 2.9646128486591823e-05
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_run_ingest_pipeline_remaining",
+          "start_line": 221,
+          "end_line": 269,
+          "rerank_score": 0.0
+        }
+      ],
+      "timing": {
+        "total_ms": 31028.0,
+        "retrieval_ms": 1373.9,
+        "generation_ms": 1704.7,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 27000.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 31.03,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_004",
+      "category": "retrieval",
+      "question": "What happens if query expansion LLM request times out?",
+      "ground_truth_files": [
+        "app/retrieval/query_expansion.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 2.4,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "expand_query",
+          "start_line": 324,
+          "end_line": 417,
+          "rerank_score": 0.7159533717994282
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "decompose_retrieval_variants",
+          "start_line": 150,
+          "end_line": 212,
+          "rerank_score": 0.7071874008662586
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "deterministic_expansions",
+          "start_line": 125,
+          "end_line": 147,
+          "rerank_score": 0.6542114886650789
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "LLMClient",
+          "start_line": 34,
+          "end_line": 40,
+          "rerank_score": 0.4261732279147407
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "LLMClient",
+          "start_line": 34,
+          "end_line": 40,
+          "rerank_score": 0.3946622562715755
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "should_expand",
+          "start_line": 59,
+          "end_line": 117,
+          "rerank_score": 0.37903988833892466
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "_filter_llm_variants",
+          "start_line": 306,
+          "end_line": 317,
+          "rerank_score": 0.26707166197886695
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "needs_flow_tracing",
+          "start_line": 274,
+          "end_line": 285,
+          "rerank_score": 0.252202276828241
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "needs_expansion",
+          "start_line": 120,
+          "end_line": 122,
+          "rerank_score": 0.25212891216264127
+        },
+        {
+          "file_path": "app/agent/context_manager.py",
+          "function_name": "_call_compression_llm",
+          "start_line": 120,
+          "end_line": 171,
+          "rerank_score": 0.20388928174115226
+        }
+      ],
+      "timing": {
+        "total_ms": 31620.6,
+        "retrieval_ms": 1382.5,
+        "generation_ms": 2122.9,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 27500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 31.62,
+      "error": null
+    },
+    {
+      "query_id": "gs_retrieval_005",
+      "category": "retrieval",
+      "question": "What vector database is used for semantic search?",
+      "ground_truth_files": [
+        "app/retrieval/vector_store.py",
+        "app/chroma_client.py"
+      ],
+      "model_answer": "<think> The user asks: \"What vector database is used for semantic search?\" Looking at the retrieval context: In `app/agent/semantic_cache.py:316-347`, there is a comment: `similarity in Chroma (``hnsw:space=cosine``, same metric family as vector_store).` This indicates that Chroma is used. Wait, the comment says: `similarity in Chroma (``hnsw:space=cosine``, same metric family as vector_store).` So the vector database is Chroma. I will formulate a claim stating that Chroma is used as the vector database for semantic search. The context shows: ``` \"\"\" similarity in Chroma (``hnsw:space=cosine``, same metric family as vector_store). \"\"\" ``` I need to find the exact line numbers. The context doesn't give explicit line numbers, but I can estimate or use the provided chunk boundaries if available. Wait, the prompt.",
+      "cited_files": [
+        "app/agent/semantic_cache.py"
+      ],
+      "sources": [
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": null,
+          "lines": "316-347",
+          "start_line": 316,
+          "end_line": 347
+        }
+      ],
+      "confidence_score": 5.8,
+      "gated": false,
+      "retrieved_hits": [],
+      "timing": {
+        "total_ms": 123.5,
+        "retrieval_ms": 0.0,
+        "generation_ms": 0.0,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 0.0,
+        "groq_calls": 0
+      },
+      "groq_calls": 0,
+      "latency_s": 0.12,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_001",
+      "category": "agent",
+      "question": "How does the agent avoid executing duplicate tool calls?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/tools.py"
+      ],
+      "model_answer": "The provided codebase context does not contain any mechanism or logic for avoiding duplicate tool calls.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 8.0,
+      "gated": false,
+      "retrieved_hits": [],
+      "timing": {
+        "total_ms": 97.7,
+        "retrieval_ms": 0.0,
+        "generation_ms": 0.0,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 0.0,
+        "groq_calls": 0
+      },
+      "groq_calls": 0,
+      "latency_s": 0.1,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_002",
+      "category": "agent",
+      "question": "What determines if an agent's answer is 'gated' due to hallucination?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/confidence.py",
+        "app/agent/claim_verification.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 0.7,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/agent/confidence.py",
+          "function_name": "evaluate_structured_claims",
+          "start_line": 452,
+          "end_line": 602,
+          "rerank_score": 0.004223734596907774
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_handle_intake",
+          "start_line": 954,
+          "end_line": 990,
+          "rerank_score": 0.0020139376631460155
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_handle_decide",
+          "start_line": 1119,
+          "end_line": 1203,
+          "rerank_score": 0.0017513801645040637
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_apply_request_timeout",
+          "start_line": 577,
+          "end_line": 603,
+          "rerank_score": 0.0006062533668926126
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_ensure_no_structured_json_leak",
+          "start_line": 1596,
+          "end_line": 1608,
+          "rerank_score": 0.00029518555793708184
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_handle_verify[part 1/2]",
+          "start_line": 1343,
+          "end_line": 1593,
+          "rerank_score": 0.0002666420552071383
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_apply_provider_failure",
+          "start_line": 669,
+          "end_line": 690,
+          "rerank_score": 0.00015709990754683934
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_handle_finalize",
+          "start_line": 1207,
+          "end_line": 1339,
+          "rerank_score": 0.00010997803233487096
+        },
+        {
+          "file_path": "app/agent/prompts/decide_prompt.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 1.6214093754491486e-05
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_wall_clock_exceeded",
+          "start_line": 558,
+          "end_line": 560,
+          "rerank_score": 1.3056342771598804e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 39052.6,
+        "retrieval_ms": 6964.0,
+        "generation_ms": 2766.1,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 27500.0,
+        "groq_calls": 6
+      },
+      "groq_calls": 6,
+      "latency_s": 39.05,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_003",
+      "category": "agent",
+      "question": "How long is a semantic cache entry valid?",
+      "ground_truth_files": [
+        "app/agent/semantic_cache.py",
+        "app/config.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 0.8,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "sweep_expired_entries",
+          "start_line": 395,
+          "end_line": 405,
+          "rerank_score": 0.35321322227723234
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "clear_repo_semantic_cache",
+          "start_line": 408,
+          "end_line": 432,
+          "rerank_score": 0.2862747761048936
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "store",
+          "start_line": 316,
+          "end_line": 347,
+          "rerank_score": 0.2830401612379764
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "get_cache_stats",
+          "start_line": 262,
+          "end_line": 273,
+          "rerank_score": 0.27227994716834597
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "invalidate_old_commits",
+          "start_line": 350,
+          "end_line": 351,
+          "rerank_score": 0.2701686518696919
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "check_cache",
+          "start_line": 98,
+          "end_line": 174,
+          "rerank_score": 0.26862924942052085
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "store",
+          "start_line": 177,
+          "end_line": 232,
+          "rerank_score": 0.265146838322928
+        },
+        {
+          "file_path": "app/agent/semantic_cache.py",
+          "function_name": "answer_question_cached",
+          "start_line": 376,
+          "end_line": 392,
+          "rerank_score": 0.26284120025859875
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "semantic_cache_lookup",
+          "start_line": 66,
+          "end_line": 98,
+          "rerank_score": 0.09192274556926615
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "semantic_cache_store",
+          "start_line": 101,
+          "end_line": 113,
+          "rerank_score": 0.047196839019765915
+        }
+      ],
+      "timing": {
+        "total_ms": 26004.4,
+        "retrieval_ms": 1375.8,
+        "generation_ms": 1596.1,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 22500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 26.0,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_004",
+      "category": "agent",
+      "question": "How are LLM rate limits handled in the agent loop?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/llm_client.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 1.9,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_groq_text",
+          "start_line": 755,
+          "end_line": 880,
+          "rerank_score": 0.9507770879855194
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_rate_limit_sleep_budget_exhausted",
+          "start_line": 570,
+          "end_line": 574,
+          "rerank_score": 0.8151510518984633
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "create[part 1/2]",
+          "start_line": 401,
+          "end_line": 588,
+          "rerank_score": 0.7306252491643233
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "RateLimitError",
+          "start_line": 53,
+          "end_line": 55,
+          "rerank_score": 0.5507949680420274
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_apply_provider_failure",
+          "start_line": 669,
+          "end_line": 690,
+          "rerank_score": 0.361143327631845
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_handle_decide",
+          "start_line": 1119,
+          "end_line": 1203,
+          "rerank_score": 0.33934119725006884
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "stream_text",
+          "start_line": 284,
+          "end_line": 399,
+          "rerank_score": 0.3118317139121529
+        },
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "function_name": "check_rate_limit",
+          "start_line": 41,
+          "end_line": 91,
+          "rerank_score": 0.2549932360096507
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "__init__",
+          "start_line": 251,
+          "end_line": 264,
+          "rerank_score": 0.25125036007467005
+        },
+        {
+          "file_path": "app/retrieval/query_expansion.py",
+          "function_name": "LLMClient",
+          "start_line": 34,
+          "end_line": 40,
+          "rerank_score": 0.14004793787866865
+        }
+      ],
+      "timing": {
+        "total_ms": 24749.7,
+        "retrieval_ms": 1423.3,
+        "generation_ms": 1562.8,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 20500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 24.75,
+      "error": null
+    },
+    {
+      "query_id": "gs_agent_005",
+      "category": "agent",
+      "question": "What happens if an individual tool execution fails during the agent loop?",
+      "ground_truth_files": [
+        "app/agent/loop.py",
+        "app/agent/tools.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 3.0,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/agent/tools.py",
+          "function_name": "execute_tool_with_retry",
+          "start_line": 405,
+          "end_line": 438,
+          "rerank_score": 0.2998454535924386
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_apply_provider_failure",
+          "start_line": 669,
+          "end_line": 690,
+          "rerank_score": 0.27630819968964915
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_handle_decide",
+          "start_line": 1119,
+          "end_line": 1203,
+          "rerank_score": 0.25417675848688037
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_apply_request_timeout",
+          "start_line": 577,
+          "end_line": 603,
+          "rerank_score": 0.251658119580353
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_elapsed_s",
+          "start_line": 552,
+          "end_line": 555,
+          "rerank_score": 0.2511588538077257
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_handle_observe",
+          "start_line": 1109,
+          "end_line": 1115,
+          "rerank_score": 0.2510115818320841
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_needs_structural_context",
+          "start_line": 276,
+          "end_line": 284,
+          "rerank_score": 0.2508317762195559
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "function_name": "_run_with_retries",
+          "start_line": 328,
+          "end_line": 350,
+          "rerank_score": 0.19649248767765523
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "function_name": "execute",
+          "start_line": 357,
+          "end_line": 402,
+          "rerank_score": 0.1086951796950249
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "create[part 2/2]",
+          "start_line": 401,
+          "end_line": 588,
+          "rerank_score": 0.0003207856981561585
+        }
+      ],
+      "timing": {
+        "total_ms": 60762.0,
+        "retrieval_ms": 9252.4,
+        "generation_ms": 2680.4,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 46500.0,
+        "groq_calls": 6
+      },
+      "groq_calls": 6,
+      "latency_s": 60.76,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_001",
+      "category": "graph",
+      "question": "How does the graph builder detect circular dependencies?",
+      "ground_truth_files": [
+        "app/graph/builder.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 3.1,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "detect_cycles",
+          "start_line": 280,
+          "end_line": 291,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "build_graph[part 1/2]",
+          "start_line": 55,
+          "end_line": 277,
+          "rerank_score": 0.25314505975487817
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "get_graph",
+          "start_line": 294,
+          "end_line": 307,
+          "rerank_score": 0.25020886735259096
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "_graph_path_for",
+          "start_line": 45,
+          "end_line": 48,
+          "rerank_score": 0.2501537848332757
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.25005476029200824
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_dependencies",
+          "start_line": 374,
+          "end_line": 390,
+          "rerank_score": 0.0024947999583088145
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "detect_cycles",
+          "start_line": 437,
+          "end_line": 466,
+          "rerank_score": 0.001562681183101031
+        },
+        {
+          "file_path": "app/agent/claim_verification.py",
+          "function_name": "_check_relationship_grounding",
+          "start_line": 530,
+          "end_line": 599,
+          "rerank_score": 0.0005046740085507615
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "_get_graph",
+          "start_line": 40,
+          "end_line": 54,
+          "rerank_score": 0.0001410363178196744
+        },
+        {
+          "file_path": "app/agent/confidence.py",
+          "function_name": "check_graph_consistency",
+          "start_line": 284,
+          "end_line": 317,
+          "rerank_score": 8.630519907416508e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 24068.7,
+        "retrieval_ms": 1402.6,
+        "generation_ms": 1565.0,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 20500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 24.07,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_002",
+      "category": "graph",
+      "question": "What is the maximum number of nodes allowed in the graph?",
+      "ground_truth_files": [
+        "app/graph/builder.py",
+        "app/config.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 2.9,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "build_graph[part 1/2]",
+          "start_line": 55,
+          "end_line": 277,
+          "rerank_score": 0.07887574069767543
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_subgraph",
+          "start_line": 235,
+          "end_line": 371,
+          "rerank_score": 0.01873356674878535
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "detect_cycles",
+          "start_line": 280,
+          "end_line": 291,
+          "rerank_score": 0.0007758951159483073
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_dependents",
+          "start_line": 393,
+          "end_line": 409,
+          "rerank_score": 0.0006175183907949711
+        },
+        {
+          "file_path": "app/agent/confidence.py",
+          "function_name": "check_graph_consistency",
+          "start_line": 284,
+          "end_line": 317,
+          "rerank_score": 0.0005260720106631868
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_dependencies",
+          "start_line": 374,
+          "end_line": 390,
+          "rerank_score": 0.00045387656855089644
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "_collect_capped_neighbors",
+          "start_line": 188,
+          "end_line": 232,
+          "rerank_score": 0.00041189715774889635
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "detect_cycles",
+          "start_line": 437,
+          "end_line": 466,
+          "rerank_score": 0.00018602096425303068
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_callers",
+          "start_line": 109,
+          "end_line": 142,
+          "rerank_score": 0.00017576920276746332
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "get_graph",
+          "start_line": 294,
+          "end_line": 307,
+          "rerank_score": 0.00012070545150174477
+        }
+      ],
+      "timing": {
+        "total_ms": 57592.0,
+        "retrieval_ms": 6933.8,
+        "generation_ms": 2647.4,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 45500.0,
+        "groq_calls": 6
+      },
+      "groq_calls": 6,
+      "latency_s": 57.59,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_003",
+      "category": "graph",
+      "question": "How does get_subgraph limit the depth of the returned graph?",
+      "ground_truth_files": [
+        "app/graph/queries.py"
+      ],
+      "model_answer": "<think> The user asks: \"How does get_subgraph limit the depth of the returned graph?\" I need to look at `app/graph/queries.py:235-371` function `get_subgraph`. In the context: ```python original_depth = max_depth clamped = (max_depth > 3) clamped_depth = min(max(1, max_depth), 3) ``` And then the BFS loop: ```python for _ in range(clamped_depth): next_layer: set[str] = set() for u in current_layer: # ... current_layer = next_layer if not current_layer: break ``` So it limits depth by clamping `max_depth` to a maximum of 3 (and minimum of 1) using `clamped_depth = min(max(1, max_depth), 3)`, and then iterating exactly `clamped_depth` times in a BFS loop. It also tracks whether it was clamped in the `clamped` boolean. Let's formulate claims: 1. `get_subgraph` limits the traversal depth.",
+      "cited_files": [
+        "app/graph/queries.py"
+      ],
+      "sources": [
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": null,
+          "lines": "235-371",
+          "start_line": 235,
+          "end_line": 371
+        }
+      ],
+      "confidence_score": 8.9,
+      "gated": false,
+      "retrieved_hits": [],
+      "timing": {
+        "total_ms": 125.7,
+        "retrieval_ms": 0.0,
+        "generation_ms": 0.0,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 0.0,
+        "groq_calls": 0
+      },
+      "groq_calls": 0,
+      "latency_s": 0.13,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_004",
+      "category": "graph",
+      "question": "What format is the graph converted to for visualization?",
+      "ground_truth_files": [
+        "app/diagrams/mermaid.py",
+        "app/graph/queries.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 1.1,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "build_graph[part 1/2]",
+          "start_line": 55,
+          "end_line": 277,
+          "rerank_score": 0.002626922264013756
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "get_graph",
+          "start_line": 294,
+          "end_line": 307,
+          "rerank_score": 0.0006856056858964551
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "_graph_path_for",
+          "start_line": 45,
+          "end_line": 48,
+          "rerank_score": 0.000476309712523866
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_subgraph",
+          "start_line": 235,
+          "end_line": 371,
+          "rerank_score": 0.00038383351183503506
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "_get_graph",
+          "start_line": 40,
+          "end_line": 54,
+          "rerank_score": 0.0002176691142241267
+        },
+        {
+          "file_path": "app/diagrams/mermaid_generator.py",
+          "function_name": "graph_to_mermaid",
+          "start_line": 214,
+          "end_line": 250,
+          "rerank_score": 0.00019026795536916303
+        },
+        {
+          "file_path": "app/graph/__init__.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 6,
+          "rerank_score": 0.00010482028532701628
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_cycle_info",
+          "start_line": 412,
+          "end_line": 426,
+          "rerank_score": 8.976215589566114e-05
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 8.141351641042831e-05
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_callers",
+          "start_line": 109,
+          "end_line": 142,
+          "rerank_score": 7.634620033527965e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 50857.5,
+        "retrieval_ms": 7020.9,
+        "generation_ms": 2545.9,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 39000.0,
+        "groq_calls": 6
+      },
+      "groq_calls": 6,
+      "latency_s": 50.86,
+      "error": null
+    },
+    {
+      "query_id": "gs_graph_005",
+      "category": "graph",
+      "question": "Are class methods linked to their parent classes in the call graph?",
+      "ground_truth_files": [
+        "app/graph/builder.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 0.5,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/parsing/tree_sitter_parser.py",
+          "function_name": "_parse_python",
+          "start_line": 378,
+          "end_line": 438,
+          "rerank_score": 0.010057352296759808
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "build_graph[part 1/2]",
+          "start_line": 55,
+          "end_line": 277,
+          "rerank_score": 0.004189878760722265
+        },
+        {
+          "file_path": "app/parsing/tree_sitter_parser.py",
+          "function_name": "_find_nodes",
+          "start_line": 212,
+          "end_line": 224,
+          "rerank_score": 0.0017162681931914992
+        },
+        {
+          "file_path": "app/parsing/tree_sitter_parser.py",
+          "function_name": "_parse_python_class_node",
+          "start_line": 337,
+          "end_line": 375,
+          "rerank_score": 0.0008023825195250363
+        },
+        {
+          "file_path": "app/parsing/tree_sitter_parser.py",
+          "function_name": "_parse_js_class_node",
+          "start_line": 525,
+          "end_line": 556,
+          "rerank_score": 0.0005125651141475573
+        },
+        {
+          "file_path": "app/agent/claim_verification.py",
+          "function_name": "_check_relationship_grounding",
+          "start_line": 530,
+          "end_line": 599,
+          "rerank_score": 0.00012659608098631358
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_callees",
+          "start_line": 145,
+          "end_line": 177,
+          "rerank_score": 0.00011834906468540863
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_callers",
+          "start_line": 109,
+          "end_line": 142,
+          "rerank_score": 7.973556269068451e-05
+        },
+        {
+          "file_path": "app/parsing/tree_sitter_parser.py",
+          "function_name": "_parse_javascript",
+          "start_line": 592,
+          "end_line": 641,
+          "rerank_score": 3.556282998647671e-05
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_subgraph",
+          "start_line": 235,
+          "end_line": 371,
+          "rerank_score": 3.167597096688334e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 57375.7,
+        "retrieval_ms": 6938.2,
+        "generation_ms": 2621.4,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 45500.0,
+        "groq_calls": 6
+      },
+      "groq_calls": 6,
+      "latency_s": 57.38,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_001",
+      "category": "api",
+      "question": "How is rate limiting implemented on the API endpoints?",
+      "ground_truth_files": [
+        "app/api/rate_limiter.py",
+        "app/main.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 3.3,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "function_name": "check_rate_limit",
+          "start_line": 41,
+          "end_line": 91,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.3331300111160024
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "create[part 1/2]",
+          "start_line": 401,
+          "end_line": 588,
+          "rerank_score": 0.04687275008423089
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_rate_limit_sleep_budget_exhausted",
+          "start_line": 570,
+          "end_line": 574,
+          "rerank_score": 0.0018240979898447908
+        },
+        {
+          "file_path": "app/agent/loop.py",
+          "function_name": "_apply_provider_failure",
+          "start_line": 669,
+          "end_line": 690,
+          "rerank_score": 0.0006555060727833345
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "RateLimitError",
+          "start_line": 53,
+          "end_line": 55,
+          "rerank_score": 0.0002495863650576228
+        },
+        {
+          "file_path": "app/platform/usage_meter.py",
+          "function_name": "_effective_limit",
+          "start_line": 88,
+          "end_line": 98,
+          "rerank_score": 4.9207538285742015e-05
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "__init__",
+          "start_line": 251,
+          "end_line": 264,
+          "rerank_score": 4.638177437583349e-05
+        },
+        {
+          "file_path": "app/agent/claim_verification.py",
+          "function_name": "check_claim_symbol_definition",
+          "start_line": 603,
+          "end_line": 664,
+          "rerank_score": 3.6037993424921935e-05
+        },
+        {
+          "file_path": "app/main.py",
+          "function_name": "on_startup",
+          "start_line": 74,
+          "end_line": 98,
+          "rerank_score": 1.632328636242796e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 20379.8,
+        "retrieval_ms": 1379.8,
+        "generation_ms": 1540.4,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 16500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 20.38,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_002",
+      "category": "api",
+      "question": "What validation does the /chat endpoint perform on the user question?",
+      "ground_truth_files": [
+        "app/api/router.py"
+      ],
+      "model_answer": "<think> The user is asking: \"What validation does the /chat endpoint perform on the user question?\" I need to look at the provided context to see if there is any validation logic for the `/chat` endpoint regarding the `question` parameter. Looking at the context: 1. `scripts/verify_regression_chat.py:25-58`: `_post_chat` sends a POST request to `/chat` with `{\"repo_id\": repo, \"question\": question}`. No validation logic here, just client-side. 2. `app/api/rate_limiter.py:41-91`: `check_rate_limit` is a FastAPI dependency for `/chat`. It checks rate limits based on `org_id` and `endpoint`. It does not validate the `question` string itself. 3. `scripts/scorecard_verify.py:50-58`: `chat` function sends POST to `/chat`. Client-side. 4. No validation logic. 5. This might be used downstream, but it's not explicitly shown as validation for the `/chat` endpoint.",
+      "cited_files": [
+        "scripts/verify_regression_chat.py",
+        "app/api/rate_limiter.py",
+        "scripts/scorecard_verify.py"
+      ],
+      "sources": [
+        {
+          "file_path": "scripts/verify_regression_chat.py",
+          "function_name": null,
+          "lines": "25-58",
+          "start_line": 25,
+          "end_line": 58
+        },
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "function_name": null,
+          "lines": "41-91",
+          "start_line": 41,
+          "end_line": 91
+        },
+        {
+          "file_path": "scripts/scorecard_verify.py",
+          "function_name": null,
+          "lines": "50-58",
+          "start_line": 50,
+          "end_line": 58
+        }
+      ],
+      "confidence_score": 6.3,
+      "gated": false,
+      "retrieved_hits": [
+        {
+          "file_path": "scripts/verify_regression_chat.py",
+          "function_name": "_post_chat",
+          "start_line": 25,
+          "end_line": 58,
+          "rerank_score": 0.25525846721894535
+        },
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "function_name": "check_rate_limit",
+          "start_line": 41,
+          "end_line": 91,
+          "rerank_score": 0.003490190733932507
+        },
+        {
+          "file_path": "scripts/scorecard_verify.py",
+          "function_name": "chat",
+          "start_line": 50,
+          "end_line": 58,
+          "rerank_score": 0.0026538848102117575
+        },
+        {
+          "file_path": "scripts/collect_p0_evidence.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.0007943953783164457
+        },
+        {
+          "file_path": "scripts/collect_p0_evidence.py",
+          "function_name": "main",
+          "start_line": 82,
+          "end_line": 145,
+          "rerank_score": 0.0006880825977267695
+        },
+        {
+          "file_path": "app/agent/prompts/answer_quality_dataset.py",
+          "function_name": "classify_query",
+          "start_line": 55,
+          "end_line": 101,
+          "rerank_score": 0.00040188598482095964
+        },
+        {
+          "file_path": "app/agent/grounding.py",
+          "function_name": "ensure_flow_claims[part 1/3]",
+          "start_line": 729,
+          "end_line": 1018,
+          "rerank_score": 0.0001139330814718663
+        },
+        {
+          "file_path": "app/agent/prompts/answer_quality_dataset.py",
+          "function_name": "finalize_system_quality_prompt",
+          "start_line": 258,
+          "end_line": 270,
+          "rerank_score": 5.4289210998236266e-05
+        },
+        {
+          "file_path": "app/agent/prompts/finalize_prompt.py",
+          "function_name": "finalize_system_prompt",
+          "start_line": 184,
+          "end_line": 197,
+          "rerank_score": 2.242172710072898e-05
+        },
+        {
+          "file_path": "app/retrieval/entity_retrieval.py",
+          "function_name": "entity_expansion_needed",
+          "start_line": 43,
+          "end_line": 53,
+          "rerank_score": 1.4860728937858882e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 27655.4,
+        "retrieval_ms": 1414.0,
+        "generation_ms": 1660.7,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 23500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 27.66,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_003",
+      "category": "api",
+      "question": "How does the API handle an unhandled exception globally?",
+      "ground_truth_files": [
+        "app/main.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 6.3,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/main.py",
+          "function_name": "global_exception_handler",
+          "start_line": 420,
+          "end_line": 446,
+          "rerank_score": 0.9684134834439044
+        },
+        {
+          "file_path": "app/main.py",
+          "function_name": "http_exception_handler",
+          "start_line": 401,
+          "end_line": 417,
+          "rerank_score": 0.5234373156890224
+        },
+        {
+          "file_path": "app/main.py",
+          "function_name": "RequestIDMiddleware",
+          "start_line": 323,
+          "end_line": 375,
+          "rerank_score": 0.011840622157516212
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "function_name": "force_remove_tree",
+          "start_line": 212,
+          "end_line": 272,
+          "rerank_score": 0.0004376104732067179
+        },
+        {
+          "file_path": "app/agent/grounding.py",
+          "function_name": "ensure_flow_claims[part 1/3]",
+          "start_line": 729,
+          "end_line": 1018,
+          "rerank_score": 8.743893756327382e-05
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "create[part 2/2]",
+          "start_line": 401,
+          "end_line": 588,
+          "rerank_score": 5.1819363000777515e-05
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "function_name": "_classify_git_error",
+          "start_line": 470,
+          "end_line": 511,
+          "rerank_score": 3.8154958435038576e-05
+        },
+        {
+          "file_path": "app/main.py",
+          "function_name": "create_app",
+          "start_line": 163,
+          "end_line": 263,
+          "rerank_score": 1.952359496345415e-05
+        },
+        {
+          "file_path": "app/agent/llm_client.py",
+          "function_name": "ProviderError",
+          "start_line": 58,
+          "end_line": 60,
+          "rerank_score": 1.405550328291944e-05
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 1.2577908675977888e-05
+        }
+      ],
+      "timing": {
+        "total_ms": 24328.9,
+        "retrieval_ms": 1390.4,
+        "generation_ms": 1678.8,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 20500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 24.33,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_004",
+      "category": "api",
+      "question": "Is the /ingest endpoint synchronous or asynchronous?",
+      "ground_truth_files": [
+        "app/api/router.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 2.9,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/ingestion/pipeline.py",
+          "function_name": "run_ingestion_sync",
+          "start_line": 66,
+          "end_line": 178,
+          "rerank_score": 0.0029114749956422803
+        },
+        {
+          "file_path": "app/ingestion/locking.py",
+          "function_name": "_lock_file_path",
+          "start_line": 130,
+          "end_line": 131,
+          "rerank_score": 8.923566304577071e-05
+        },
+        {
+          "file_path": "app/ingestion/progress_counts.py",
+          "function_name": "ingest_progress_counts",
+          "start_line": 17,
+          "end_line": 52,
+          "rerank_score": 4.630703993256953e-05
+        },
+        {
+          "file_path": "app/api/state_stream.py",
+          "function_name": "stream",
+          "start_line": 219,
+          "end_line": 226,
+          "rerank_score": 2.3691859941807457e-05
+        },
+        {
+          "file_path": "scripts/platform_slo_harness.py",
+          "function_name": "measure_endpoint",
+          "start_line": 94,
+          "end_line": 119,
+          "rerank_score": 2.1295747658092926e-05
+        },
+        {
+          "file_path": "app/webhook/github_webhook.py",
+          "function_name": "_safe_trigger_ingest",
+          "start_line": 59,
+          "end_line": 60,
+          "rerank_score": 1.7627201353016592e-05
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "IngestRequest",
+          "start_line": 65,
+          "end_line": 68,
+          "rerank_score": 0.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_ingest_progress_counts",
+          "start_line": 177,
+          "end_line": 181,
+          "rerank_score": 0.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_run_ingest_pipeline_remaining",
+          "start_line": 221,
+          "end_line": 269,
+          "rerank_score": 0.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "trigger_ingest",
+          "start_line": 272,
+          "end_line": 361,
+          "rerank_score": 0.0
+        }
+      ],
+      "timing": {
+        "total_ms": 59506.0,
+        "retrieval_ms": 6950.4,
+        "generation_ms": 2502.7,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 47500.0,
+        "groq_calls": 6
+      },
+      "groq_calls": 6,
+      "latency_s": 59.51,
+      "error": null
+    },
+    {
+      "query_id": "gs_api_005",
+      "category": "api",
+      "question": "What is the return structure of the /eval/status endpoint?",
+      "ground_truth_files": [
+        "app/api/router.py"
+      ],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 4.8,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "run_eval_endpoint",
+          "start_line": 1011,
+          "end_line": 1063,
+          "rerank_score": 0.553425283260147
+        },
+        {
+          "file_path": "scripts/diag_status_vs_eval.py",
+          "function_name": "main",
+          "start_line": 21,
+          "end_line": 42,
+          "rerank_score": 0.27246766981008946
+        },
+        {
+          "file_path": "scripts/diag_status_vs_eval.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.2598083998929027
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "eval_status_summary",
+          "start_line": 1106,
+          "end_line": 1112,
+          "rerank_score": 0.08271258631509987
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "run_golden_endpoint",
+          "start_line": 1188,
+          "end_line": 1203,
+          "rerank_score": 0.07239158144533128
+        },
+        {
+          "file_path": "app/api/rate_limiter.py",
+          "function_name": "check_rate_limit",
+          "start_line": 41,
+          "end_line": 91,
+          "rerank_score": 0.0009566689178678806
+        },
+        {
+          "file_path": "scripts/platform_slo_harness.py",
+          "function_name": "measure_endpoint",
+          "start_line": 94,
+          "end_line": 119,
+          "rerank_score": 0.0003190703287395766
+        },
+        {
+          "file_path": "app/agent/grounding.py",
+          "function_name": "parse_finalize_json",
+          "start_line": 71,
+          "end_line": 97,
+          "rerank_score": 2.4273142339312008e-05
+        },
+        {
+          "file_path": "app/retrieval/entity_retrieval.py",
+          "function_name": "entity_expansion_needed",
+          "start_line": 43,
+          "end_line": 53,
+          "rerank_score": 2.2930764409454777e-05
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_run_eval_background",
+          "start_line": 966,
+          "end_line": 1006,
+          "rerank_score": 0.0
+        }
+      ],
+      "timing": {
+        "total_ms": 26289.0,
+        "retrieval_ms": 1357.1,
+        "generation_ms": 1630.8,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 22500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 26.29,
+      "error": null
+    },
+    {
+      "query_id": "gs_hall_001",
+      "category": "hallucination",
+      "question": "Is the class InvalidUrlException defined in app/api/router.py?",
+      "ground_truth_files": [],
+      "model_answer": "<think> The user asks: \"Is the class InvalidUrlException defined in app/api/router.py?\" Looking at the context: `app/api/router.py:65-68` contains `_validate_repo_id`, `_validate_eval_job_id`, `IngestRequest`, `_raise_for_ingestion_error`. `app/ingestion/clone.py:80-81` contains `InvalidURLError`. The context shows `InvalidURLError` in `app/ingestion/clone.py:80-81`. Wait, the prompt says: \"If the retrieved context does not contain any code related to the user's question (e.g. Let's check the exact wording of the question: \"Is the class InvalidUrlException defined in app/api/router.py?\" I will formulate a claim: \"The class InvalidUrlException is not defined in app/api/router.py.\" And another claim: \"The class InvalidURLError is defined in app/ingestion/clone.py.\" Wait, the prompt says \"If the retrieved context does not contain any code related to the user's question... So I can cite that. Actually, the question is a yes/no question about a specific.",
+      "cited_files": [
+        "app/api/router.py",
+        "app/ingestion/clone.py"
+      ],
+      "sources": [
+        {
+          "file_path": "app/api/router.py",
+          "function_name": null,
+          "lines": "65-68",
+          "start_line": 65,
+          "end_line": 68
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "function_name": null,
+          "lines": "80-81",
+          "start_line": 80,
+          "end_line": 81
+        }
+      ],
+      "confidence_score": 9.8,
+      "gated": false,
+      "retrieved_hits": [
+        {
+          "file_path": "app/api/billing_router.py",
+          "function_name": "CheckoutRequest",
+          "start_line": 27,
+          "end_line": 30,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/api/platform_router.py",
+          "function_name": "CreateKeyRequest",
+          "start_line": 30,
+          "end_line": 33,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/api/platform_router.py",
+          "function_name": "RevokeKeyRequest",
+          "start_line": 101,
+          "end_line": 102,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_validate_repo_id",
+          "start_line": 22,
+          "end_line": 24,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_validate_eval_job_id",
+          "start_line": 26,
+          "end_line": 28,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "IngestRequest",
+          "start_line": 65,
+          "end_line": 68,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/api/router.py",
+          "function_name": "_raise_for_ingestion_error",
+          "start_line": 196,
+          "end_line": 219,
+          "rerank_score": 1.0
+        },
+        {
+          "file_path": "app/ingestion/clone.py",
+          "function_name": "InvalidURLError",
+          "start_line": 80,
+          "end_line": 81,
+          "rerank_score": 0.9665770634418674
+        },
+        {
+          "file_path": "app/api/platform_router.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.6492139303979247
+        },
+        {
+          "file_path": "app/api/billing_router.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.6385535079101125
+        }
+      ],
+      "timing": {
+        "total_ms": 20166.0,
+        "retrieval_ms": 1224.6,
+        "generation_ms": 1548.7,
+        "verify_ms": 0.0,
+        "rate_limit_sleep_ms": 16500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 20.17,
+      "error": null
+    },
+    {
+      "query_id": "gs_hall_002",
+      "category": "hallucination",
+      "question": "Does app/graph/builder.py define a CypherQueryExecutor class?",
+      "ground_truth_files": [],
+      "model_answer": "I could not verify the cited references in the indexed codebase. Please try again with a more specific class, function, or file path.",
+      "cited_files": [],
+      "sources": [],
+      "confidence_score": 0.0,
+      "gated": true,
+      "retrieved_hits": [
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "build_graph[part 1/2]",
+          "start_line": 55,
+          "end_line": 277,
+          "rerank_score": 0.9377821365119448
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.3873741433142861
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "get_graph",
+          "start_line": 294,
+          "end_line": 307,
+          "rerank_score": 0.3871479919065124
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "_graph_path_for",
+          "start_line": 45,
+          "end_line": 48,
+          "rerank_score": 0.3646167225931084
+        },
+        {
+          "file_path": "app/graph/builder.py",
+          "function_name": "detect_cycles",
+          "start_line": 280,
+          "end_line": 291,
+          "rerank_score": 0.3205043126890711
+        },
+        {
+          "file_path": "app/ingestion/pipeline.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.08969301353365085
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "_get_graph",
+          "start_line": 40,
+          "end_line": 54,
+          "rerank_score": 0.08366841238739724
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "get_cycle_info",
+          "start_line": 412,
+          "end_line": 426,
+          "rerank_score": 0.07782297361194104
+        },
+        {
+          "file_path": "app/graph/queries.py",
+          "function_name": "<module>",
+          "start_line": 1,
+          "end_line": 40,
+          "rerank_score": 0.03200413219331016
+        },
+        {
+          "file_path": "app/agent/tools.py",
+          "function_name": "GraphNameArgs",
+          "start_line": 61,
+          "end_line": 62,
+          "rerank_score": 0.03133752288577904
+        }
+      ],
+      "timing": {
+        "total_ms": 24070.6,
+        "retrieval_ms": 1387.7,
+        "generation_ms": 1591.7,
+        "verify_ms": 0.3,
+        "rate_limit_sleep_ms": 20500.0,
+        "groq_calls": 1
+      },
+      "groq_calls": 1,
+      "latency_s": 24.07,
+      "error": null
+    }
+  ]
+}

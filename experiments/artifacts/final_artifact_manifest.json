@@ -1,0 +1,170 @@
+[
+  {
+    "path": "experiments/artifacts/environment_manifest.json",
+    "size_bytes": 1184,
+    "sha256": "504cfa7a24d4d9da4cc21422e5fbfca7da45497634077ecc7a550418bc369327",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "experiment_config"
+  },
+  {
+    "path": "experiments/artifacts/benchmark_manifest.json",
+    "size_bytes": 974,
+    "sha256": "cd7b790ca2d4eabbac34ea6311e74fe5865b631b586a9fa71504f49a054c59a8",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "benchmark_config"
+  },
+  {
+    "path": "experiments/artifacts/multifile_recall_definition.md",
+    "size_bytes": 1435,
+    "sha256": "231e54cb165a48f53616a36cc3b246181a636968a2ef17cbe3f18ed202772992",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "documentation"
+  },
+  {
+    "path": "eval_results_27.json",
+    "size_bytes": 9114,
+    "sha256": "128fe646bda8f399f0682c08d45ebcc1836f876430aed03802e14c093a14f146",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "run_eval"
+  },
+  {
+    "path": "eval_results_clean_27.json",
+    "size_bytes": 12136,
+    "sha256": "3532f71f34304160a8dfadb48b70b1990dc11b04d0daa993137b5915bbf2b80a",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "run_eval"
+  },
+  {
+    "path": "data/golden_set.json",
+    "size_bytes": 11256,
+    "sha256": "489aa522eab0de1fa29c2ac9aff4bed0f3e9396acbe42f226f10a8e66027a545",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "golden_set"
+  },
+  {
+    "path": "experiments/raw/exp_a_full_system.json",
+    "size_bytes": 9223,
+    "sha256": "5a3137cb27deb76180c381d0ffdf8437bbefc16b0d9a50c1a935c6d8a401f78d",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "eval_results_27"
+  },
+  {
+    "path": "experiments/raw/exp_b_naive_dense_rag.json",
+    "size_bytes": 9312,
+    "sha256": "2bfb29898cc3e5c141e4b5a300a7922de26d18323b14caf3910949c682c020c9",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "ablation_runner"
+  },
+  {
+    "path": "experiments/raw/exp_c_details.json",
+    "size_bytes": 13720,
+    "sha256": "e11895a255213606fde12864d4c41ed67828814bdfb77900f4f7d14604b0694e",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "ablation_runner"
+  },
+  {
+    "path": "experiments/raw/exp_d_details.json",
+    "size_bytes": 8221,
+    "sha256": "5f62369f19f7601db17608b128f4d7d5414781c040f48e156fde81783fe5bae6",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "ablation_runner"
+  },
+  {
+    "path": "experiments/raw/exp_e_details.json",
+    "size_bytes": 7451,
+    "sha256": "f23d4cddeefd88445eb61a8b042197c041c7fffbf6eed09a00455bf72e974699",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "ablation_runner"
+  },
+  {
+    "path": "experiments/scripts/calculate_metrics.py",
+    "size_bytes": 2854,
+    "sha256": "74f03236be24cb5d31ecf424a4df1756d75c9f3bf2173b71419e51d1e94d07d0",
+    "evidence_level": "EXECUTABLE CODE",
+    "generated_by": "script"
+  },
+  {
+    "path": "experiments/scripts/bootstrap_metrics.py",
+    "size_bytes": 4693,
+    "sha256": "fdc189eed4bebd03e8216d468101b63f7f5240a982aa8e525485dc8ff36b96cf",
+    "evidence_level": "EXECUTABLE CODE",
+    "generated_by": "script"
+  },
+  {
+    "path": "experiments/summaries/results_table.csv",
+    "size_bytes": 404,
+    "sha256": "c64a9bdf40b4bd350cc256b74ed45832bb332861a4aeb8ae1ab3409256ff681b",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "calculate_metrics"
+  },
+  {
+    "path": "experiments/summaries/bootstrap_confidence_intervals.json",
+    "size_bytes": 718,
+    "sha256": "dbc6eddf109861daeed869bd11b97d9440236b96550c634355bac4d60e7e81c8",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "bootstrap_metrics"
+  },
+  {
+    "path": "experiments/summaries/statistical_tests.json",
+    "size_bytes": 560,
+    "sha256": "ff33d1b34a1ab78818cafccd0db57d392311c86273fe6147afcb3b7795eb1d00",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "bootstrap_metrics"
+  },
+  {
+    "path": "experiments/summaries/qualitative_cases.json",
+    "size_bytes": 3030,
+    "sha256": "0143400996539499fc52e8756cc9a9aea3680c24c500a65a00c187561d215410",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "case_extractor"
+  },
+  {
+    "path": "experiments/summaries/failure_taxonomy.json",
+    "size_bytes": 891,
+    "sha256": "8f7a452305fb1633369cc199c625b37e2373e3f2ebf06dd31c386e9fe198eed9",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "taxonomy_classifier"
+  },
+  {
+    "path": "codenavigator_research_paper.md",
+    "size_bytes": 23448,
+    "sha256": "d4b9428738a4a2e36b4bf7f59609ca46a1185d8d44d9f8ff7c99d85126e8361a",
+    "evidence_level": "MANUSCRIPT",
+    "generated_by": "author"
+  },
+  {
+    "path": "experiments/raw/ragas_postfix_details.json",
+    "size_bytes": 13794,
+    "sha256": "e39d06cb71c0832dae0fa3175165e7cb85c845645bf907080d07b2f34ba09c9f",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "run_eval"
+  },
+  {
+    "path": "experiments/summaries/ragas_postfix_verified.json",
+    "size_bytes": 1425,
+    "sha256": "95ec088d4acaecbcecf6f5e9ccc5aa793053c630c1384622738125be19f48f57",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "ragas_evaluator"
+  },
+  {
+    "path": "experiments/summaries/ragas_claim_evidence.json",
+    "size_bytes": 1428,
+    "sha256": "28a3fa7df3911ef79588de96aa48c0dee11e68e3069346dab1187f098da25eee",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "ragas_claim_audit"
+  },
+  {
+    "path": "experiments/artifacts/ragas_environment_manifest.json",
+    "size_bytes": 1334,
+    "sha256": "368caa3383d0646cd64daccaea8f8c9ac97b6a3df4d3459f669bf27385ef6c38",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "generated_by": "ragas_manifest"
+  },
+  {
+    "path": "experiments/summaries/final_paper_metrics.json",
+    "size_bytes": 1731,
+    "sha256": "81ed1161d9999773c60e66364c556398c7d3e180db8273aa728cbc24fe8e2f15",
+    "evidence_level": "LEVEL 1 SUMMARY",
+    "generated_by": "manuscript_freeze"
+  }
+]

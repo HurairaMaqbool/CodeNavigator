@@ -1,0 +1,380 @@
+[
+  {
+    "query_id": "gs_ingest_001",
+    "category": "ingestion",
+    "D1_graph_on": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_ingest_002",
+    "category": "ingestion",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_ingest_003",
+    "category": "ingestion",
+    "D1_graph_on": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_ingest_004",
+    "category": "ingestion",
+    "D1_graph_on": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_ingest_005",
+    "category": "ingestion",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_retrieval_001",
+    "category": "retrieval",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_retrieval_002",
+    "category": "retrieval",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_retrieval_003",
+    "category": "retrieval",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_retrieval_004",
+    "category": "retrieval",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_retrieval_005",
+    "category": "retrieval",
+    "D1_graph_on": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_agent_001",
+    "category": "agent",
+    "D1_graph_on": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_agent_002",
+    "category": "agent",
+    "D1_graph_on": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_agent_003",
+    "category": "agent",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_agent_004",
+    "category": "agent",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_agent_005",
+    "category": "agent",
+    "D1_graph_on": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_graph_001",
+    "category": "graph",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 12,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_graph_002",
+    "category": "graph",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 12,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_graph_003",
+    "category": "graph",
+    "D1_graph_on": {
+      "metric": "FN",
+      "graph_nodes_expanded": 12,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_graph_004",
+    "category": "graph",
+    "D1_graph_on": {
+      "metric": "FN",
+      "graph_nodes_expanded": 12,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_graph_005",
+    "category": "graph",
+    "D1_graph_on": {
+      "metric": "FN",
+      "graph_nodes_expanded": 12,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_api_001",
+    "category": "api",
+    "D1_graph_on": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_api_002",
+    "category": "api",
+    "D1_graph_on": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_api_003",
+    "category": "api",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_api_004",
+    "category": "api",
+    "D1_graph_on": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "FN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_api_005",
+    "category": "api",
+    "D1_graph_on": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    },
+    "D2_graph_off": {
+      "metric": "TP",
+      "graph_nodes_expanded": 0,
+      "context_recall": 1.0
+    }
+  },
+  {
+    "query_id": "gs_hall_001",
+    "category": "hallucination",
+    "D1_graph_on": {
+      "metric": "TN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "TN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  },
+  {
+    "query_id": "gs_hall_002",
+    "category": "hallucination",
+    "D1_graph_on": {
+      "metric": "TN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    },
+    "D2_graph_off": {
+      "metric": "TN",
+      "graph_nodes_expanded": 0,
+      "context_recall": 0.0
+    }
+  }
+]

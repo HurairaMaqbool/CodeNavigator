@@ -1,0 +1,137 @@
+[
+  {
+    "query_id": "gs_ingest_001",
+    "error_raw": null,
+    "failure_taxonomy": "retrieval failure"
+  },
+  {
+    "query_id": "gs_ingest_002",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_ingest_003",
+    "error_raw": null,
+    "failure_taxonomy": "retrieval failure"
+  },
+  {
+    "query_id": "gs_ingest_004",
+    "error_raw": null,
+    "failure_taxonomy": "retrieval failure"
+  },
+  {
+    "query_id": "gs_ingest_005",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_retrieval_001",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_retrieval_002",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_retrieval_003",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_retrieval_004",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_retrieval_005",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_agent_001",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_agent_002",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_agent_003",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_agent_004",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_agent_005",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_graph_001",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_graph_002",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_graph_003",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_graph_004",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_graph_005",
+    "error_raw": null,
+    "failure_taxonomy": "retrieval failure"
+  },
+  {
+    "query_id": "gs_api_001",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_api_002",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_api_003",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_api_004",
+    "error_raw": null,
+    "failure_taxonomy": "retrieval failure"
+  },
+  {
+    "query_id": "gs_api_005",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_hall_001",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  },
+  {
+    "query_id": "gs_hall_002",
+    "error_raw": null,
+    "failure_taxonomy": "none"
+  }
+]

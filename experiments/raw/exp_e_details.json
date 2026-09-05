@@ -1,0 +1,380 @@
+[
+  {
+    "query_id": "gs_ingest_001",
+    "category": "ingestion",
+    "E1_gating_on": {
+      "metric": "FP",
+      "confidence": 3.5,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 3.5,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_ingest_002",
+    "category": "ingestion",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 4.9,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 4.9,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_ingest_003",
+    "category": "ingestion",
+    "E1_gating_on": {
+      "metric": "FN",
+      "confidence": 0.6,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 0.6,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_ingest_004",
+    "category": "ingestion",
+    "E1_gating_on": {
+      "metric": "FP",
+      "confidence": 4.6,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 4.6,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_ingest_005",
+    "category": "ingestion",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 8.9,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 8.9,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_001",
+    "category": "retrieval",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 9.0,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 9.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_002",
+    "category": "retrieval",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 9.8,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 9.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_003",
+    "category": "retrieval",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 8.5,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 8.5,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_004",
+    "category": "retrieval",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 4.8,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 4.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_005",
+    "category": "retrieval",
+    "E1_gating_on": {
+      "metric": "FP",
+      "confidence": 2.0,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 2.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_001",
+    "category": "agent",
+    "E1_gating_on": {
+      "metric": "FP",
+      "confidence": 2.1,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 2.1,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_002",
+    "category": "agent",
+    "E1_gating_on": {
+      "metric": "FP",
+      "confidence": 4.0,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 4.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_003",
+    "category": "agent",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 8.1,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 8.1,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_004",
+    "category": "agent",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 4.4,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 4.4,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_005",
+    "category": "agent",
+    "E1_gating_on": {
+      "metric": "FP",
+      "confidence": 3.0,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 3.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_001",
+    "category": "graph",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 8.8,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 8.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_002",
+    "category": "graph",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 4.5,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 4.5,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_003",
+    "category": "graph",
+    "E1_gating_on": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 0.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_004",
+    "category": "graph",
+    "E1_gating_on": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 0.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_005",
+    "category": "graph",
+    "E1_gating_on": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 0.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_api_001",
+    "category": "api",
+    "E1_gating_on": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 0.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_api_002",
+    "category": "api",
+    "E1_gating_on": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 0.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_api_003",
+    "category": "api",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 8.9,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 8.9,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_api_004",
+    "category": "api",
+    "E1_gating_on": {
+      "metric": "FN",
+      "confidence": 0.2,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 0.2,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_api_005",
+    "category": "api",
+    "E1_gating_on": {
+      "metric": "TP",
+      "confidence": 7.8,
+      "gated": false
+    },
+    "E2_gating_off": {
+      "metric": "TP",
+      "confidence": 7.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_hall_001",
+    "category": "hallucination",
+    "E1_gating_on": {
+      "metric": "TN",
+      "confidence": 1.5,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 1.5,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_hall_002",
+    "category": "hallucination",
+    "E1_gating_on": {
+      "metric": "TN",
+      "confidence": 1.4,
+      "gated": true
+    },
+    "E2_gating_off": {
+      "metric": "FP",
+      "confidence": 1.4,
+      "gated": false
+    }
+  }
+]

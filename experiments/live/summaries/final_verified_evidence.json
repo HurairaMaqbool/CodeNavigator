@@ -1,0 +1,38 @@
+{
+  "audit_timestamp": "2026-09-05T13:56:00Z",
+  "repository_id": "5749924cb6a9850057686b664b4b980fc407af109104df6f0aec8ec8182a4338",
+  "artifacts": {
+    "exp_a_raw": {
+      "path": "experiments/live/raw/exp_a_full_system_live.json",
+      "size_bytes": 80200,
+      "lines": 2414,
+      "sha256": "27d22d7852cc01932bc091e658842407150b15cb3cd0e1f2d7866ebd99600318",
+      "md5": "ee3471329f736c9fd2195e9c4b54220b"
+    },
+    "exp_b_raw": {
+      "path": "experiments/live/raw/exp_b_naive_dense_rag_live.json",
+      "size_bytes": 61661,
+      "lines": 1293,
+      "sha256": "a51a4e5c13b55a8a2be5714f92fa5b17febf1204350eca49baf0f4f8a51a62e2",
+      "md5": "bda9a7bdb08a2fbe78fb0fbe9af3af13"
+    }
+  },
+  "raw_execution_findings": {
+    "total_queries": 27,
+    "exp_b_successful_answers": 21,
+    "exp_a_successful_answers": 5,
+    "exp_a_gated_queries": 21,
+    "exp_a_ungated_queries": 6
+  },
+  "mcnemar_recomputation": {
+    "b_exp_a_succ_exp_b_fail": 0,
+    "c_exp_b_succ_exp_a_fail": 16,
+    "both_succeeded": 5,
+    "both_failed": 6,
+    "uncorrected_chi2": 16.0,
+    "p_uncorrected": 6.334248e-05,
+    "corrected_chi2": 14.0625,
+    "p_corrected": 0.0001768346
+  },
+  "paper_readiness": "GO \u2014 Live execution complete, verified, and statistically certified."
+}

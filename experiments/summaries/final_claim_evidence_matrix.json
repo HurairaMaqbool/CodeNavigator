@@ -1,0 +1,58 @@
+[
+  {
+    "claim": "Full System Accuracy = 51.85%",
+    "source": "eval_results_27.json",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "recomputed": true,
+    "correct": true,
+    "safe_for_paper": true
+  },
+  {
+    "claim": "Full System Precision = 66.67%",
+    "source": "eval_results_27.json",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "recomputed": true,
+    "correct": true,
+    "safe_for_paper": true
+  },
+  {
+    "claim": "Naive Baseline Accuracy = 37.04%",
+    "source": "exp_b_naive_dense_rag.json",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "recomputed": true,
+    "correct": true,
+    "safe_for_paper": true
+  },
+  {
+    "claim": "Graph Recall Delta = -21.05%",
+    "source": "exp_d_details.json",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "recomputed": true,
+    "correct": true,
+    "safe_for_paper": true
+  },
+  {
+    "claim": "Gating Precision Gain = +16.67%",
+    "source": "exp_e_details.json",
+    "evidence_level": "LEVEL 1 \u2014 FULL RAW",
+    "recomputed": true,
+    "correct": true,
+    "safe_for_paper": true
+  },
+  {
+    "claim": "100% Accuracy Claim",
+    "source": "README.md:86",
+    "evidence_level": "LEVEL 4 \u2014 CLAIM",
+    "recomputed": false,
+    "correct": false,
+    "safe_for_paper": false
+  },
+  {
+    "claim": "0% Hallucination Claim",
+    "source": "README.md:86",
+    "evidence_level": "LEVEL 4 \u2014 CLAIM",
+    "recomputed": false,
+    "correct": false,
+    "safe_for_paper": false
+  }
+]

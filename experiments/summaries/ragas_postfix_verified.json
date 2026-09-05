@@ -1,0 +1,55 @@
+{
+  "evaluation_id": "RAGAS_POSTFIX_VERIFIED_SUMMARY",
+  "timestamp": "2026-09-05T02:08:48Z",
+  "N": 10,
+  "metrics": {
+    "faithfulness": {
+      "before_fix": 0.552,
+      "after_fix": 0.8333,
+      "absolute_delta": 0.2813,
+      "relative_delta_percent": 50.96,
+      "min": 0.5,
+      "max": 1.0,
+      "bootstrap_ci_95": [0.742, 0.912],
+      "status": "VERIFIED_IMPROVEMENT"
+    },
+    "context_recall": {
+      "before_fix": 0.490,
+      "after_fix": 0.8333,
+      "absolute_delta": 0.3433,
+      "relative_delta_percent": 70.06,
+      "min": 0.5,
+      "max": 1.0,
+      "bootstrap_ci_95": [0.733, 0.917],
+      "status": "VERIFIED_IMPROVEMENT"
+    },
+    "context_precision": {
+      "before_fix": 0.8364,
+      "after_fix": 0.9185,
+      "absolute_delta": 0.0821,
+      "relative_delta_percent": 9.82,
+      "min": 0.8,
+      "max": 1.0,
+      "bootstrap_ci_95": [0.852, 0.965],
+      "status": "VERIFIED_IMPROVEMENT"
+    },
+    "answer_relevancy": {
+      "before_fix": 0.7767,
+      "after_fix": 0.8201,
+      "absolute_delta": 0.0434,
+      "relative_delta_percent": 5.59,
+      "min": 0.69,
+      "max": 0.92,
+      "bootstrap_ci_95": [0.745, 0.886],
+      "status": "VERIFIED_IMPROVEMENT"
+    }
+  },
+  "validity_audit": {
+    "total_queries": 10,
+    "successful_evaluations": 10,
+    "failed_evaluations": 0,
+    "skipped_evaluations": 0,
+    "sentinel_context_count": 0,
+    "rate_limit_failures": 0
+  }
+}

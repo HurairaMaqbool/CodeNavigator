@@ -1,0 +1,266 @@
+[
+  {
+    "query_id": "gs_ingest_001",
+    "category": "ingestion",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/ingestion/repo_readiness.py",
+      "app/ingestion/pipeline.py",
+      "app/api/router.py",
+      "scripts/audit_ingestion_pipeline.py",
+      "app/ingestion/metadata_store.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/ingestion/repo_readiness.py', 'app/ingestion/pipeline.py', 'app/api/router.py', 'scripts/audit_ingestion_pipeline.py', 'app/ingestion/metadata_store.py']"
+  },
+  {
+    "query_id": "gs_ingest_002",
+    "category": "ingestion",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/webhook/github_app_webhook.py",
+      "app/webhook/github_webhook.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/webhook/github_app_webhook.py', 'app/webhook/github_webhook.py']"
+  },
+  {
+    "query_id": "gs_ingest_003",
+    "category": "ingestion",
+    "grounding_status": "no answer / refusal",
+    "cited_files": [
+      "app/parsing/chunker.py"
+    ],
+    "reason": "Model explicitly refused or stated context was insufficient."
+  },
+  {
+    "query_id": "gs_ingest_004",
+    "category": "ingestion",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/ingestion/locking.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/ingestion/locking.py']"
+  },
+  {
+    "query_id": "gs_ingest_005",
+    "category": "ingestion",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "metadata_store.py",
+      "app/ingestion/metadata_store.py"
+    ],
+    "reason": "Model generated answer with citations: ['metadata_store.py', 'app/ingestion/metadata_store.py']"
+  },
+  {
+    "query_id": "gs_retrieval_001",
+    "category": "retrieval",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/retrieval/hybrid_search.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/retrieval/hybrid_search.py']"
+  },
+  {
+    "query_id": "gs_retrieval_002",
+    "category": "retrieval",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/retrieval/bm25_store.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/retrieval/bm25_store.py']"
+  },
+  {
+    "query_id": "gs_retrieval_003",
+    "category": "retrieval",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/retrieval/reranker.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/retrieval/reranker.py']"
+  },
+  {
+    "query_id": "gs_retrieval_004",
+    "category": "retrieval",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/retrieval/query_expansion.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/retrieval/query_expansion.py']"
+  },
+  {
+    "query_id": "gs_retrieval_005",
+    "category": "retrieval",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/retrieval/vector_store.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/retrieval/vector_store.py']"
+  },
+  {
+    "query_id": "gs_agent_001",
+    "category": "agent",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "tests/test_agent_9a.py"
+    ],
+    "reason": "Model generated answer with citations: ['tests/test_agent_9a.py']"
+  },
+  {
+    "query_id": "gs_agent_002",
+    "category": "agent",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/agent/loop.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/agent/loop.py']"
+  },
+  {
+    "query_id": "gs_agent_003",
+    "category": "agent",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/agent/loop.py",
+      "app/agent/semantic_cache.py",
+      "tests/test_semantic_cache.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/agent/loop.py', 'app/agent/semantic_cache.py', 'tests/test_semantic_cache.py']"
+  },
+  {
+    "query_id": "gs_agent_004",
+    "category": "agent",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/agent/llm_client.py",
+      "app/agent/loop.py",
+      "tests/test_rate_limit_regressions.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/agent/llm_client.py', 'app/agent/loop.py', 'tests/test_rate_limit_regressions.py']"
+  },
+  {
+    "query_id": "gs_agent_005",
+    "category": "agent",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/agent/tools.py",
+      "app/agent/loop.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/agent/tools.py', 'app/agent/loop.py']"
+  },
+  {
+    "query_id": "gs_graph_001",
+    "category": "graph",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/graph/builder.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/graph/builder.py']"
+  },
+  {
+    "query_id": "gs_graph_002",
+    "category": "graph",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/graph/builder.py",
+      "tests/test_graph.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/graph/builder.py', 'tests/test_graph.py']"
+  },
+  {
+    "query_id": "gs_graph_003",
+    "category": "graph",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/graph/queries.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/graph/queries.py']"
+  },
+  {
+    "query_id": "gs_graph_004",
+    "category": "graph",
+    "grounding_status": "no answer / refusal",
+    "cited_files": [
+      "app/graph/__init__.py",
+      "app/graph/builder.py",
+      "app/graph/queries.py",
+      "app/agent/tools.py"
+    ],
+    "reason": "Model explicitly refused or stated context was insufficient."
+  },
+  {
+    "query_id": "gs_graph_005",
+    "category": "graph",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/graph/queries.py",
+      "app/parsing/tree_sitter_parser.py",
+      "tests/test_graph.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/graph/queries.py', 'app/parsing/tree_sitter_parser.py', 'tests/test_graph.py']"
+  },
+  {
+    "query_id": "gs_api_001",
+    "category": "api",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/api/rate_limiter.py",
+      "app/agent/llm_client.py",
+      "tests/test_api_endpoints.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/api/rate_limiter.py', 'app/agent/llm_client.py', 'tests/test_api_endpoints.py']"
+  },
+  {
+    "query_id": "gs_api_002",
+    "category": "api",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/api/router.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/api/router.py']"
+  },
+  {
+    "query_id": "gs_api_003",
+    "category": "api",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/main.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/main.py']"
+  },
+  {
+    "query_id": "gs_api_004",
+    "category": "api",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/ingestion/metadata_store.py",
+      "app/ingestion/pipeline.py",
+      "app/ingestion/locking.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/ingestion/metadata_store.py', 'app/ingestion/pipeline.py', 'app/ingestion/locking.py']"
+  },
+  {
+    "query_id": "gs_api_005",
+    "category": "api",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/api/router.py"
+    ],
+    "reason": "Model generated answer with citations: ['app/api/router.py']"
+  },
+  {
+    "query_id": "gs_hall_001",
+    "category": "hallucination",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/api/router.py"
+    ],
+    "reason": "Correctly stated non-existence / refusal to hallucinate non-existent class."
+  },
+  {
+    "query_id": "gs_hall_002",
+    "category": "hallucination",
+    "grounding_status": "grounded",
+    "cited_files": [
+      "app/graph/builder.py"
+    ],
+    "reason": "Correctly stated non-existence / refusal to hallucinate non-existent class."
+  }
+]

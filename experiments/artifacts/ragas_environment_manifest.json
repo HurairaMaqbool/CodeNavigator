@@ -1,0 +1,45 @@
+{
+  "repository": "CodeNavigator (codebase-onboarding-agent)",
+  "git_commit": "a9792b53b817c180907e80556b6aa99e12089f81",
+  "timestamp": "2026-09-05T02:08:30Z",
+  "python_version": "3.13.14",
+  "os": "Windows 11 Home 10.0.26100",
+  "benchmark_version": "Golden Set v1.2 (tests/eval_set.json & tests/eval_results.json)",
+  "query_counts": {
+    "primary_experiment_n": 27,
+    "eval_golden_set_n": 10,
+    "total_benchmark_n": 27
+  },
+  "llm_model": "llama-3.1-8b-instant",
+  "llm_provider": "groq",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "cross_encoder_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "ragas_version": "0.2.12",
+  "evaluator_configuration": {
+    "judge_llm": "llama-3.1-8b-instant",
+    "judge_embeddings": "all-MiniLM-L6-v2",
+    "temperature": 0.0,
+    "strictness": 1,
+    "max_workers": 1,
+    "timeout_s": 120
+  },
+  "retrieval_configuration": {
+    "hybrid_search": "RRF (Reciprocal Rank Fusion)",
+    "rrf_k": 60,
+    "reranker_enabled": true,
+    "query_expansion": false,
+    "entity_retrieval_max_chunks": 12
+  },
+  "graph_configuration": {
+    "max_graph_nodes": 10000,
+    "cycle_detection_timeout_s": 10
+  },
+  "gating_configuration": {
+    "min_confidence_score": 4.0,
+    "confidence_gate_threshold_normalized": 0.80
+  },
+  "bootstrap_resampling": {
+    "seed": 42,
+    "iterations": 1000
+  }
+}

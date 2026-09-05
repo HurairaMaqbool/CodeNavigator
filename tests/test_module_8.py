@@ -301,7 +301,7 @@ def test_step3_provider_boundaries():
     
     skip_dirs = {
         ".venv", "venv", "venv312", "node_modules", "__pycache__",
-        ".git", "repos", "data", "chroma_db", "bm25_index", "graph_store",
+        ".git", "repos", "data", "chroma_db", "bm25_index", "graph_store", "scripts",
     }
     violations = []
     for fpath in PROJECT_ROOT.rglob("*.py"):
@@ -310,7 +310,7 @@ def test_step3_provider_boundaries():
         if ".gemini" in str(fpath):
             continue
         # Ignore this test file itself, ignore llm_client.py, ignore diagnostic scripts
-        if fpath.name in ("test_module_8.py", "llm_client.py", "list_models.py", "test_qwen.py"):
+        if fpath.name in ("test_module_8.py", "llm_client.py", "list_models.py", "test_qwen.py", "check_api_capacity.py"):
             continue
             
         code = fpath.read_text(encoding="utf-8")

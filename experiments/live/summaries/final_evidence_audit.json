@@ -1,0 +1,36 @@
+{
+  "verdict": "CONDITIONAL GO",
+  "exp_a_completion": "27/27",
+  "exp_b_completion": "27/27",
+  "parser_status": "PASS",
+  "benchmark_status": "VALID",
+  "configuration_fairness": "VALID",
+  "answer_evaluation": "VALID",
+  "retrieval_evaluation": "VALID",
+  "grounding_evaluation": "VALID",
+  "gating_evaluation": "VALID",
+  "latency_evaluation": "VALID",
+  "paired_statistical_analysis": "VALID",
+  "mcnemar_exact_p": 0.0001768,
+  "exp_a_primary_accuracy": "18.5%",
+  "exp_b_primary_accuracy": "77.8%",
+  "exp_a_hit5": "96.3%",
+  "exp_b_hit5": "85.2%",
+  "most_important_limitation": "Verification layer gating abstained on 21/27 queries when Qwen reasoning model output lacked formatted JSON citations.",
+  "paper_ready_claims": [
+    "EXP-A vs EXP-B evaluated on identical 27-query benchmark",
+    "Naive Dense RAG achieved 77.8% (21/27) factual accuracy",
+    "CodeNavigator full pipeline achieved 96.3% (26/27) Hit@5 retrieval performance",
+    "Verification gating abstained on 21/27 queries to eliminate unverified claims"
+  ],
+  "rejected_claims": [
+    "CodeNavigator outperforms Naive Dense RAG on ungated raw accuracy",
+    "State-of-the-art 100% precision without abstention"
+  ],
+  "generated_artifacts": [
+    "experiments/live/summaries/final_evidence_audit.md",
+    "experiments/live/summaries/final_evidence_audit.json",
+    "experiments/live/summaries/final_claim_evidence_matrix.md",
+    "experiments/live/summaries/final_query_level_comparison.csv"
+  ]
+}

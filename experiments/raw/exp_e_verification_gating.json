@@ -1,0 +1,22 @@
+{
+  "experiment_id": "EXP-E",
+  "name": "Verification Gating Firewall Ablation (Gating ON vs OFF)",
+  "gating_enabled": {
+    "accuracy": 0.5185,
+    "precision": 0.6667,
+    "recall": 0.6316,
+    "false_positives": 6,
+    "refusal_count": 9
+  },
+  "gating_disabled": {
+    "accuracy": 0.4444,
+    "precision": 0.5,
+    "recall": 0.8421,
+    "false_positives": 16,
+    "refusal_count": 0
+  },
+  "delta": {
+    "precision_gain_with_gating": 0.1667,
+    "false_positive_reduction": -10
+  }
+}

@@ -1,0 +1,305 @@
+{
+  "experiment_id": "EXP-B",
+  "name": "Naive Dense RAG Baseline (Fixed Chunk + Vector Search Only)",
+  "summary": {
+    "total_queries": 27,
+    "TP": 9,
+    "FP": 10,
+    "TN": 0,
+    "FN": 8,
+    "precision": 0.4737,
+    "recall": 0.5294,
+    "accuracy": 0.3333,
+    "f1_score": 0.5,
+    "hallucination_rate": 0.3704,
+    "mean_latency_s": 1.82
+  },
+  "details": [
+    {
+      "id": "gs_ingest_001",
+      "category": "ingestion",
+      "metric": "FP",
+      "conf": 3.5,
+      "gated": false,
+      "cited_files": [
+        "app/api/router.py",
+        "app/ingestion/metadata_store.py"
+      ],
+      "answer_preview": "The ingestion pipeline spans modules 5 \u2192 7: parse \u2192 chunk \u2192 embed \u2192 BM25 \u2192 graph. `app/api/router.py"
+    },
+    {
+      "id": "gs_ingest_002",
+      "category": "ingestion",
+      "metric": "TP",
+      "conf": 4.9,
+      "gated": false,
+      "cited_files": [
+        "app/webhook/github_webhook.py"
+      ],
+      "answer_preview": "The GitHub webhook ignores push events on non-default branches. `app/webhook/github_webhook.py:38-55"
+    },
+    {
+      "id": "gs_ingest_003",
+      "category": "ingestion",
+      "metric": "FP",
+      "conf": 0.6,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "I could not verify the cited references in the indexed codebase. Please try again with a more specif"
+    },
+    {
+      "id": "gs_ingest_004",
+      "category": "ingestion",
+      "metric": "FP",
+      "conf": 4.6,
+      "gated": false,
+      "cited_files": [
+        "app/ingestion/metadata_store.py"
+      ],
+      "answer_preview": "The ingestion lock is acquired by calling the acquire_lock function in locking.py. `app/ingestion/me"
+    },
+    {
+      "id": "gs_ingest_005",
+      "category": "ingestion",
+      "metric": "TP",
+      "conf": 8.9,
+      "gated": false,
+      "cited_files": [
+        "app/ingestion/metadata_store.py",
+        "app/ingestion/repo_readiness.py"
+      ],
+      "answer_preview": "The `mark_synced` method of the `MetadataStore` class transitions a repository to the 'synced' statu"
+    },
+    {
+      "id": "gs_retrieval_001",
+      "category": "retrieval",
+      "metric": "TP",
+      "conf": 9.0,
+      "gated": false,
+      "cited_files": [
+        "app/retrieval/hybrid_search.py"
+      ],
+      "answer_preview": "Hybrid search combines BM25 and vector scores using Reciprocal Rank Fusion (RRF). `app/retrieval/hyb"
+    },
+    {
+      "id": "gs_retrieval_002",
+      "category": "retrieval",
+      "metric": "TP",
+      "conf": 9.8,
+      "gated": false,
+      "cited_files": [
+        "app/retrieval/bm25_store.py",
+        "app/retrieval/bm25_store.py",
+        "app/ingestion/index_integrity.py"
+      ],
+      "answer_preview": "The BM25 index is persisted on disk at the path specified by _index_path_for(repo_id). `app/retrieva"
+    },
+    {
+      "id": "gs_retrieval_003",
+      "category": "retrieval",
+      "metric": "TP",
+      "conf": 8.5,
+      "gated": false,
+      "cited_files": [
+        "app/retrieval/hybrid_search.py",
+        "app/retrieval/reranker.py"
+      ],
+      "answer_preview": "The pipeline uses a cross-encoder reranker. `app/retrieval/hybrid_search.py:219-302`  The cross-enco"
+    },
+    {
+      "id": "gs_retrieval_004",
+      "category": "retrieval",
+      "metric": "TP",
+      "conf": 4.8,
+      "gated": false,
+      "cited_files": [
+        "app/retrieval/query_expansion.py",
+        "app/retrieval/query_expansion.py"
+      ],
+      "answer_preview": "The query expansion LLM request times out after 5 seconds. `app/retrieval/query_expansion.py:125-147"
+    },
+    {
+      "id": "gs_retrieval_005",
+      "category": "retrieval",
+      "metric": "FP",
+      "conf": 2.0,
+      "gated": false,
+      "cited_files": [
+        "app/agent/semantic_cache.py"
+      ],
+      "answer_preview": "The vector database used for semantic search is Chroma. `app/agent/semantic_cache.py:408-432`  *Some"
+    },
+    {
+      "id": "gs_agent_001",
+      "category": "agent",
+      "metric": "FP",
+      "conf": 2.1,
+      "gated": false,
+      "cited_files": [
+        "app/agent/tools.py"
+      ],
+      "answer_preview": "The agent uses the _run_with_retries function to implement the retry mechanism. `app/agent/tools.py:"
+    },
+    {
+      "id": "gs_agent_002",
+      "category": "agent",
+      "metric": "FP",
+      "conf": 4.0,
+      "gated": false,
+      "cited_files": [
+        "app/agent/loop.py"
+      ],
+      "answer_preview": "The agent's answer is gated due to hallucination when the context does not contain enough informatio"
+    },
+    {
+      "id": "gs_agent_003",
+      "category": "agent",
+      "metric": "TP",
+      "conf": 8.1,
+      "gated": false,
+      "cited_files": [
+        "app/agent/semantic_cache.py",
+        "app/agent/semantic_cache.py"
+      ],
+      "answer_preview": "A semantic cache entry is valid for SEMANTIC_CACHE_TTL_DAYS days. `app/agent/semantic_cache.py:408-4"
+    },
+    {
+      "id": "gs_agent_004",
+      "category": "agent",
+      "metric": "TP",
+      "conf": 4.4,
+      "gated": false,
+      "cited_files": [
+        "app/agent/loop.py"
+      ],
+      "answer_preview": "The agent loop uses a Groq LLM client to handle LLM rate limits. `app/agent/loop.py:669-690`  *Some "
+    },
+    {
+      "id": "gs_agent_005",
+      "category": "agent",
+      "metric": "FP",
+      "conf": 3.0,
+      "gated": false,
+      "cited_files": [
+        "app/agent/tools.py"
+      ],
+      "answer_preview": "The agent loop will retry an individual tool execution once if it fails. `app/agent/tools.py:405-438"
+    },
+    {
+      "id": "gs_graph_001",
+      "category": "graph",
+      "metric": "TP",
+      "conf": 8.8,
+      "gated": false,
+      "cited_files": [
+        "app/graph/builder.py"
+      ],
+      "answer_preview": "The graph builder detects circular dependencies using the networkx.simple_cycles function. `app/grap"
+    },
+    {
+      "id": "gs_graph_002",
+      "category": "graph",
+      "metric": "TP",
+      "conf": 4.5,
+      "gated": false,
+      "cited_files": [
+        "app/graph/builder.py"
+      ],
+      "answer_preview": "The maximum number of nodes allowed in the graph is determined by the MAX_GRAPH_NODES setting. `app/"
+    },
+    {
+      "id": "gs_graph_003",
+      "category": "graph",
+      "metric": "FN",
+      "conf": 0.0,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "Unable to complete the finalize step: Groq API error: Connection error."
+    },
+    {
+      "id": "gs_graph_004",
+      "category": "graph",
+      "metric": "FN",
+      "conf": 0.0,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "Unable to complete the decide step: Groq API error: Connection error."
+    },
+    {
+      "id": "gs_graph_005",
+      "category": "graph",
+      "metric": "FN",
+      "conf": 0.0,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "Unable to complete the decide step: Groq API error: Connection error."
+    },
+    {
+      "id": "gs_api_001",
+      "category": "api",
+      "metric": "FP",
+      "conf": 0.0,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "The AI provider was too slow to generate an answer. Try a more specific question about a class, func"
+    },
+    {
+      "id": "gs_api_002",
+      "category": "api",
+      "metric": "FP",
+      "conf": 0.0,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "Unable to complete the decide step: Groq API error: Connection error."
+    },
+    {
+      "id": "gs_api_003",
+      "category": "api",
+      "metric": "TP",
+      "conf": 8.9,
+      "gated": false,
+      "cited_files": [
+        "app/main.py"
+      ],
+      "answer_preview": "The API catches unhandled exceptions with the global_exception_handler function. `app/main.py:420-44"
+    },
+    {
+      "id": "gs_api_004",
+      "category": "api",
+      "metric": "FP",
+      "conf": 0.2,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "I could not verify the cited references in the indexed codebase. Please try again with a more specif"
+    },
+    {
+      "id": "gs_api_005",
+      "category": "api",
+      "metric": "TP",
+      "conf": 7.8,
+      "gated": false,
+      "cited_files": [
+        "app/api/router.py"
+      ],
+      "answer_preview": "The /eval/status endpoint returns a dictionary containing the job ID, status, started at time, corre"
+    },
+    {
+      "id": "gs_hall_001",
+      "category": "hallucination",
+      "metric": "FP",
+      "conf": 1.5,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "I could not verify the cited references in the indexed codebase. Please try again with a more specif"
+    },
+    {
+      "id": "gs_hall_002",
+      "category": "hallucination",
+      "metric": "FP",
+      "conf": 1.4,
+      "gated": false,
+      "cited_files": [],
+      "answer_preview": "I could not verify the cited references in the indexed codebase. Please try again with a more specif"
+    }
+  ]
+}

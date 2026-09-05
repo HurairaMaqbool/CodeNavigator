@@ -1,0 +1,15 @@
+{
+  "experiment_id": "EXP-B_LIVE",
+  "total_queries": 27,
+  "infrastructure_failures": 0,
+  "retrieval_failures": 5,
+  "retrieval_hit_at_5": 0.8148,
+  "latency_metrics_s": {
+    "mean": 11.71,
+    "median": 13.01,
+    "std_dev": 12.7,
+    "min": 0.79,
+    "max": 37.85,
+    "p95": 37.68
+  }
+}

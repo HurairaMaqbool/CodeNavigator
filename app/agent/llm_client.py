@@ -335,8 +335,8 @@ class GroqAdapter:
                 "stream": True,
                 "temperature": float(settings.GROQ_LLM_TEMPERATURE),
             }
-            if purpose == "finalize":
-                create_kwargs["response_format"] = {"type": "json_object"}
+            # Note: response_format json_object is omitted so reasoning models (e.g. Qwen) can emit think tags before JSON payload.
+            # parse_finalize_json in app/agent/grounding.py strips think tags and parses JSON safely.
             stream = self._client.chat.completions.create(**create_kwargs)
             for chunk in stream:
                 now = _time.monotonic()
@@ -439,12 +439,12 @@ class GroqAdapter:
                 body = getattr(e, "body", None)
                 if isinstance(body, dict):
                     err_info = body.get("error", {})
-                    if err_info.get("code") == "tool_use_failed":
+                    if err_info.get("code") == "tool_use_failed" or "failed_generation" in err_info:
                         failed_gen = err_info.get("failed_generation")
                 
                 if not failed_gen:
                     e_str = str(e)
-                    if "tool_use_failed" in e_str:
+                    if "tool_use_failed" in e_str or "failed_generation" in e_str or "Failed to validate JSON" in e_str:
                         start_idx = e_str.find("{")
                         if start_idx != -1:
                             end_idx = e_str.rfind("}")
@@ -520,6 +520,15 @@ class GroqAdapter:
                                                     )
                                                 except Exception:
                                                     pass
+
+                    # 3. Fallback text recovery for FINALIZE or completion calls
+                    if isinstance(failed_gen, str) and len(failed_gen.strip()) > 0:
+                        logger.info("recovered_groq_failed_generation_text", length=len(failed_gen))
+                        return LLMResponse(
+                            content=failed_gen,
+                            stop_reason="stop",
+                            usage={"input_tokens": 0, "output_tokens": 0},
+                        )
             except Exception as recovery_err:
                 logger.warning("groq_recovery_failed", error=str(recovery_err))
 

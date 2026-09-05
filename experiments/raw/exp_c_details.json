@@ -1,0 +1,596 @@
+[
+  {
+    "query_id": "gs_ingest_001",
+    "question": "The ingestion pipeline spans modules 5 \u2192 7: parse ",
+    "category": "ingestion",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FP",
+      "confidence": 3.5,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_ingest_002",
+    "question": "The GitHub webhook ignores push events on non-defa",
+    "category": "ingestion",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 4.9,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_ingest_003",
+    "question": "I could not verify the cited references in the ind",
+    "category": "ingestion",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FN",
+      "confidence": 0.6,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_ingest_004",
+    "question": "The ingestion lock is acquired by calling the acqu",
+    "category": "ingestion",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FP",
+      "confidence": 4.6,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_ingest_005",
+    "question": "The `mark_synced` method of the `MetadataStore` cl",
+    "category": "ingestion",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 8.9,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_001",
+    "question": "Hybrid search combines BM25 and vector scores usin",
+    "category": "retrieval",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 9.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_002",
+    "question": "The BM25 index is persisted on disk at the path sp",
+    "category": "retrieval",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 9.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_003",
+    "question": "The pipeline uses a cross-encoder reranker. `app/r",
+    "category": "retrieval",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 8.5,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_004",
+    "question": "The query expansion LLM request times out after 5 ",
+    "category": "retrieval",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 4.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_retrieval_005",
+    "question": "The vector database used for semantic search is Ch",
+    "category": "retrieval",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FP",
+      "confidence": 2.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_001",
+    "question": "The agent uses the _run_with_retries function to i",
+    "category": "agent",
+    "C1_bm25_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FP",
+      "confidence": 2.1,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_002",
+    "question": "The agent's answer is gated due to hallucination w",
+    "category": "agent",
+    "C1_bm25_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FP",
+      "confidence": 4.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_003",
+    "question": "A semantic cache entry is valid for SEMANTIC_CACHE",
+    "category": "agent",
+    "C1_bm25_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "TP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 8.1,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_004",
+    "question": "The agent loop uses a Groq LLM client to handle LL",
+    "category": "agent",
+    "C1_bm25_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 4.4,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_agent_005",
+    "question": "The agent loop will retry an individual tool execu",
+    "category": "agent",
+    "C1_bm25_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FP",
+      "confidence": 3.0,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_001",
+    "question": "The graph builder detects circular dependencies us",
+    "category": "graph",
+    "C1_bm25_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 8.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_002",
+    "question": "The maximum number of nodes allowed in the graph i",
+    "category": "graph",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 4.5,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_graph_003",
+    "question": "Unable to complete the finalize step: Groq API err",
+    "category": "graph",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_graph_004",
+    "question": "Unable to complete the decide step: Groq API error",
+    "category": "graph",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_graph_005",
+    "question": "Unable to complete the decide step: Groq API error",
+    "category": "graph",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FP",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_api_001",
+    "question": "The AI provider was too slow to generate an answer",
+    "category": "api",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_api_002",
+    "question": "Unable to complete the decide step: Groq API error",
+    "category": "api",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FN",
+      "confidence": 0.0,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_api_003",
+    "question": "The API catches unhandled exceptions with the glob",
+    "category": "api",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 8.9,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_api_004",
+    "question": "I could not verify the cited references in the ind",
+    "category": "api",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "FN",
+      "confidence": 0.2,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_api_005",
+    "question": "The /eval/status endpoint returns a dictionary con",
+    "category": "api",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TP",
+      "confidence": 7.8,
+      "gated": false
+    }
+  },
+  {
+    "query_id": "gs_hall_001",
+    "question": "I could not verify the cited references in the ind",
+    "category": "hallucination",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TN",
+      "confidence": 1.5,
+      "gated": true
+    }
+  },
+  {
+    "query_id": "gs_hall_002",
+    "question": "I could not verify the cited references in the ind",
+    "category": "hallucination",
+    "C1_bm25_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C2_dense_only": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C3_hybrid_rrf": {
+      "metric": "FN",
+      "retrieved_chunks": 10
+    },
+    "C4_hybrid_rrf_reranker": {
+      "metric": "TN",
+      "confidence": 1.4,
+      "gated": true
+    }
+  }
+]

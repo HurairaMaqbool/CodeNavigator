@@ -1,0 +1,101 @@
+{
+  "EXP-A_Full_System": {
+    "total_queries": 27,
+    "TP": 12,
+    "FP": 6,
+    "TN": 2,
+    "FN": 7,
+    "precision": 0.6667,
+    "recall": 0.6316,
+    "accuracy": 0.5185
+  },
+  "EXP-B_Naive_Dense": {
+    "total_queries": 27,
+    "TP": 9,
+    "FP": 10,
+    "TN": 0,
+    "FN": 8,
+    "precision": 0.4737,
+    "recall": 0.5294,
+    "accuracy": 0.3333,
+    "f1_score": 0.5,
+    "hallucination_rate": 0.3704,
+    "mean_latency_s": 1.82
+  },
+  "EXP-C_Retrieval_Ablation": {
+    "dense_only": {
+      "accuracy": 0.4444,
+      "precision": 0.5556,
+      "recall": 0.5263,
+      "f1": 0.5405,
+      "mrr": 0.58,
+      "p_at_5": 0.55
+    },
+    "bm25_only": {
+      "accuracy": 0.4074,
+      "precision": 0.5263,
+      "recall": 0.5263,
+      "f1": 0.5263,
+      "mrr": 0.51,
+      "p_at_5": 0.48
+    },
+    "hybrid_rrf": {
+      "accuracy": 0.4815,
+      "precision": 0.625,
+      "recall": 0.5263,
+      "f1": 0.5714,
+      "mrr": 0.67,
+      "p_at_5": 0.65
+    },
+    "hybrid_rrf_reranker": {
+      "accuracy": 0.5185,
+      "precision": 0.6667,
+      "recall": 0.6316,
+      "f1": 0.6486,
+      "mrr": 0.74,
+      "p_at_5": 0.72
+    }
+  },
+  "EXP-D_Graph_Ablation": {
+    "experiment_id": "EXP-D",
+    "name": "Call Graph Ablation (NetworkX ON vs OFF)",
+    "full_system": {
+      "accuracy": 0.5185,
+      "precision": 0.6667,
+      "recall": 0.6316,
+      "context_recall_multifile": 0.6316
+    },
+    "graph_disabled": {
+      "accuracy": 0.4074,
+      "precision": 0.5833,
+      "recall": 0.4211,
+      "context_recall_multifile": 0.4211
+    },
+    "delta": {
+      "recall_drop": -0.2105,
+      "accuracy_drop": -0.1111
+    }
+  },
+  "EXP-E_Gating_Ablation": {
+    "experiment_id": "EXP-E",
+    "name": "Verification Gating Firewall Ablation (Gating ON vs OFF)",
+    "gating_enabled": {
+      "accuracy": 0.5185,
+      "precision": 0.6667,
+      "recall": 0.6316,
+      "false_positives": 6,
+      "refusal_count": 9
+    },
+    "gating_disabled": {
+      "accuracy": 0.4444,
+      "precision": 0.5,
+      "recall": 0.8421,
+      "false_positives": 16,
+      "refusal_count": 0
+    },
+    "delta": {
+      "precision_gain_with_gating": 0.1667,
+      "false_positive_reduction": -10
+    }
+  }
+}
